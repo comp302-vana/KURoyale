@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="450.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.StartSceneController">
+   <children>
+      <Button layoutX="145.0" layoutY="185.0" mnemonicParsing="false" onAction="#btnStartClicked" prefHeight="80.0" prefWidth="160.0" text="START!">
+         <font>
+            <Font name="Trebuchet MS Bold" size="24.0" />
+         </font>
+      </Button>
+      <Button layoutX="145.0" layoutY="286.0" mnemonicParsing="false" onAction="#btnQuitCliked" prefHeight="80.0" prefWidth="160.0" text="KUIRT">
+         <font>
+            <Font name="Trebuchet MS Bold" size="24.0" />
+         </font>
+      </Button>
+      <Label alignment="CENTER" contentDisplay="CENTER" layoutY="135.0" prefHeight="50.0" prefWidth="450.0" text="KUROYALE">
+         <font>
+            <Font name="Trebuchet MS Bold" size="36.0" />
+         </font>
+      </Label>
+      <ImageView fitHeight="135.0" fitWidth="135.0" layoutX="157.5" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@icon.png" />
+         </image>
+      </ImageView>
+   </children>
+</AnchorPane>
