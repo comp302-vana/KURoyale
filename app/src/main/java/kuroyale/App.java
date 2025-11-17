@@ -18,6 +18,7 @@ public class App extends Application {
         try {
             Parent root = FXMLLoader.load(App.class.getResource("/kuroyale/StartScene.fxml"));
             Scene scene = new Scene(root);
+            stage.setResizable(false);
             stage.setScene(scene);
             stage.show();
         } catch (IOException e) {}
