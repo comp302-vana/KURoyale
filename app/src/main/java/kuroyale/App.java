@@ -6,6 +6,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class App extends Application {
@@ -18,7 +19,10 @@ public class App extends Application {
         try {
             Parent root = FXMLLoader.load(App.class.getResource("/kuroyale/StartScene.fxml"));
             Scene scene = new Scene(root);
+            root.setStyle("-fx-background-color: BD7FFF;");
             stage.setResizable(false);
+            stage.setTitle("KURoyale");
+            stage.getIcons().add(new Image("/kuroyale/icon.png"));
             stage.setScene(scene);
             stage.show();
         } catch (IOException e) {}

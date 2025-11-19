@@ -8,24 +8,45 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.SceneController">
    <children>
-      <Button layoutX="210.0" layoutY="336.0" mnemonicParsing="false" prefHeight="60.0" prefWidth="80.0" text="Deck">
+      <Button contentDisplay="TOP" graphicTextGap="0.0" layoutX="210.0" layoutY="336.0" mnemonicParsing="false" prefHeight="60.0" prefWidth="80.0" text="Deck">
          <font>
             <Font name="Trebuchet MS Bold" size="16.0" />
          </font>
+         <graphic>
+            <ImageView fitHeight="28.0" fitWidth="60.0" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@deck.png" />
+               </image>
+            </ImageView>
+         </graphic>
       </Button>
-      <Button layoutX="350.0" layoutY="350.0" mnemonicParsing="false" onAction="#btnSelectBuildClicked" prefHeight="45.0" prefWidth="60.0" text="Build">
+      <Button layoutX="350.0" layoutY="350.0" mnemonicParsing="false" onAction="#btnSelectBuildClicked" prefHeight="45.0" prefWidth="60.0">
          <font>
             <Font name="Trebuchet MS Bold" size="12.0" />
          </font>
+         <graphic>
+            <ImageView fitHeight="28.0" fitWidth="60.0" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@build.png" />
+               </image>
+            </ImageView>
+         </graphic>
       </Button>
-      <Button layoutX="290.0" layoutY="350.0" mnemonicParsing="false" onAction="#btnSelectBattleClicked" prefHeight="45.0" prefWidth="60.0" text="Battle">
+      <Button layoutX="290.0" layoutY="350.0" mnemonicParsing="false" onAction="#btnSelectBattleClicked" prefHeight="45.0" prefWidth="60.0">
          <font>
             <Font name="System Bold" size="12.0" />
          </font>
+         <graphic>
+            <ImageView fitHeight="28.0" fitWidth="60.0" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@battle.png" />
+               </image>
+            </ImageView>
+         </graphic>
       </Button>
       <ImageView fitHeight="148.0" fitWidth="276.0" layoutX="162.0" layoutY="14.0" pickOnBounds="true" preserveRatio="true">
          <image>
-            <Image url="@deck.png" />
+            <Image url="@deck_img.png" />
          </image>
       </ImageView>
       <ImageView fitHeight="172.0" fitWidth="600.0" layoutX="102.0" layoutY="164.0" pickOnBounds="true" preserveRatio="true">
