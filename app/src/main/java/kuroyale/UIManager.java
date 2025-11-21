@@ -12,7 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-public class SceneController {
+public class UIManager {
     private Stage stage;
     private Scene scene;
     private Parent root;
