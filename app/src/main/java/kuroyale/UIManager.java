@@ -48,7 +48,7 @@ public class UIManager {
     }
 
     private void switchToStartBattleScene(ActionEvent event) throws IOException {
-        root = FXMLLoader.load(getClass().getResource("/kuroyale/StartBattleScene.fxml"));
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, Color.web("0xBD7FFF"));
@@ -57,7 +57,7 @@ public class UIManager {
     }
 
     private void switchToDeckBuilderScene(ActionEvent event) throws IOException {
-        root = FXMLLoader.load(getClass().getResource("/kuroyale/DeckBuilderScene.fxml"));
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/DeckBuilderScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, Color.web("0xBD7FFF"));
@@ -66,7 +66,7 @@ public class UIManager {
     }
 
     private void switchToArenaBuilderScene(ActionEvent event) throws IOException {
-        root = FXMLLoader.load(getClass().getResource("/kuroyale/ArenaBuilderScene.fxml"));
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/ArenaBuilderScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, Color.web("0xBD7FFF"));
@@ -75,8 +75,8 @@ public class UIManager {
     }
     
     private void switchToBattleScene(ActionEvent event) throws IOException {
-        root = FXMLLoader.load(getClass().getResource("/kuroyale/BattleScene.fxml"));
-        root.setStyle("-fx-background-color: 3F7FFF;");
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/BattleScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, Color.web("0xBD7FFF"));
         stage.setScene(scene);

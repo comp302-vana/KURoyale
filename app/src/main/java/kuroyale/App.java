@@ -17,12 +17,12 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {
         try {
-            Parent root = FXMLLoader.load(App.class.getResource("/kuroyale/StartScene.fxml"));
+            Parent root = FXMLLoader.load(App.class.getResource("/kuroyale/scenes/StartScene.fxml"));
             Scene scene = new Scene(root);
             root.setStyle("-fx-background-color: BD7FFF;");
             stage.setResizable(false);
             stage.setTitle("KURoyale");
-            stage.getIcons().add(new Image("/kuroyale/icon.png"));
+            stage.getIcons().add(new Image("/kuroyale/images/icon.png"));
             stage.setScene(scene);
             stage.show();
         } catch (IOException e) {}
