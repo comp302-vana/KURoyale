@@ -1,7 +1,8 @@
-package kuroyale;
+package kuroyale.mainpack;
 
 import java.io.IOException;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -9,13 +10,28 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-public class UIManager {
+public class UIManager extends Application {
     private Stage stage;
     private Scene scene;
     private Parent root;
+    
+    @Override
+    public void start(Stage stage) {
+        try {
+            Parent root = FXMLLoader.load(UIManager.class.getResource("/kuroyale/scenes/StartScene.fxml"));
+            Scene scene = new Scene(root);
+            root.setStyle("-fx-background-color: BD7FFF;");
+            stage.setResizable(false);
+            stage.setTitle("KURoyale");
+            stage.getIcons().add(new Image("/kuroyale/images/icon.png"));
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {}
+    }
 
     @FXML
     void btnQuitCliked(ActionEvent event) {
