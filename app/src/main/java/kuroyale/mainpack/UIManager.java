@@ -18,6 +18,20 @@ public class UIManager extends Application {
     private Stage stage;
     private Scene scene;
     private Parent root;
+    
+    @Override
+    public void start(Stage stage) {
+        try {
+            Parent root = FXMLLoader.load(UIManager.class.getResource("/kuroyale/scenes/StartScene.fxml"));
+            Scene scene = new Scene(root);
+            root.setStyle("-fx-background-color: BD7FFF;");
+            stage.setResizable(false);
+            stage.setTitle("KURoyale");
+            stage.getIcons().add(new Image("/kuroyale/images/icon.png"));
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {}
+    }
 
     @Override
     public void start(Stage stage) {
