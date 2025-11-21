@@ -1,4 +1,4 @@
-package kuroyale.mainpack.cards;
+package kuroyale.cardpack;
 
 public abstract class Card {
 
