@@ -43,8 +43,8 @@ public class UIManager {
     }
 
     @FXML
-    void btnStartBattleClicked(ActionEvent event) {
-        
+    void btnStartBattleClicked(ActionEvent event) throws IOException {
+        switchToBattleScene(event);
     }
 
     private void switchToStartBattleScene(ActionEvent event) throws IOException {
@@ -68,6 +68,15 @@ public class UIManager {
     private void switchToArenaBuilderScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/ArenaBuilderScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
+    
+    private void switchToBattleScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/BattleScene.fxml"));
+        root.setStyle("-fx-background-color: 3F7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, Color.web("0xBD7FFF"));
         stage.setScene(scene);
