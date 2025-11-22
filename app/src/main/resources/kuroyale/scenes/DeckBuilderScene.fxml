@@ -1,57 +1,122 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21.0.9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.UIManager">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/21.0.9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.DeckBuilder">
    <children>
-      <Button contentDisplay="TOP" graphicTextGap="0.0" layoutX="210.0" layoutY="336.0" mnemonicParsing="false" prefHeight="60.0" prefWidth="80.0" text="Deck">
+      <!-- Title -->
+      <Label layoutX="300.0" layoutY="10.0" text="Deck Builder" textFill="#333333">
          <font>
-            <Font name="Trebuchet MS Bold" size="16.0" />
+            <Font name="Trebuchet MS Bold" size="28.0" />
          </font>
-         <graphic>
-            <ImageView fitHeight="28.0" fitWidth="60.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/deck.png" />
-               </image>
-            </ImageView>
-         </graphic>
+      </Label>
+      
+      <!-- Available Cards Section -->
+      <Label layoutX="20.0" layoutY="50.0" text="Your Deck (Made of 8 Cards)" textFill="#333333">
+         <font>
+            <Font name="Arial Bold" size="14.0" />
+         </font>
+      </Label>
+      
+            <ScrollPane fx:id="cardScrollPane" fitToWidth="true" layoutX="14.0" layoutY="381.0" prefHeight="250.0" prefWidth="760.0">
+         <content>
+            <FlowPane fx:id="cardContainer" hgap="8.0" prefWrapLength="760.0" vgap="10.0" />
+         </content>
+      </ScrollPane>
+      
+      <!-- Deck Slots Section -->
+      <Label layoutX="20.0" layoutY="358.0" text="Available Cards" textFill="#333333">
+         <font>
+            <Font name="Arial Bold" size="14.0" />
+         </font>
+      </Label>
+      
+      <FlowPane fx:id="deckSlots" hgap="10.0" layoutX="14.0" layoutY="74.0" prefHeight="160.0" prefWidth="760.0" prefWrapLength="580.0" vgap="10.0" />
+      
+      <!-- Deck Management Section -->
+      <Label layoutX="26.0" layoutY="317.0" text="Deck Name:" textFill="#333333">
+         <font>
+            <Font name="Arial Bold" size="12.0" />
+         </font>
+      </Label>
+      
+      <TextField fx:id="deckNameField" layoutX="105.0" layoutY="312.0" prefHeight="25.0" prefWidth="200.0" />
+      
+      <Label layoutX="321.0" layoutY="317.0" text="Load Deck:" textFill="#333333">
+         <font>
+            <Font name="Arial Bold" size="12.0" />
+         </font>
+      </Label>
+      
+      <ComboBox fx:id="deckSelector" layoutX="391.0" layoutY="312.0" prefHeight="25.0" prefWidth="150.0" />
+      
+      <Button fx:id="btnLoadDeck" layoutX="187.0" layoutY="234.0" onAction="#handleLoadDeck" prefHeight="35.0" prefWidth="120.0" text="Load Deck">
+         <font>
+            <Font name="Arial Bold" size="12.0" />
+         </font>
       </Button>
-      <Button layoutX="350.0" layoutY="350.0" mnemonicParsing="false" onAction="#btnSelectBuildClicked" prefHeight="45.0" prefWidth="60.0">
+      
+      <Button fx:id="btnClearDeck" layoutX="321.0" layoutY="234.0" onAction="#handleClearDeck" prefHeight="35.0" prefWidth="120.0" text="Clear Deck">
+         <font>
+            <Font name="Arial Bold" size="12.0" />
+         </font>
+      </Button>
+      
+      <Button fx:id="btnDeleteDeck" layoutX="455.0" layoutY="234.0" onAction="#handleDeleteDeck" prefHeight="35.0" prefWidth="120.0" text="Delete Deck">
+         <font>
+            <Font name="Arial Bold" size="12.0" />
+         </font>
+      </Button>
+      
+      <!-- Status Label -->
+      <Label fx:id="deckStatusLabel" layoutX="669.0" layoutY="58.0" text="Deck: 0/8 cards" textFill="orange">
+         <font>
+            <Font name="Arial Bold" size="14.0" />
+         </font>
+      </Label>
+      
+      <!-- Navigation Buttons -->
+      <Button fx:id="btnBack" layoutX="430.0" layoutY="643.0" mnemonicParsing="false" onAction="#handleBack" prefHeight="46.0" prefWidth="106.0" text="Back">
          <font>
             <Font name="Trebuchet MS Bold" size="12.0" />
          </font>
-         <graphic>
-            <ImageView fitHeight="28.0" fitWidth="60.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/build.png" />
-               </image>
-            </ImageView>
-         </graphic>
       </Button>
-      <Button layoutX="290.0" layoutY="350.0" mnemonicParsing="false" onAction="#btnSelectBattleClicked" prefHeight="45.0" prefWidth="60.0">
+      
+      <Button layoutX="545.0" layoutY="643.0" mnemonicParsing="false" onAction="#handleBack" prefHeight="46.0" prefWidth="106.0" text="Battle">
          <font>
-            <Font name="System Bold" size="12.0" />
+            <Font name="Trebuchet MS Bold" size="12.0" />
          </font>
-         <graphic>
-            <ImageView fitHeight="28.0" fitWidth="60.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/battle.png" />
-               </image>
-            </ImageView>
-         </graphic>
       </Button>
-      <ImageView fitHeight="148.0" fitWidth="276.0" layoutX="162.0" layoutY="14.0" pickOnBounds="true" preserveRatio="true">
+      
+      <Button layoutX="666.0" layoutY="643.0" mnemonicParsing="false" onAction="#handleBack" prefHeight="46.0" prefWidth="110.0" text="Build" textAlignment="CENTER">
+         <font>
+            <Font name="Trebuchet MS Bold" size="12.0" />
+         </font>
+      </Button>
+      
+            <!-- Buttons -->
+      <Button fx:id="btnSaveDeck" layoutX="45.0" layoutY="234.0" onAction="#handleSaveDeck" prefHeight="35.0" prefWidth="120.0" text="Save Deck">
+         <font>
+            <Font name="Arial Bold" size="12.0" />
+         </font>
+      </Button>
+      <ImageView fitHeight="26.0" fitWidth="23.0" layoutX="550.0" layoutY="656.0" pickOnBounds="true" preserveRatio="true">
          <image>
-            <Image url="@../images/deck_img.png" />
+            <Image url="@../images/battle.png" />
          </image>
       </ImageView>
-      <ImageView fitHeight="172.0" fitWidth="600.0" layoutX="102.0" layoutY="164.0" pickOnBounds="true" preserveRatio="true">
+      <ImageView fitHeight="22.0" fitWidth="29.0" layoutX="671.0" layoutY="659.0" pickOnBounds="true" preserveRatio="true">
          <image>
-            <Image url="@../images/deckbuilder.png" />
+            <Image url="@../images/build.png" />
          </image>
       </ImageView>
    </children>

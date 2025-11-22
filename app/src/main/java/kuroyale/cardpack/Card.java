@@ -45,12 +45,12 @@ public abstract class Card {
         return target;
     }
 
-        public String getDescription() {
+    public String getDescription() {
         return description;
     }
 
     @Override
     public String toString() {
-        return name + " (Cost: " + cost + ")" + "\n" + "Description: " + description;
+        return name + " (Elixir Cost: " + cost + ")" + "\n" + "Description: " + description;
     }
 }

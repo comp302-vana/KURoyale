@@ -1,5 +1,330 @@
 package kuroyale.mainpack;
 
-public class DeckBuilder {
+import java.io.IOException;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+import kuroyale.cardpack.Card;
+import kuroyale.cardpack.CardFactory;
+import kuroyale.deckpack.Deck;
+import kuroyale.deckpack.DeckManager;
 
+public class DeckBuilder {
+    @FXML private ScrollPane cardScrollPane;
+    @FXML private FlowPane cardContainer;
+    @FXML private FlowPane deckSlots;
+    @FXML private Button btnSaveDeck;
+    @FXML private Button btnDeleteDeck;
+    @FXML private Button btnLoadDeck;
+    @FXML private Button btnBack;
+    @FXML private TextField deckNameField;
+    @FXML private ComboBox<String> deckSelector;
+    @FXML private Label deckStatusLabel;
+
+    private Deck currentDeck;
+    private ObservableList<Card> deckCards;
+
+    @FXML
+    public void initialize() {
+        if (cardScrollPane == null || cardContainer == null || deckSlots == null) {
+            System.err.println("ERROR: FXML fields not injected! Check FXML file.");
+            return;
+        }
+        
+        deckCards = FXCollections.observableArrayList();
+        currentDeck = new Deck("New Deck");
+        
+        setupCardDisplay();
+        setupDeckSlots();
+        setupDeckSelector();
+        updateUI();
+    }
+
+    private void setupCardDisplay() {
+        if (cardContainer == null) {
+            return;
+        }
+        
+        cardContainer.setHgap(8); 
+        cardContainer.setVgap(10);
+        cardContainer.setPrefWrapLength(760);
+        
+        //create buttons for all cards
+        for (Card card : CardFactory.getAllCards()) {
+            Button cardButton = createCardButton(card);
+            cardContainer.getChildren().add(cardButton);
+        }
+        
+        if (cardScrollPane != null) {
+            cardScrollPane.setContent(cardContainer);
+            cardScrollPane.setFitToWidth(true);
+        }
+    }
+
+    private Button createCardButton(Card card) {
+        Button btn = new Button();
+        btn.setPrefSize(115, 140); 
+        btn.setStyle("-fx-background-color: #E8E8E8; -fx-border-color: #333; -fx-border-width: 2;");
+        
+        VBox vbox = new VBox(4); 
+        vbox.setAlignment(javafx.geometry.Pos.CENTER);
+        
+        Label nameLabel = new Label(card.getName());
+        nameLabel.setFont(new Font("Arial Bold", 11)); 
+        nameLabel.setWrapText(true);
+        nameLabel.setMaxWidth(105);  
+        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
+        nameLabel.setAlignment(javafx.geometry.Pos.CENTER); 
+        
+        Label costLabel = new Label("Cost: " + card.getCost());
+        costLabel.setFont(new Font("Arial Bold", 11)); 
+        costLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
+        costLabel.setAlignment(javafx.geometry.Pos.CENTER); 
+        
+        Label descLabel = new Label(card.getDescription());
+        descLabel.setFont(new Font("Arial Bold", 11));  
+        descLabel.setWrapText(true);
+        descLabel.setMaxWidth(105);  
+        descLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER); 
+        descLabel.setAlignment(javafx.geometry.Pos.CENTER);  
+        
+        vbox.getChildren().addAll(nameLabel, costLabel, descLabel);
+        btn.setGraphic(vbox);
+        
+        btn.setOnAction(e -> addCardToDeck(card));
+        
+        return btn;
+    }
+
+    private void setupDeckSlots() {
+        if (deckSlots == null) {
+            return;
+        }
+        
+        deckSlots.setHgap(10);
+        deckSlots.setVgap(10);
+        deckSlots.setPrefWrapLength(580);
+        
+        for (int i = 0; i < 8; i++) {
+            Button slot = createDeckSlot(i);
+            deckSlots.getChildren().add(slot);
+        }
+    }
+
+    private Button createDeckSlot(int index) {
+        Button slot = new Button();
+        slot.setPrefSize(85, 130);
+        slot.setStyle("-fx-background-color: #D0D0D0; -fx-border-color: #666; -fx-border-width: 2;");
+        slot.setText("Slot " + (index + 1));
+        slot.setFont(new Font("Arial", 9));
+        
+        slot.setOnAction(e -> removeCardFromDeck(index));
+        
+        return slot;
+    }
+
+    private void addCardToDeck(Card card) {
+
+        try {
+            currentDeck.addCard(card);
+            updateDeckDisplay();
+            updateUI();
+        } catch (IllegalArgumentException e) {
+            // Trying to select a card that is already in the deck
+            showAlert("Duplicate Card", "This card is already in your deck!");
+        } catch (IllegalStateException e) {
+            // Deck is full (No more than 8 cards)
+            showAlert("Deck Full", "Your deck is full! Remove a card first.");
+        }
+    }
+
+    private void removeCardFromDeck(int index) {
+        if (currentDeck.removeCard(index)) {
+            updateDeckDisplay();
+            updateUI();
+        }
+    }
+
+    private void updateDeckDisplay() {
+        deckCards.clear();
+        deckCards.addAll(currentDeck.getCards());
+        
+        deckSlots.getChildren().clear();
+        for (int i = 0; i < 8; i++) {
+            Button slot;
+            if (i < deckCards.size()) {
+                Card card = deckCards.get(i);
+                slot = createCardInSlotButton(card, i);
+            } else {
+                slot = createDeckSlot(i);
+            }
+            deckSlots.getChildren().add(slot);
+        }
+    }
+
+    private Button createCardInSlotButton(Card card, int index) {
+        Button btn = new Button();
+        btn.setPrefSize(85, 130);
+        btn.setStyle("-fx-background-color: #B8E6B8; -fx-border-color: #333; -fx-border-width: 2;");
+        
+        VBox vbox = new VBox(4);
+        vbox.setAlignment(javafx.geometry.Pos.CENTER);
+        
+        Label nameLabel = new Label(card.getName());
+        nameLabel.setFont(new Font("Arial", 11));
+        nameLabel.setWrapText(true);
+        nameLabel.setMaxWidth(80);  
+        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
+        nameLabel.setAlignment(javafx.geometry.Pos.CENTER);  
+        
+        Label costLabel = new Label("Cost: " + card.getCost());
+        costLabel.setFont(new Font("Arial", 10));
+        costLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
+        costLabel.setAlignment(javafx.geometry.Pos.CENTER);  
+        
+        vbox.getChildren().addAll(nameLabel, costLabel);
+        btn.setGraphic(vbox);
+        
+        btn.setOnAction(e -> removeCardFromDeck(index));
+        
+        return btn;
+    }
+
+    private void setupDeckSelector() {
+        deckSelector.getItems().clear();
+        DeckManager.loadAllDecks();
+        for (Deck deck : DeckManager.getAllDecks()) {
+            deckSelector.getItems().add(deck.getName());
+        }
+    }
+
+    @FXML
+    private void handleSaveDeck() {
+        String name = deckNameField.getText().trim();
+        if (name.isEmpty()) {
+            showAlert("Invalid Name", "Please enter a deck name.");
+            return;
+        }
+        
+        if (currentDeck.getSize() != 8) {
+            showAlert("Incomplete Deck", "Your deck must have exactly 8 cards!");
+            return;
+        }
+        
+        String finalName = name;
+        DeckManager.loadAllDecks();
+        int deckNumber = 1;
+        while (DeckManager.getDeckByName(finalName) != null) {
+            finalName = name + " " + deckNumber;
+            deckNumber++;
+        }
+        
+        currentDeck.setName(finalName);
+        DeckManager.saveDeck(currentDeck);
+        DeckManager.setCurrentDeck(currentDeck);
+        setupDeckSelector();
+        deckNameField.setText(finalName);
+        deckStatusLabel.setText("Deck saved: " + finalName);
+        showAlert("Success", "Deck saved successfully!");
+    }
+
+    @FXML
+    private void handleClearDeck() {
+        if (currentDeck.isEmpty()) {
+            showAlert("Deck Empty", "The deck is already empty.");
+            return;
+        }
+        
+        currentDeck.clear();
+        updateDeckDisplay();
+        updateUI();
+    }
+
+    @FXML
+    private void handleDeleteDeck() {
+        String name = deckNameField.getText().trim();
+        if (name.isEmpty()) {
+            showAlert("Invalid Name", "Please enter a deck name to delete.");
+            return;
+        }
+        
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete Deck");
+        confirm.setHeaderText("Are you sure you want to delete '" + name + "'?");
+        confirm.setContentText("This action cannot be undone.");
+        
+        if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
+            DeckManager.deleteDeck(name);
+            setupDeckSelector();
+            deckStatusLabel.setText("Deck deleted: " + name);
+            
+            // clear the currect deck if deleted
+            if (currentDeck != null && currentDeck.getName().equals(name)) {
+                currentDeck = new Deck("New Deck");
+                deckNameField.clear();
+                updateDeckDisplay();
+                updateUI();
+            }
+        }
+    }
+
+    @FXML
+    private void handleLoadDeck() {
+        String selected = deckSelector.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showAlert("No Selection", "Please select a deck to load.");
+            return;
+        }
+        
+        Deck loaded = DeckManager.loadDeck(selected);
+        if (loaded != null) {
+            currentDeck = loaded;
+            deckNameField.setText(loaded.getName());
+            DeckManager.setCurrentDeck(loaded);
+            updateDeckDisplay();
+            updateUI();
+            deckStatusLabel.setText("Deck loaded: " + selected);
+        }
+    }
+
+    private void updateUI() {
+        int size = currentDeck.getSize();
+        deckStatusLabel.setText("Deck: " + size + "/8 cards");
+        
+        btnSaveDeck.setDisable(size != 8);
+        
+        if (size == 8) {
+            deckStatusLabel.setStyle("-fx-text-fill: green;");
+        } else {
+            deckStatusLabel.setStyle("-fx-text-fill: orange;");
+        }
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    @FXML
+    private void handleBack(ActionEvent event) throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        Scene scene = new Scene(root, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
 }
