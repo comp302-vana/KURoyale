@@ -16,10 +16,10 @@ public class UnitCard extends Card {
 
        public UnitCard(
             int id, String name, String description, int cost,
-            CardCategory category, CardTarget target,
+            CardCategory category, CardTarget target, CardType type,
             int hp, int damage, double hitSpeed, double range, String speed) {
 
-        super(id, name, description, cost, CardType.UNIT, category, target);
+        super(id, name, description, cost, type, category, target);
         this.hp = hp;
         this.damage = damage;
         this.hitSpeed = hitSpeed;

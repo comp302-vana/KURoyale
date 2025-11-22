@@ -15,77 +15,77 @@ public class CardFactory {
 
             case 1: return new UnitCard(1, "Knight", 
                 "A tough soldier with a sword. Good for soaking up damage.",
-                3, CardCategory.SINGLE_TARGET, CardTarget.GROUND,
+                3, CardCategory.SINGLE_TARGET, CardTarget.GROUND, CardType.GROUND,
                 600, 75, 1.1, 0, "Medium");
 
             case 2: return new UnitCard(2, "Musketeer",
                 "A ranged shooter. Can hit ground and air targets.",
-                4, CardCategory.SINGLE_TARGET, CardTarget.AIR_GROUND,
+                4, CardCategory.SINGLE_TARGET, CardTarget.AIR_GROUND, CardType.GROUND,
                 340, 100, 1.1, 6.5, "Medium");
 
             case 3: return new UnitCard(3, "Mini P.E.K.K.A",
                 "A powerful armored warrior. Slow but deals massive damage.",
-                4, CardCategory.SINGLE_TARGET, CardTarget.GROUND,
+                4, CardCategory.SINGLE_TARGET, CardTarget.GROUND, CardType.GROUND,
                 600, 325, 1.8, 0, "Slow");
 
             case 4: return new UnitCard(4, "Giant",
                 "A huge tank unit. Ignores soldiers and attacks buildings/towers only.",
-                5, CardCategory.SINGLE_TARGET, CardTarget.BUILDINGS,
+                5, CardCategory.SINGLE_TARGET, CardTarget.BUILDINGS, CardType.GROUND,
                 2000, 126, 1.5, 0, "Very Slow");
 
             case 5: return new UnitCard(5, "Hog Rider",
                 "Fast unit that rushes toward buildings. Ignores soldiers.",
-                4, CardCategory.SINGLE_TARGET, CardTarget.BUILDINGS,
+                4, CardCategory.SINGLE_TARGET, CardTarget.BUILDINGS, CardType.GROUND,
                 800, 160, 1.5, 0, "Fast");
 
             case 6: return new UnitCard(6, "Bomber",
                 "Throws bombs that explode on impact.",
-                3, CardCategory.AOE, CardTarget.GROUND,
+                3, CardCategory.AOE, CardTarget.GROUND, CardType.GROUND,
                 150, 100, 1.9, 5, "Medium");
 
             case 7: return new UnitCard(7, "Valkyrie",
                 "Spins and damages all nearby enemies.",
-                4, CardCategory.AOE, CardTarget.GROUND,
+                4, CardCategory.AOE, CardTarget.GROUND, CardType.GROUND,
                 880, 120, 1.5, 0, "Medium");
 
             case 8: return new UnitCard(8, "Wizard",
                 "Shoots fireballs that explode.",
-                5, CardCategory.AOE, CardTarget.AIR_GROUND,
+                5, CardCategory.AOE, CardTarget.AIR_GROUND, CardType.GROUND,
                 340, 130, 1.7, 5, "Medium");
 
             case 9: return new UnitCard(9, "Skeletons",
                 "Spawns 4 very weak but very fast soldiers.",
-                1, CardCategory.SWARM, CardTarget.GROUND,
+                1, CardCategory.SWARM, CardTarget.GROUND, CardType.GROUND,
                 30, 30, 1.1, 0, "Very Fast");
 
             case 10: return new UnitCard(10, "Goblins",
                 "Spawns 3 fast, weak melee fighters.",
-                2, CardCategory.SWARM, CardTarget.GROUND,
+                2, CardCategory.SWARM, CardTarget.GROUND, CardType.GROUND,
                 80, 50, 1.1, 0, "Fast");
 
             case 11: return new UnitCard(11, "Spear Goblins",
                 "Spawns 3 ranged goblins (can hit air).",
-                2, CardCategory.SWARM, CardTarget.AIR_GROUND,
+                2, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.GROUND,
                 52, 24, 1.7, 5.5, "Fast");
 
             case 12: return new UnitCard(12, "Archers",
                 "Spawns 2 ranged soldiers.",
-                3, CardCategory.SWARM, CardTarget.AIR_GROUND,
+                3, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.GROUND,
                 125, 40, 0.9, 5.5, "Medium");
 
             case 13: return new UnitCard(13, "Minions",
                 "Spawns 3 flying units.",
-                3, CardCategory.SWARM, CardTarget.AIR,
+                3, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.AIR,
                 90, 40, 1.2, 2.5, "Very Fast");
 
             case 14: return new UnitCard(14, "Minion Horde",
                 "Spawns 6 flying units.",
-                5, CardCategory.SWARM, CardTarget.AIR,
+                5, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.AIR,
                 90, 40, 1.2, 2.5, "Very Fast");
 
             case 15: return new UnitCard(15, "Barbarians",
                 "Spawns 4 tough melee fighters.",
-                5, CardCategory.SWARM, CardTarget.GROUND,
+                5, CardCategory.SWARM, CardTarget.GROUND, CardType.GROUND,
                 300, 75, 1.3, 0, "Fast");
 
 
