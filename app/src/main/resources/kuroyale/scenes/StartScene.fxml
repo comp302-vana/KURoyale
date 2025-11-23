@@ -7,24 +7,24 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21.0.9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.UIManager">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/21.0.9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.UIManager">
    <children>
-      <Button layoutX="225.0" layoutY="185.0" mnemonicParsing="false" onAction="#btnStartClicked" prefHeight="80.0" prefWidth="160.0" text="START!">
+      <Label alignment="CENTER" contentDisplay="CENTER" layoutX="499.2" layoutY="292.8" prefHeight="131.0" prefWidth="282.0" text="KUROYALE" AnchorPane.bottomAnchor="300.0" AnchorPane.leftAnchor="500.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="300.0">
          <font>
-            <Font name="Trebuchet MS Bold" size="24.0" />
-         </font>
-      </Button>
-      <Button layoutX="225.0" layoutY="286.0" mnemonicParsing="false" onAction="#btnQuitCliked" prefHeight="80.0" prefWidth="160.0" text="KUIRT">
-         <font>
-            <Font name="Trebuchet MS Bold" size="24.0" />
-         </font>
-      </Button>
-      <Label alignment="CENTER" contentDisplay="CENTER" layoutY="135.0" prefHeight="50.0" prefWidth="600.0" text="KUROYALE">
-         <font>
-            <Font name="Trebuchet MS Bold" size="36.0" />
+            <Font name="Trebuchet MS Bold" size="48.0" />
          </font>
       </Label>
-      <ImageView fitHeight="135.0" fitWidth="135.0" layoutX="233.0" pickOnBounds="true" preserveRatio="true">
+      <Button layoutX="569.0" layoutY="425.0" mnemonicParsing="false" onAction="#btnStartClicked" prefHeight="80.0" prefWidth="160.0" text="START!" AnchorPane.bottomAnchor="215.0" AnchorPane.leftAnchor="560.0" AnchorPane.rightAnchor="560.0" AnchorPane.topAnchor="425.0">
+         <font>
+            <Font name="Trebuchet MS Bold" size="24.0" />
+         </font>
+      </Button>
+      <Button layoutX="225.0" layoutY="550.0" mnemonicParsing="false" onAction="#btnQuitCliked" prefHeight="80.0" prefWidth="160.0" text="KUIRT" AnchorPane.bottomAnchor="90.0" AnchorPane.leftAnchor="560.0" AnchorPane.rightAnchor="560.0" AnchorPane.topAnchor="550.0">
+         <font>
+            <Font name="Trebuchet MS Bold" size="24.0" />
+         </font>
+      </Button>
+      <ImageView fitHeight="280.0" fitWidth="280.0" layoutX="526.0" layoutY="11.0" pickOnBounds="true" preserveRatio="true" AnchorPane.leftAnchor="500.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="15.0">
          <image>
             <Image url="@../images/icon.png" />
          </image>

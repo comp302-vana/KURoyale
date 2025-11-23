@@ -6,30 +6,43 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.CardFactory;
 import kuroyale.deckpack.Deck;
 import kuroyale.deckpack.DeckManager;
 
 public class DeckBuilder {
-    @FXML private ScrollPane cardScrollPane;
-    @FXML private FlowPane cardContainer;
-    @FXML private FlowPane deckSlots;
-    @FXML private Button btnSaveDeck;
-    @FXML private Button btnDeleteDeck;
-    @FXML private Button btnLoadDeck;
-    @FXML private Button btnBack;
-    @FXML private TextField deckNameField;
-    @FXML private ComboBox<String> deckSelector;
-    @FXML private Label deckStatusLabel;
+    private Stage stage;
+    private Scene scene;
+    private Parent root;
+
+    @FXML
+    private ScrollPane cardScrollPane;
+    @FXML
+    private FlowPane cardContainer;
+    @FXML
+    private FlowPane deckSlots;
+    @FXML
+    private Button btnSaveDeck;
+    @FXML
+    private TextField deckNameField;
+    @FXML
+    private ComboBox<String> deckSelector;
+    // @FXML
+    // private Label deckStatusLabel;
 
     private Deck currentDeck;
     private ObservableList<Card> deckCards;
@@ -40,10 +53,10 @@ public class DeckBuilder {
             System.err.println("ERROR: FXML fields not injected! Check FXML file.");
             return;
         }
-        
+
         deckCards = FXCollections.observableArrayList();
         currentDeck = new Deck("New Deck");
-        
+
         setupCardDisplay();
         setupDeckSlots();
         setupDeckSelector();
@@ -54,83 +67,146 @@ public class DeckBuilder {
         if (cardContainer == null) {
             return;
         }
-        
-        cardContainer.setHgap(8); 
+
+        cardContainer.setHgap(8);
         cardContainer.setVgap(10);
         cardContainer.setPrefWrapLength(760);
-        
-        //create buttons for all cards
+
+        // create buttons for all cards
         for (Card card : CardFactory.getAllCards()) {
-            Button cardButton = createCardButton(card);
+            AnchorPane cardButton = createCardNode(card);
             cardContainer.getChildren().add(cardButton);
         }
-        
+
         if (cardScrollPane != null) {
             cardScrollPane.setContent(cardContainer);
             cardScrollPane.setFitToWidth(true);
         }
     }
 
-    private Button createCardButton(Card card) {
+    private AnchorPane createCardNode(Card card) {
+        // --- BUTTON (the card) ---
         Button btn = new Button();
-        btn.setPrefSize(115, 140); 
-        btn.setStyle("-fx-background-color: #E8E8E8; -fx-border-color: #333; -fx-border-width: 2;");
-        
-        VBox vbox = new VBox(4); 
-        vbox.setAlignment(javafx.geometry.Pos.CENTER);
-        
-        Label nameLabel = new Label(card.getName());
-        nameLabel.setFont(new Font("Arial Bold", 11)); 
-        nameLabel.setWrapText(true);
-        nameLabel.setMaxWidth(105);  
-        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
-        nameLabel.setAlignment(javafx.geometry.Pos.CENTER); 
-        
-        Label costLabel = new Label("Cost: " + card.getCost());
-        costLabel.setFont(new Font("Arial Bold", 11)); 
-        costLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
-        costLabel.setAlignment(javafx.geometry.Pos.CENTER); 
-        
-        Label descLabel = new Label(card.getDescription());
-        descLabel.setFont(new Font("Arial Bold", 11));  
-        descLabel.setWrapText(true);
-        descLabel.setMaxWidth(105);  
-        descLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER); 
-        descLabel.setAlignment(javafx.geometry.Pos.CENTER);  
-        
-        vbox.getChildren().addAll(nameLabel, costLabel, descLabel);
-        btn.setGraphic(vbox);
-        
+        btn.setStyle(
+            "-fx-background-color: #E8E8E8; " +
+            "-fx-border-color: #333; " +
+            "-fx-border-width: 3; " +
+            "-fx-background-radius: 6;" +
+            "-fx-border-radius: 5;"
+        );
         btn.setOnAction(e -> addCardToDeck(card));
-        
-        return btn;
+
+        VBox vbox = new VBox(4);
+        vbox.setAlignment(Pos.CENTER);
+
+        Label nameLabel = new Label(card.getName());
+        nameLabel.setFont(new Font("Trebuchet MS", 11));
+        nameLabel.setStyle("-fx-text-fill: black;");
+        nameLabel.setWrapText(true);
+        nameLabel.setMaxWidth(105);
+        nameLabel.setTextAlignment(TextAlignment.CENTER);
+
+        Label descLabel = new Label(card.getDescription());
+        descLabel.setFont(new Font("Trebuchet MS", 11));
+        descLabel.setStyle("-fx-text-fill: black;");
+        descLabel.setWrapText(true);
+        descLabel.setMaxWidth(105);
+        descLabel.setTextAlignment(TextAlignment.CENTER);
+
+        vbox.getChildren().addAll(nameLabel, descLabel);
+        btn.setGraphic(vbox);
+
+        // --- BADGE: circle + cost number ---
+        double radius = 15;
+
+        Circle circle = new Circle(radius);
+        circle.setStyle("-fx-fill: #ff1fff; -fx-stroke: #4d3d4d; -fx-stroke-width: 3;");
+
+        Label costLabel = new Label(String.valueOf(card.getCost()));
+        costLabel.setTextFill(Color.WHITE);
+        costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
+        costLabel.setAlignment(Pos.CENTER);
+        costLabel.setPrefWidth(10);
+        costLabel.setPrefHeight(16);
+
+        // so clicks on badge still click the button
+        circle.setMouseTransparent(true);
+        costLabel.setMouseTransparent(true);
+
+        // --- CONTAINER ---
+        AnchorPane ap = new AnchorPane();
+
+        // add in the order you described
+        ap.getChildren().addAll(btn, circle, costLabel);
+
+        // circle at (0,0)
+        AnchorPane.setTopAnchor(circle, 0.0);
+        AnchorPane.setLeftAnchor(circle, 0.0);
+
+        // label centered in the circle:
+        // top = r - h/2 = 15 - 16/2 = 7
+        // left = r - w/2 = 15 - 10/2 = 10
+        AnchorPane.setTopAnchor(costLabel, 8.5);
+        AnchorPane.setLeftAnchor(costLabel, 11.5);
+
+        // button fills rest, offset by radius
+        AnchorPane.setTopAnchor(btn, radius);
+        AnchorPane.setLeftAnchor(btn, radius);
+        AnchorPane.setRightAnchor(btn, 0.0);
+        AnchorPane.setBottomAnchor(btn, 0.0);
+
+        // optional: set a fixed card size if you want
+        ap.setPrefSize(126, 168);
+
+        return ap;
     }
 
     private void setupDeckSlots() {
         if (deckSlots == null) {
             return;
         }
-        
+
         deckSlots.setHgap(10);
         deckSlots.setVgap(10);
         deckSlots.setPrefWrapLength(580);
-        
+
         for (int i = 0; i < 8; i++) {
-            Button slot = createDeckSlot(i);
+            AnchorPane slot = createDeckSlot(i);
             deckSlots.getChildren().add(slot);
         }
     }
 
-    private Button createDeckSlot(int index) {
-        Button slot = new Button();
-        slot.setPrefSize(85, 130);
-        slot.setStyle("-fx-background-color: #D0D0D0; -fx-border-color: #666; -fx-border-width: 2;");
-        slot.setText("Slot " + (index + 1));
-        slot.setFont(new Font("Arial", 9));
-        
-        slot.setOnAction(e -> removeCardFromDeck(index));
-        
-        return slot;
+    private AnchorPane createDeckSlot(int index) {
+        Button btn = new Button();
+        btn.setPrefSize(111, 113);
+        btn.setStyle(
+            "-fx-background-color: #00000026; " +
+            "-fx-border-color: #333; " +
+            "-fx-border-width: 3; " +
+            "-fx-background-radius: 6;" +
+            "-fx-border-radius: 5;"
+        );
+        btn.setText("Slot " + (index + 1));
+        btn.setFont(new Font("Trebuchet MS", 9));
+
+        btn.setOnAction(e -> removeCardFromDeck(index));
+
+        // --- CONTAINER ---
+        AnchorPane ap = new AnchorPane();
+
+        // add in the order you described
+        ap.getChildren().addAll(btn);
+
+        // button fills rest, offset by radius
+        AnchorPane.setTopAnchor(btn, 15.0);
+        AnchorPane.setLeftAnchor(btn, 15.0);
+        AnchorPane.setRightAnchor(btn, 0.0);
+        AnchorPane.setBottomAnchor(btn, 0.0);
+
+        // optional: set a fixed card size if you want
+        ap.setPrefSize(126, 168);
+
+        return ap;
     }
 
     private void addCardToDeck(Card card) {
@@ -158,10 +234,10 @@ public class DeckBuilder {
     private void updateDeckDisplay() {
         deckCards.clear();
         deckCards.addAll(currentDeck.getCards());
-        
+
         deckSlots.getChildren().clear();
         for (int i = 0; i < 8; i++) {
-            Button slot;
+            AnchorPane slot;
             if (i < deckCards.size()) {
                 Card card = deckCards.get(i);
                 slot = createCardInSlotButton(card, i);
@@ -172,32 +248,75 @@ public class DeckBuilder {
         }
     }
 
-    private Button createCardInSlotButton(Card card, int index) {
+    private AnchorPane createCardInSlotButton(Card card, int index) {
         Button btn = new Button();
-        btn.setPrefSize(85, 130);
-        btn.setStyle("-fx-background-color: #B8E6B8; -fx-border-color: #333; -fx-border-width: 2;");
-        
+        btn.setPrefSize(111, 113);
+        btn.setStyle(
+            "-fx-background-color: #B8E6B8; " +
+            "-fx-border-color: #333; " +
+            "-fx-border-width: 3; " +
+            "-fx-background-radius: 6;" +
+            "-fx-border-radius: 5;"
+        );
+
         VBox vbox = new VBox(4);
         vbox.setAlignment(javafx.geometry.Pos.CENTER);
-        
+
         Label nameLabel = new Label(card.getName());
-        nameLabel.setFont(new Font("Arial", 11));
+        nameLabel.setFont(new Font("Trebuchet MS", 11));
         nameLabel.setWrapText(true);
-        nameLabel.setMaxWidth(80);  
-        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
-        nameLabel.setAlignment(javafx.geometry.Pos.CENTER);  
-        
-        Label costLabel = new Label("Cost: " + card.getCost());
-        costLabel.setFont(new Font("Arial", 10));
-        costLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);  
-        costLabel.setAlignment(javafx.geometry.Pos.CENTER);  
-        
-        vbox.getChildren().addAll(nameLabel, costLabel);
+        nameLabel.setMaxWidth(80);
+        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        nameLabel.setAlignment(javafx.geometry.Pos.CENTER);
+
+        vbox.getChildren().addAll(nameLabel);
         btn.setGraphic(vbox);
-        
+
         btn.setOnAction(e -> removeCardFromDeck(index));
-        
-        return btn;
+
+        // --- BADGE: circle + cost number ---
+        double radius = 15;
+
+        Circle circle = new Circle(radius);
+        circle.setStyle("-fx-fill: #ff1fff; -fx-stroke: #4d3d4d; -fx-stroke-width: 3;");
+
+        Label costLabel = new Label(String.valueOf(card.getCost()));
+        costLabel.setTextFill(Color.WHITE);
+        costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
+        costLabel.setAlignment(Pos.CENTER);
+        costLabel.setPrefWidth(10);
+        costLabel.setPrefHeight(16);
+
+        // so clicks on badge still click the button
+        circle.setMouseTransparent(true);
+        costLabel.setMouseTransparent(true);
+
+        // --- CONTAINER ---
+        AnchorPane ap = new AnchorPane();
+
+        // add in the order you described
+        ap.getChildren().addAll(btn, circle, costLabel);
+
+        // circle at (0,0)
+        AnchorPane.setTopAnchor(circle, 0.0);
+        AnchorPane.setLeftAnchor(circle, 0.0);
+
+        // label centered in the circle:
+        // top = r - h/2 = 15 - 16/2 = 7
+        // left = r - w/2 = 15 - 10/2 = 10
+        AnchorPane.setTopAnchor(costLabel, 8.5);
+        AnchorPane.setLeftAnchor(costLabel, 11.5);
+
+        // button fills rest, offset by radius
+        AnchorPane.setTopAnchor(btn, radius);
+        AnchorPane.setLeftAnchor(btn, radius);
+        AnchorPane.setRightAnchor(btn, 0.0);
+        AnchorPane.setBottomAnchor(btn, 0.0);
+
+        // optional: set a fixed card size if you want
+        ap.setPrefSize(126, 168);
+
+        return ap;
     }
 
     private void setupDeckSelector() {
@@ -215,12 +334,12 @@ public class DeckBuilder {
             showAlert("Invalid Name", "Please enter a deck name.");
             return;
         }
-        
+
         if (currentDeck.getSize() != 8) {
             showAlert("Incomplete Deck", "Your deck must have exactly 8 cards!");
             return;
         }
-        
+
         String finalName = name;
         DeckManager.loadAllDecks();
         int deckNumber = 1;
@@ -228,13 +347,13 @@ public class DeckBuilder {
             finalName = name + " " + deckNumber;
             deckNumber++;
         }
-        
+
         currentDeck.setName(finalName);
         DeckManager.saveDeck(currentDeck);
         DeckManager.setCurrentDeck(currentDeck);
         setupDeckSelector();
         deckNameField.setText(finalName);
-        deckStatusLabel.setText("Deck saved: " + finalName);
+        // deckStatusLabel.setText("Deck saved: " + finalName);
         showAlert("Success", "Deck saved successfully!");
     }
 
@@ -244,7 +363,7 @@ public class DeckBuilder {
             showAlert("Deck Empty", "The deck is already empty.");
             return;
         }
-        
+
         currentDeck.clear();
         updateDeckDisplay();
         updateUI();
@@ -257,17 +376,17 @@ public class DeckBuilder {
             showAlert("Invalid Name", "Please enter a deck name to delete.");
             return;
         }
-        
+
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Delete Deck");
         confirm.setHeaderText("Are you sure you want to delete '" + name + "'?");
         confirm.setContentText("This action cannot be undone.");
-        
+
         if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
             DeckManager.deleteDeck(name);
             setupDeckSelector();
-            deckStatusLabel.setText("Deck deleted: " + name);
-            
+            // deckStatusLabel.setText("Deck deleted: " + name);
+
             // clear the currect deck if deleted
             if (currentDeck != null && currentDeck.getName().equals(name)) {
                 currentDeck = new Deck("New Deck");
@@ -285,7 +404,7 @@ public class DeckBuilder {
             showAlert("No Selection", "Please select a deck to load.");
             return;
         }
-        
+
         Deck loaded = DeckManager.loadDeck(selected);
         if (loaded != null) {
             currentDeck = loaded;
@@ -293,21 +412,21 @@ public class DeckBuilder {
             DeckManager.setCurrentDeck(loaded);
             updateDeckDisplay();
             updateUI();
-            deckStatusLabel.setText("Deck loaded: " + selected);
+            // deckStatusLabel.setText("Deck loaded: " + selected);
         }
     }
 
     private void updateUI() {
         int size = currentDeck.getSize();
-        deckStatusLabel.setText("Deck: " + size + "/8 cards");
-        
+        // deckStatusLabel.setText("Deck: " + size + "/8 cards");
+
         btnSaveDeck.setDisable(size != 8);
-        
-        if (size == 8) {
-            deckStatusLabel.setStyle("-fx-text-fill: green;");
-        } else {
-            deckStatusLabel.setStyle("-fx-text-fill: orange;");
-        }
+
+        // if (size == 8) {
+        //     deckStatusLabel.setStyle("-fx-text-fill: green;");
+        // } else {
+        //     deckStatusLabel.setStyle("-fx-text-fill: orange;");
+        // }
     }
 
     private void showAlert(String title, String message) {
@@ -319,11 +438,31 @@ public class DeckBuilder {
     }
 
     @FXML
-    private void handleBack(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
+    void btnSelectBattleClicked(ActionEvent event) throws IOException {
+        switchToStartBattleScene(event);
+    }
+
+    @FXML
+    void btnSelectBuildClicked(ActionEvent event) throws IOException {
+        switchToArenaBuilderScene(event);
+    }
+
+
+    private void switchToStartBattleScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        Scene scene = new Scene(root, Color.web("0xBD7FFF"));
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
+
+
+    private void switchToArenaBuilderScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/ArenaBuilderScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
     }

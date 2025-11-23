@@ -23,7 +23,7 @@ public class UIManager extends Application {
     public void start(Stage stage) {
         try {
             Parent root = FXMLLoader.load(UIManager.class.getResource("/kuroyale/scenes/StartScene.fxml"));
-            Scene scene = new Scene(root);
+            Scene scene = new Scene(root, 1280, 720);
             root.setStyle("-fx-background-color: BD7FFF;");
             stage.setResizable(false);
             stage.setTitle("KURoyale");
@@ -67,7 +67,7 @@ public class UIManager extends Application {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        scene = new Scene(root, Color.web("0xBD7FFF"));
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
     }
@@ -76,7 +76,7 @@ public class UIManager extends Application {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/DeckBuilderScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        scene = new Scene(root, Color.web("0xBD7FFF"));
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
     }
@@ -85,7 +85,7 @@ public class UIManager extends Application {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/ArenaBuilderScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        scene = new Scene(root, Color.web("0xBD7FFF"));
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
     }
@@ -94,7 +94,7 @@ public class UIManager extends Application {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/BattleScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        scene = new Scene(root, Color.web("0xBD7FFF"));
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
     }
