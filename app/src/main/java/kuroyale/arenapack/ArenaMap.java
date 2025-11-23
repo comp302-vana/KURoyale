@@ -40,6 +40,17 @@ public class ArenaMap {
 
         ArenaTile tile = grid[row][col];
 
+        if (!tile.isEmpty())
+            return false;
+
+        if(type==(ArenaObjectType.BRIDGE)) {
+            if (tile.getTileType() != TileType.RIVER)
+                return false;
+
+            tile.setPlacedObject(new PlacedObject(type));
+            return true;
+        }
+
         if (tile.getTileType() == TileType.RIVER)
             return false;
 
