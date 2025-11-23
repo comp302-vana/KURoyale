@@ -35,7 +35,7 @@
       <!-- Deck Slots Section -->
       <Label layoutX="39.0" layoutY="270.0" prefWidth="106.0" text="Available Cards" textFill="#333333">
          <font>
-            <Font name="Trebuchet MS" size="14.0" />
+            <Font name="Arial Bold" size="18.0" />
          </font>
       </Label>
       

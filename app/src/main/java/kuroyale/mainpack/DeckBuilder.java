@@ -104,7 +104,7 @@ public class DeckBuilder {
         nameLabel.setStyle("-fx-text-fill: black;");
         nameLabel.setWrapText(true);
         nameLabel.setMaxWidth(105);
-        nameLabel.setTextAlignment(TextAlignment.CENTER);
+        nameLabel.setAlignment(Pos.CENTER);
 
         Label descLabel = new Label(card.getDescription());
         descLabel.setFont(new Font("Trebuchet MS", 11));
