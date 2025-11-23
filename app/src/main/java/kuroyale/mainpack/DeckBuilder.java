@@ -23,6 +23,7 @@ import kuroyale.cardpack.Card;
 import kuroyale.cardpack.CardFactory;
 import kuroyale.deckpack.Deck;
 import kuroyale.deckpack.DeckManager;
+import kuroyale.cardpack.subclasses.*;
 
 public class DeckBuilder {
     private Stage stage;
@@ -116,6 +117,40 @@ public class DeckBuilder {
         vbox.getChildren().addAll(nameLabel, descLabel);
         btn.setGraphic(vbox);
 
+        HBox hoverButtons = new HBox(5);
+        hoverButtons.setAlignment(Pos.CENTER);
+        hoverButtons.setStyle("-fx-background-color: rgba(0,0,0,1); -fx-padding: 5;");
+        hoverButtons.setVisible(false); 
+        hoverButtons.setAlignment(Pos.CENTER);
+        
+        Button btnAdd = new Button("Add");
+        btnAdd.setStyle(
+            "-fx-background-color: #4CAF50; " +
+            "-fx-text-fill: white; " +
+            "-fx-font-size: 10px; " +
+            "-fx-padding: 5 10; " +
+            "-fx-cursor: hand;"
+        );
+        btnAdd.setOnAction(e -> {
+            addCardToDeck(card);
+            e.consume(); 
+        });
+        
+        Button btnView = new Button("View");
+        btnView.setStyle(
+            "-fx-background-color: #2196F3; " +
+            "-fx-text-fill: white; " +
+            "-fx-font-size: 10px; " +
+            "-fx-padding: 5 10; " +
+            "-fx-cursor: hand;"
+        );
+        btnView.setOnAction(e -> {
+            viewCardDetails(card);
+            e.consume();
+        });
+    
+    hoverButtons.getChildren().addAll(btnAdd, btnView);
+
         // --- BADGE: circle + cost number ---
         double radius = 15;
 
@@ -137,7 +172,7 @@ public class DeckBuilder {
         AnchorPane ap = new AnchorPane();
 
         // add in the order you described
-        ap.getChildren().addAll(btn, circle, costLabel);
+        ap.getChildren().addAll(btn, hoverButtons, circle, costLabel);
 
         // circle at (0,0)
         AnchorPane.setTopAnchor(circle, 0.0);
@@ -155,12 +190,220 @@ public class DeckBuilder {
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
+        AnchorPane.setBottomAnchor(hoverButtons, 5.0);
+        AnchorPane.setLeftAnchor(hoverButtons, 15.0);
+        AnchorPane.setRightAnchor(hoverButtons, 15.0);
+
         // optional: set a fixed card size if you want
         ap.setPrefSize(126, 168);
+
+        ap.setOnMouseEntered(e -> {
+            hoverButtons.setVisible(true);
+            btn.setStyle(
+                "-fx-background-color: #D0D0D0; " + // Biraz daha koyu
+                "-fx-border-color: #333; " +
+                "-fx-border-width: 3; " +
+                "-fx-background-radius: 6;" +
+                "-fx-border-radius: 5;"
+            );
+        });
+
+        ap.setOnMouseExited(e -> {
+            hoverButtons.setVisible(false);
+            btn.setStyle(
+                "-fx-background-color: #E8E8E8; " +
+                "-fx-border-color: #333; " +
+                "-fx-border-width: 3; " +
+                "-fx-background-radius: 6;" +
+                "-fx-border-radius: 5;"
+            );
+        });
 
         return ap;
     }
 
+    private void viewCardDetails(Card card) {
+        StackPane modalOverlay = new StackPane();
+        modalOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
+        
+        VBox detailPanel = new VBox(15);
+        detailPanel.setAlignment(Pos.CENTER);
+        detailPanel.setMaxWidth(400);
+        detailPanel.setMaxHeight(500);
+        detailPanel.setStyle(
+            "-fx-background-color: #FFFFFF; " +
+            "-fx-background-radius: 10; " +
+            "-fx-padding: 30; " +
+            "-fx-border-color: #333; " +
+            "-fx-border-width: 3; " +
+            "-fx-border-radius: 10;"
+        );
+        
+        Label titleLabel = new Label(card.getName());
+        titleLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 24));
+        titleLabel.setStyle("-fx-text-fill: #333;");
+        
+        javafx.scene.shape.Line separator = new javafx.scene.shape.Line(0, 0, 340, 0);
+        separator.setStroke(Color.GRAY);
+        
+        VBox statsBox = new VBox(10);
+        statsBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Label costStat = new Label("Cost: " + card.getCost());
+        costStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+        
+        Label descStat = new Label("Description:");
+        descStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+        
+        Label descText = new Label(card.getDescription());
+        descText.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+        descText.setWrapText(true);
+        descText.setMaxWidth(340);
+        descText.setStyle("-fx-text-fill: #555;");
+        
+        String type = card.getClass().getSimpleName();
+
+        Label typeStat = new Label("Type: " + type);
+        typeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+        String hp = "";
+        String damage = "";
+        String hitSpeed = "";
+        String range = "";
+        String speed = "";
+        String lifetime = "";
+        String areaDamage = "";
+        String radius = "";
+
+        if (card instanceof UnitCard) {
+            UnitCard unitCard = (UnitCard) card;
+            hp = String.valueOf(unitCard.getHp());
+            damage = String.valueOf(unitCard.getDamage());
+            hitSpeed = String.valueOf(unitCard.getHitSpeed());
+            range = String.valueOf(unitCard.getRange());
+            speed = unitCard.getSpeed();
+
+            Label hpStat = new Label("HP: " + hp);
+            hpStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label damageStat = new Label("Damage: " + damage);
+            damageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label hitSpeedStat = new Label("Hit Speed: " + hitSpeed);
+            hitSpeedStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label rangeStat = new Label("Range: " + range);
+            rangeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label speedStat = new Label("Speed: " + speed);
+            speedStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, hitSpeedStat, rangeStat, speedStat, descStat, descText);
+        }
+    
+        if (card instanceof BuildingCard) {
+            BuildingCard buildingCard = (BuildingCard) card;
+            hp = String.valueOf(buildingCard.getHp());
+            damage = String.valueOf(buildingCard.getDamage());
+            range = String.valueOf(buildingCard.getRange());
+            lifetime = String.valueOf(buildingCard.getLifetime());
+
+            Label hpStat = new Label("HP: " + hp);
+            hpStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label damageStat = new Label("Damage: " + damage);
+            damageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label rangeStat = new Label("Range: " + range);
+            rangeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label lifetimeStat = new Label("Lifetime: " + lifetime);
+            lifetimeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, rangeStat, lifetimeStat, descStat, descText);
+        }
+
+        if (card instanceof SpellCard) {
+            SpellCard spellCard = (SpellCard) card;
+            areaDamage = String.valueOf(spellCard.getAreaDamage());
+            radius = String.valueOf(spellCard.getRadius());
+
+            Label areaDamageStat = new Label("Area Damage: " + areaDamage);
+            areaDamageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            Label radiusStat = new Label("Radius: " + radius);
+            radiusStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
+
+            statsBox.getChildren().addAll(costStat, typeStat, areaDamageStat, radiusStat, descStat, descText);
+        }
+        
+        
+        Button closeButton = new Button("Close");
+        closeButton.setStyle(
+            "-fx-background-color: #FF5252; " +
+            "-fx-text-fill: white; " +
+            "-fx-font-size: 14px; " +
+            "-fx-padding: 10 30; " +
+            "-fx-cursor: hand; " +
+            "-fx-background-radius: 5;"
+        );
+        closeButton.setOnAction(e -> {
+            // Modal'ı kapat - root tipine göre
+            Parent sceneRoot = cardScrollPane.getScene().getRoot();
+            if (sceneRoot instanceof Pane) {
+                ((Pane) sceneRoot).getChildren().remove(modalOverlay);
+            }
+        });
+        
+        closeButton.setOnMouseEntered(e -> 
+            closeButton.setStyle(
+                "-fx-background-color: #D32F2F; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 10 30; " +
+                "-fx-cursor: hand; " +
+                "-fx-background-radius: 5;"
+            )
+        );
+        closeButton.setOnMouseExited(e -> 
+            closeButton.setStyle(
+                "-fx-background-color: #FF5252; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 10 30; " +
+                "-fx-cursor: hand; " +
+                "-fx-background-radius: 5;"
+            )
+        );
+        
+        detailPanel.getChildren().addAll(titleLabel, separator, statsBox, closeButton);
+        modalOverlay.getChildren().add(detailPanel);
+        
+        modalOverlay.setOnMouseClicked(e -> {
+            if (e.getTarget() == modalOverlay) {
+                Parent sceneRoot = cardScrollPane.getScene().getRoot();
+                if (sceneRoot instanceof Pane) {
+                    ((Pane) sceneRoot).getChildren().remove(modalOverlay);
+                }
+            }
+        });
+        
+        Parent sceneRoot = cardScrollPane.getScene().getRoot();
+        
+        if (sceneRoot instanceof StackPane) {
+            ((StackPane) sceneRoot).getChildren().add(modalOverlay);
+        } else if (sceneRoot instanceof AnchorPane) {
+            AnchorPane anchorRoot = (AnchorPane) sceneRoot;
+            anchorRoot.getChildren().add(modalOverlay);
+            // Modal'ı tam ekran yap
+            AnchorPane.setTopAnchor(modalOverlay, 0.0);
+            AnchorPane.setBottomAnchor(modalOverlay, 0.0);
+            AnchorPane.setLeftAnchor(modalOverlay, 0.0);
+            AnchorPane.setRightAnchor(modalOverlay, 0.0);
+        } else if (sceneRoot instanceof Pane) {
+            ((Pane) sceneRoot).getChildren().add(modalOverlay);
+        }
+    }
     private void setupDeckSlots() {
         if (deckSlots == null) {
             return;
