@@ -16,7 +16,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
 import kuroyale.cardpack.Card;
@@ -89,67 +88,55 @@ public class DeckBuilder {
         // --- BUTTON (the card) ---
         Button btn = new Button();
         btn.setStyle(
-            "-fx-background-color: #E8E8E8; " +
-            "-fx-border-color: #333; " +
-            "-fx-border-width: 3; " +
-            "-fx-background-radius: 6;" +
-            "-fx-border-radius: 5;"
-        );
+                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
+                "-fx-background-size: cover;" +
+                "-fx-background-color: transparent;" +
+                "-fx-background-radius: 5;" +
+                "-fx-padding: 0;" +
+                "-fx-border-color: #333; " +
+                "-fx-border-width: 3; " +
+                "-fx-border-radius: 5;");
         btn.setOnAction(e -> addCardToDeck(card));
 
-        VBox vbox = new VBox(4);
-        vbox.setAlignment(Pos.CENTER);
-
-        Label nameLabel = new Label(card.getName());
-        nameLabel.setFont(new Font("Trebuchet MS", 11));
-        nameLabel.setStyle("-fx-text-fill: black;");
-        nameLabel.setWrapText(true);
-        nameLabel.setMaxWidth(105);
-        nameLabel.setAlignment(Pos.CENTER);
-
-        Label descLabel = new Label(card.getDescription());
-        descLabel.setFont(new Font("Trebuchet MS", 11));
-        descLabel.setStyle("-fx-text-fill: black;");
-        descLabel.setWrapText(true);
-        descLabel.setMaxWidth(105);
-        descLabel.setTextAlignment(TextAlignment.CENTER);
-
-        vbox.getChildren().addAll(nameLabel, descLabel);
-        btn.setGraphic(vbox);
-
-        HBox hoverButtons = new HBox(5);
+        VBox hoverButtons = new VBox(5);
         hoverButtons.setAlignment(Pos.CENTER);
-        hoverButtons.setStyle("-fx-background-color: rgba(0,0,0,1); -fx-padding: 5;");
-        hoverButtons.setVisible(false); 
+        hoverButtons.setStyle("-fx-background-color: transparent; -fx-padding: 5;");
+        hoverButtons.setVisible(false);
         hoverButtons.setAlignment(Pos.CENTER);
-        
+
+        HBox hbox = new HBox(5);
+        hbox.setAlignment(Pos.CENTER);
+        hbox.setStyle("-fx-background-color: rgba(0,0,0,0.5); -fx-padding: 5;");
+        hbox.setAlignment(Pos.CENTER);
+
+        Label lblName = new Label(card.getName());
+        lblName.setFont(new Font("Trebuchet MS", 12));
+        lblName.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+
         Button btnAdd = new Button("Add");
         btnAdd.setStyle(
-            "-fx-background-color: #4CAF50; " +
-            "-fx-text-fill: white; " +
-            "-fx-font-size: 10px; " +
-            "-fx-padding: 5 10; " +
-            "-fx-cursor: hand;"
-        );
+                "-fx-background-color: #4CAF50; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 10px; " +
+                        "-fx-cursor: hand;");
         btnAdd.setOnAction(e -> {
             addCardToDeck(card);
-            e.consume(); 
+            e.consume();
         });
-        
+
         Button btnView = new Button("View");
         btnView.setStyle(
-            "-fx-background-color: #2196F3; " +
-            "-fx-text-fill: white; " +
-            "-fx-font-size: 10px; " +
-            "-fx-padding: 5 10; " +
-            "-fx-cursor: hand;"
-        );
+                "-fx-background-color: #2196F3; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 10px; " +
+                        "-fx-cursor: hand;");
         btnView.setOnAction(e -> {
             viewCardDetails(card);
             e.consume();
         });
-    
-    hoverButtons.getChildren().addAll(btnAdd, btnView);
+
+        hbox.getChildren().addAll(btnAdd, btnView);
+        hoverButtons.getChildren().addAll(lblName, hbox);
 
         // --- BADGE: circle + cost number ---
         double radius = 15;
@@ -185,13 +172,13 @@ public class DeckBuilder {
         AnchorPane.setLeftAnchor(costLabel, 11.5);
 
         // button fills rest, offset by radius
-        AnchorPane.setTopAnchor(btn, radius);
-        AnchorPane.setLeftAnchor(btn, radius);
+        AnchorPane.setTopAnchor(btn, radius/3);
+        AnchorPane.setLeftAnchor(btn, radius/3);
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
         AnchorPane.setBottomAnchor(hoverButtons, 5.0);
-        AnchorPane.setLeftAnchor(hoverButtons, 15.0);
+        AnchorPane.setLeftAnchor(hoverButtons, 20.0);
         AnchorPane.setRightAnchor(hoverButtons, 15.0);
 
         // optional: set a fixed card size if you want
@@ -199,24 +186,10 @@ public class DeckBuilder {
 
         ap.setOnMouseEntered(e -> {
             hoverButtons.setVisible(true);
-            btn.setStyle(
-                "-fx-background-color: #D0D0D0; " + // Biraz daha koyu
-                "-fx-border-color: #333; " +
-                "-fx-border-width: 3; " +
-                "-fx-background-radius: 6;" +
-                "-fx-border-radius: 5;"
-            );
         });
 
         ap.setOnMouseExited(e -> {
             hoverButtons.setVisible(false);
-            btn.setStyle(
-                "-fx-background-color: #E8E8E8; " +
-                "-fx-border-color: #333; " +
-                "-fx-border-width: 3; " +
-                "-fx-background-radius: 6;" +
-                "-fx-border-radius: 5;"
-            );
         });
 
         return ap;
@@ -225,42 +198,41 @@ public class DeckBuilder {
     private void viewCardDetails(Card card) {
         StackPane modalOverlay = new StackPane();
         modalOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
-        
+
         VBox detailPanel = new VBox(15);
         detailPanel.setAlignment(Pos.CENTER);
         detailPanel.setMaxWidth(400);
         detailPanel.setMaxHeight(500);
         detailPanel.setStyle(
-            "-fx-background-color: #FFFFFF; " +
-            "-fx-background-radius: 10; " +
-            "-fx-padding: 30; " +
-            "-fx-border-color: #333; " +
-            "-fx-border-width: 3; " +
-            "-fx-border-radius: 10;"
-        );
-        
+                "-fx-background-color: #FFFFFF; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-padding: 30; " +
+                        "-fx-border-color: #333; " +
+                        "-fx-border-width: 3; " +
+                        "-fx-border-radius: 10;");
+
         Label titleLabel = new Label(card.getName());
         titleLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 24));
         titleLabel.setStyle("-fx-text-fill: #333;");
-        
+
         javafx.scene.shape.Line separator = new javafx.scene.shape.Line(0, 0, 340, 0);
         separator.setStroke(Color.GRAY);
-        
+
         VBox statsBox = new VBox(10);
         statsBox.setAlignment(Pos.CENTER_LEFT);
-        
+
         Label costStat = new Label("Cost: " + card.getCost());
         costStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
-        
+
         Label descStat = new Label("Description:");
         descStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
-        
+
         Label descText = new Label(card.getDescription());
         descText.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
         descText.setWrapText(true);
         descText.setMaxWidth(340);
         descText.setStyle("-fx-text-fill: #555;");
-        
+
         String type = card.getClass().getSimpleName();
 
         Label typeStat = new Label("Type: " + type);
@@ -298,9 +270,10 @@ public class DeckBuilder {
             Label speedStat = new Label("Speed: " + speed);
             speedStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
 
-            statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, hitSpeedStat, rangeStat, speedStat, descStat, descText);
+            statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, hitSpeedStat, rangeStat, speedStat,
+                    descStat, descText);
         }
-    
+
         if (card instanceof BuildingCard) {
             BuildingCard buildingCard = (BuildingCard) card;
             hp = String.valueOf(buildingCard.getHp());
@@ -320,7 +293,8 @@ public class DeckBuilder {
             Label lifetimeStat = new Label("Lifetime: " + lifetime);
             lifetimeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
 
-            statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, rangeStat, lifetimeStat, descStat, descText);
+            statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, rangeStat, lifetimeStat, descStat,
+                    descText);
         }
 
         if (card instanceof SpellCard) {
@@ -336,17 +310,15 @@ public class DeckBuilder {
 
             statsBox.getChildren().addAll(costStat, typeStat, areaDamageStat, radiusStat, descStat, descText);
         }
-        
-        
+
         Button closeButton = new Button("Close");
         closeButton.setStyle(
-            "-fx-background-color: #FF5252; " +
-            "-fx-text-fill: white; " +
-            "-fx-font-size: 14px; " +
-            "-fx-padding: 10 30; " +
-            "-fx-cursor: hand; " +
-            "-fx-background-radius: 5;"
-        );
+                "-fx-background-color: #FF5252; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 10 30; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-background-radius: 5;");
         closeButton.setOnAction(e -> {
             // Modal'ı kapat - root tipine göre
             Parent sceneRoot = cardScrollPane.getScene().getRoot();
@@ -354,31 +326,25 @@ public class DeckBuilder {
                 ((Pane) sceneRoot).getChildren().remove(modalOverlay);
             }
         });
-        
-        closeButton.setOnMouseEntered(e -> 
-            closeButton.setStyle(
+
+        closeButton.setOnMouseEntered(e -> closeButton.setStyle(
                 "-fx-background-color: #D32F2F; " +
-                "-fx-text-fill: white; " +
-                "-fx-font-size: 14px; " +
-                "-fx-padding: 10 30; " +
-                "-fx-cursor: hand; " +
-                "-fx-background-radius: 5;"
-            )
-        );
-        closeButton.setOnMouseExited(e -> 
-            closeButton.setStyle(
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 10 30; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-background-radius: 5;"));
+        closeButton.setOnMouseExited(e -> closeButton.setStyle(
                 "-fx-background-color: #FF5252; " +
-                "-fx-text-fill: white; " +
-                "-fx-font-size: 14px; " +
-                "-fx-padding: 10 30; " +
-                "-fx-cursor: hand; " +
-                "-fx-background-radius: 5;"
-            )
-        );
-        
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 14px; " +
+                        "-fx-padding: 10 30; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-background-radius: 5;"));
+
         detailPanel.getChildren().addAll(titleLabel, separator, statsBox, closeButton);
         modalOverlay.getChildren().add(detailPanel);
-        
+
         modalOverlay.setOnMouseClicked(e -> {
             if (e.getTarget() == modalOverlay) {
                 Parent sceneRoot = cardScrollPane.getScene().getRoot();
@@ -387,9 +353,9 @@ public class DeckBuilder {
                 }
             }
         });
-        
+
         Parent sceneRoot = cardScrollPane.getScene().getRoot();
-        
+
         if (sceneRoot instanceof StackPane) {
             ((StackPane) sceneRoot).getChildren().add(modalOverlay);
         } else if (sceneRoot instanceof AnchorPane) {
@@ -404,6 +370,7 @@ public class DeckBuilder {
             ((Pane) sceneRoot).getChildren().add(modalOverlay);
         }
     }
+
     private void setupDeckSlots() {
         if (deckSlots == null) {
             return;
@@ -423,12 +390,11 @@ public class DeckBuilder {
         Button btn = new Button();
         btn.setPrefSize(111, 113);
         btn.setStyle(
-            "-fx-background-color: #00000026; " +
-            "-fx-border-color: #333; " +
-            "-fx-border-width: 3; " +
-            "-fx-background-radius: 6;" +
-            "-fx-border-radius: 5;"
-        );
+                "-fx-background-color: #00000026; " +
+                        "-fx-border-color: #333; " +
+                        "-fx-border-width: 3; " +
+                        "-fx-background-radius: 6;" +
+                        "-fx-border-radius: 5;");
         btn.setText("Slot " + (index + 1));
         btn.setFont(new Font("Trebuchet MS", 9));
 
@@ -441,8 +407,8 @@ public class DeckBuilder {
         ap.getChildren().addAll(btn);
 
         // button fills rest, offset by radius
-        AnchorPane.setTopAnchor(btn, 15.0);
-        AnchorPane.setLeftAnchor(btn, 15.0);
+        AnchorPane.setTopAnchor(btn, 5.0);
+        AnchorPane.setLeftAnchor(btn, 5.0);
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
@@ -492,30 +458,58 @@ public class DeckBuilder {
     }
 
     private AnchorPane createCardInSlotButton(Card card, int index) {
+        // --- BUTTON (the card) ---
         Button btn = new Button();
-        btn.setPrefSize(111, 113);
         btn.setStyle(
-            "-fx-background-color: #B8E6B8; " +
-            "-fx-border-color: #333; " +
-            "-fx-border-width: 3; " +
-            "-fx-background-radius: 6;" +
-            "-fx-border-radius: 5;"
-        );
-
-        VBox vbox = new VBox(4);
-        vbox.setAlignment(javafx.geometry.Pos.CENTER);
-
-        Label nameLabel = new Label(card.getName());
-        nameLabel.setFont(new Font("Trebuchet MS", 11));
-        nameLabel.setWrapText(true);
-        nameLabel.setMaxWidth(80);
-        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        nameLabel.setAlignment(javafx.geometry.Pos.CENTER);
-
-        vbox.getChildren().addAll(nameLabel);
-        btn.setGraphic(vbox);
-
+                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
+                "-fx-background-size: cover;" +
+                "-fx-background-color: transparent;" +
+                "-fx-background-radius: 5;" +
+                "-fx-padding: 0;" +
+                "-fx-border-color: #333; " +
+                "-fx-border-width: 3; " +
+                "-fx-border-radius: 5;");
         btn.setOnAction(e -> removeCardFromDeck(index));
+
+        VBox hoverButtons = new VBox(5);
+        hoverButtons.setAlignment(Pos.CENTER);
+        hoverButtons.setStyle("-fx-background-color: transparent; -fx-padding: 5;");
+        hoverButtons.setVisible(false);
+        hoverButtons.setAlignment(Pos.CENTER);
+
+        HBox hbox = new HBox(5);
+        hbox.setAlignment(Pos.CENTER);
+        hbox.setStyle("-fx-background-color: rgba(0,0,0,0.5); -fx-padding: 5;");
+        hbox.setAlignment(Pos.CENTER);
+
+        Label lblName = new Label(card.getName());
+        lblName.setFont(new Font("Trebuchet MS", 12));
+        lblName.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+
+        Button btnAdd = new Button("Remove");
+        btnAdd.setStyle(
+                "-fx-background-color: #af4c4cff; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 10px; " +
+                        "-fx-cursor: hand;");
+        btnAdd.setOnAction(e -> {
+            removeCardFromDeck(index);
+            e.consume();
+        });
+
+        Button btnView = new Button("View");
+        btnView.setStyle(
+                "-fx-background-color: #2196F3; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 10px; " +
+                        "-fx-cursor: hand;");
+        btnView.setOnAction(e -> {
+            viewCardDetails(card);
+            e.consume();
+        });
+
+        hbox.getChildren().addAll(btnAdd, btnView);
+        hoverButtons.getChildren().addAll(lblName, hbox);
 
         // --- BADGE: circle + cost number ---
         double radius = 15;
@@ -538,7 +532,7 @@ public class DeckBuilder {
         AnchorPane ap = new AnchorPane();
 
         // add in the order you described
-        ap.getChildren().addAll(btn, circle, costLabel);
+        ap.getChildren().addAll(btn, hoverButtons, circle, costLabel);
 
         // circle at (0,0)
         AnchorPane.setTopAnchor(circle, 0.0);
@@ -551,13 +545,25 @@ public class DeckBuilder {
         AnchorPane.setLeftAnchor(costLabel, 11.5);
 
         // button fills rest, offset by radius
-        AnchorPane.setTopAnchor(btn, radius);
-        AnchorPane.setLeftAnchor(btn, radius);
+        AnchorPane.setTopAnchor(btn, radius/3);
+        AnchorPane.setLeftAnchor(btn, radius/3);
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
+        AnchorPane.setBottomAnchor(hoverButtons, 5.0);
+        AnchorPane.setLeftAnchor(hoverButtons, 10.0);
+        AnchorPane.setRightAnchor(hoverButtons, 5.0);
+
         // optional: set a fixed card size if you want
         ap.setPrefSize(126, 168);
+
+        ap.setOnMouseEntered(e -> {
+            hoverButtons.setVisible(true);
+        });
+
+        ap.setOnMouseExited(e -> {
+            hoverButtons.setVisible(false);
+        });
 
         return ap;
     }
@@ -666,9 +672,9 @@ public class DeckBuilder {
         btnSaveDeck.setDisable(size != 8);
 
         // if (size == 8) {
-        //     deckStatusLabel.setStyle("-fx-text-fill: green;");
+        // deckStatusLabel.setStyle("-fx-text-fill: green;");
         // } else {
-        //     deckStatusLabel.setStyle("-fx-text-fill: orange;");
+        // deckStatusLabel.setStyle("-fx-text-fill: orange;");
         // }
     }
 
@@ -690,7 +696,6 @@ public class DeckBuilder {
         switchToArenaBuilderScene(event);
     }
 
-
     private void switchToStartBattleScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
@@ -699,7 +704,6 @@ public class DeckBuilder {
         stage.setScene(scene);
         stage.show();
     }
-
 
     private void switchToArenaBuilderScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/ArenaBuilderScene.fxml"));
