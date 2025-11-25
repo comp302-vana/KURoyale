@@ -54,9 +54,6 @@ public class ArenaMap {
         if (tile.getTileType() == TileType.RIVER)
             return false;
 
-        if (!tile.isEmpty())
-            return false;
-
         tile.setPlacedObject(new PlacedObject(type));
         return true;
     }
