@@ -2,26 +2,31 @@ package kuroyale.cardpack;
 
 public abstract class Card {
 
-    private int id;
-    private String name;
-    private String description;
-    private int cost;
-    private CardType type;
-    private CardCategory category;
-    private CardTarget target;
-    
+    private final int id;
+    private final String name;
+    private final String description;
+    private final int cost;
+    private final double damage;
+    private final double radius;
+    private final CardType type;
+    private final CardCategory category;
+    private final CardTarget target;
 
-   public Card(int id, String name, String description, int cost, CardType type, CardCategory category, CardTarget target) {
+    public Card(
+            int id, String name, String description, int cost, double damage,
+            double radius, CardType type, CardCategory category, CardTarget target) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.cost = cost;
+        this.damage = damage;
+        this.radius = radius;
         this.type = type;
         this.category = category;
         this.target = target;
     }
 
-       public int getId() {
+    public int getId() {
         return id;
     }
 
@@ -31,6 +36,14 @@ public abstract class Card {
 
     public int getCost() {
         return cost;
+    }
+
+    public double getDamage() {
+        return damage;
+    }
+
+    public double getRadius() {
+        return radius;
     }
 
     public CardType getType() {

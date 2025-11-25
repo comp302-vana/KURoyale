@@ -251,7 +251,7 @@ public class DeckBuilder {
             UnitCard unitCard = (UnitCard) card;
             hp = String.valueOf(unitCard.getHp());
             damage = String.valueOf(unitCard.getDamage());
-            hitSpeed = String.valueOf(unitCard.getHitSpeed());
+            hitSpeed = String.valueOf(unitCard.getActSpeed());
             range = String.valueOf(unitCard.getRange());
             speed = unitCard.getSpeed();
 
@@ -299,7 +299,7 @@ public class DeckBuilder {
 
         if (card instanceof SpellCard) {
             SpellCard spellCard = (SpellCard) card;
-            areaDamage = String.valueOf(spellCard.getAreaDamage());
+            areaDamage = String.valueOf(spellCard.getDamage());
             radius = String.valueOf(spellCard.getRadius());
 
             Label areaDamageStat = new Label("Area Damage: " + areaDamage);

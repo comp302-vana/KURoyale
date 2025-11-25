@@ -1,6 +1,5 @@
 package kuroyale.cardpack;
 
-
 public enum CardCategory {
     SINGLE_TARGET,
     AOE,
