@@ -7,15 +7,16 @@ import java.util.List;
 public class ArenaMap {
 
     private final int rows = 18;
-    private final int cols = 10;
+    private final int cols = 32;
 
     private final ArenaTile[][] grid;
+    private final ArenaTile[][] collisions;
 
     public ArenaMap() {
         grid = new ArenaTile[rows][cols];
+        collisions = new ArenaTile[rows][cols];
         initTiles();
     }
-
 
     private void initTiles() {
 
@@ -24,14 +25,15 @@ public class ArenaMap {
 
                 TileType type;
 
-                if (r >= 0 && r <= 6)
+                if (c >= 0 && c < cols/2 - 1)
                     type = TileType.GRASS;
-                else if (r >= 7 && r <= 9)
+                else if (c >= cols/2 - 1 && c <= cols/2)
                     type = TileType.RIVER;
                 else
                     type = TileType.GRASS;
 
                 grid[r][c] = new ArenaTile(r, c, type);
+                collisions[r][c] = new ArenaTile(r, c, type);
             }
         }
     }
@@ -39,29 +41,59 @@ public class ArenaMap {
     public boolean placeObject(int row, int col, ArenaObjectType type) {
 
         ArenaTile tile = grid[row][col];
+        if (type == (ArenaObjectType.BRIDGE)) {
 
-        if (!tile.isEmpty())
-            return false;
-
-        if(type==(ArenaObjectType.BRIDGE)) {
             if (tile.getTileType() != TileType.RIVER)
+                return false;
+            if (col % 2 == 1)
+                return false;
+            if (tile.getPlacedObject() != null && tile.getPlacedObject().getType() == ArenaObjectType.BRIDGE)
                 return false;
 
             tile.setPlacedObject(new PlacedObject(type));
             return true;
         }
 
-        if (tile.getTileType() == TileType.RIVER)
+        if (grid[row][col].getTileType() == TileType.RIVER)
             return false;
+        
+        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
+        (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
+        
+        for (int r = row-s; r<=row; r++) {
+            for (int c = col-s; c<=col; c++) {
+                if (!collisions[r][c].isEmpty())
+                    return false;
+            }
+        }
 
-        tile.setPlacedObject(new PlacedObject(type));
+        grid[row][col].setPlacedObject(new PlacedObject(type));
+        
+        for (int r = row-s; r<=row; r++) {
+            for (int c = col-s; c<=col; c++) {
+                collisions[r][c].setPlacedObject(new PlacedObject(type));
+            }
+        }
         return true;
     }
 
     public void clearObject(int row, int col) {
+        if (grid[row][col].getTileType() == TileType.RIVER)
+            col += col % 2;
+        if (grid[row][col].getPlacedObject() == null)
+            return;
+        ArenaObjectType type = grid[row][col].getPlacedObject().getType();
         grid[row][col].setPlacedObject(null);
-    }
+        
+        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
+        (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
 
+        for (int r = row-s; r<=row; r++) {
+            for (int c = col-s; c<=col; c++) {
+                collisions[r][c].setPlacedObject(null);
+            }
+        }
+    }
 
     /** GET ALL PLACED OBJECTS WITH COORDINATES */
     public List<SavedObject> getAllObjects() {
@@ -84,6 +116,7 @@ public class ArenaMap {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 grid[r][c].setPlacedObject(null);
+                collisions[r][c].setPlacedObject(null);
             }
         }
     }
@@ -96,7 +129,6 @@ public class ArenaMap {
         }
     }
 
-
     /** SAVE TO CSV */
     public void saveToFile(String filePath) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(filePath))) {
@@ -105,10 +137,13 @@ public class ArenaMap {
 
                     PlacedObject obj = grid[r][c].getPlacedObject();
 
-                    if (obj == null) pw.print("EMPTY");
-                    else pw.print(obj.getType().name());
+                    if (obj == null)
+                        pw.print("EMPTY");
+                    else
+                        pw.print(obj.getType().name());
 
-                    if (c < cols - 1) pw.print(",");
+                    if (c < cols - 1)
+                        pw.print(",");
                 }
                 pw.println();
             }
@@ -120,7 +155,6 @@ public class ArenaMap {
         }
     }
 
-
     /** LOAD CSV */
     public void loadFromFile(String filePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -128,7 +162,8 @@ public class ArenaMap {
             for (int r = 0; r < rows; r++) {
 
                 String line = br.readLine();
-                if (line == null) break;
+                if (line == null)
+                    break;
 
                 String[] tokens = line.split(",");
 
@@ -141,6 +176,14 @@ public class ArenaMap {
                     } else {
                         ArenaObjectType type = ArenaObjectType.valueOf(tok);
                         grid[r][c].setPlacedObject(new PlacedObject(type));
+                        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
+                        (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
+
+                        for (int rr = r-s; rr<=r; rr++) {
+                            for (int cc = c-s; cc<=c; cc++) {
+                                collisions[rr][cc].setPlacedObject(new PlacedObject(type));
+                            }
+                        }
                     }
                 }
             }
@@ -152,12 +195,13 @@ public class ArenaMap {
         }
     }
 
-public PlacedObject getObject(int row, int col) {
-    if (row < 0 || row >= 18 || col < 0 || col >= 10)
-        return null;
+    public PlacedObject getObject(int row, int col) {
+        if (row < 0 || row >= rows || col < 0 || col >= cols)
+            return null;
 
-    return grid[row][col].getPlacedObject();
-}
+        return grid[row][col].getPlacedObject();
+    }
 
-
+    public int getRows() {return rows;}
+    public int getCols() {return cols;}
 }

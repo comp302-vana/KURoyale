@@ -5,5 +5,6 @@ public enum ArenaObjectType {
     ENEMY_TOWER,
     OUR_KING,
     ENEMY_KING,
-    BRIDGE
+    BRIDGE,
+    ENTITY
 }

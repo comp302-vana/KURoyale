@@ -8,8 +8,6 @@ import javafx.geometry.Pos;
 import javafx.application.Platform;
 import java.util.EnumMap;
 
-import javax.imageio.ImageIO;
-
 import java.io.File;
 
 import javafx.scene.control.Alert;
@@ -21,7 +19,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -34,7 +31,6 @@ import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
 import javafx.scene.input.MouseButton;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import kuroyale.arenapack.SpriteLoader;
 
 public class ArenaController {
@@ -63,6 +59,10 @@ public class ArenaController {
 
     private EnumMap<ArenaObjectType, Label> countLabels = new EnumMap<>(ArenaObjectType.class);
 
+    private final int rows = arenaMap.getRows();
+    private final int cols = arenaMap.getCols();
+
+
     @FXML
     private void initialize() {
         // Make draggable palette items
@@ -71,6 +71,7 @@ public class ArenaController {
         remaining.put(ArenaObjectType.OUR_KING, 1);
         remaining.put(ArenaObjectType.ENEMY_TOWER, 2);
         remaining.put(ArenaObjectType.ENEMY_KING, 1);
+        remaining.put(ArenaObjectType.BRIDGE, 3);
 
         makeDraggable(ourtower, "ourtower");
         makeDraggable(ourking, "ourking");
@@ -90,6 +91,7 @@ public class ArenaController {
             case "enemytower" -> ArenaObjectType.ENEMY_TOWER;
             case "enemyking" -> ArenaObjectType.ENEMY_KING;
             case "bridge" -> ArenaObjectType.BRIDGE;
+            case "entity" -> ArenaObjectType.ENTITY;
             default -> null;
         };
     }
@@ -99,7 +101,7 @@ public class ArenaController {
         addSpriteToPane(ourking, ArenaObjectType.OUR_KING, "Our King", 1);
         addSpriteToPane(enemytower, ArenaObjectType.ENEMY_TOWER, "Enemy Tower", 2);
         addSpriteToPane(enemyking, ArenaObjectType.ENEMY_KING, "Enemy King", 1);
-        // Bridge has no sprite yet
+        addSpriteToPane(bridge, ArenaObjectType.BRIDGE, "Bridge", 3);
     }
 
     private void addSpriteToPane(Pane pane, ArenaObjectType type, String displayName, int count) {
@@ -135,23 +137,8 @@ public class ArenaController {
     }
 
     private ImageView loadFullImage(ArenaObjectType type) {
-        String path = switch (type) {
-            case OUR_TOWER, OUR_KING -> "/kuroyale/images/Tower 06.png";
-            case ENEMY_TOWER, ENEMY_KING -> "/kuroyale/images/Tower 05.png";
-            default -> null;
-        };
-
-        if (path == null)
-            return null;
-
-        var url = SpriteLoader.class.getResource(path);
-        if (url == null) {
-            System.err.println("RESOURCE NOT FOUND: " + path);
-            return null;
-        }
-
-        ImageView img = new ImageView(url.toExternalForm());
-        img.setFitWidth(45);
+        ImageView img = SpriteLoader.getSprite(type);
+        img.setFitWidth(30);
         img.setPreserveRatio(true);
 
         return img;
@@ -159,16 +146,16 @@ public class ArenaController {
 
     private void fillArenaGrid() {
 
-        for (int row = 0; row < 18; row++) {
-            for (int col = 0; col < 10; col++) {
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
 
                 Pane tile = new Pane();
-                tile.setPrefWidth(45);
-                tile.setPrefHeight(45);
+                tile.setPrefWidth(24);
+                tile.setPrefHeight(24);
 
-                if (row >= 0 && row <= 6) {
+                if (col >= 0 && col < cols/2 - 1) {
                     tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
-                } else if (row >= 7 && row <= 9) {
+                } else if (col >= cols/2 - 1 && col <= cols/2) {
                     tile.setStyle("-fx-background-color: #42A5F5; -fx-border-color: #64B5F6; -fx-border-width: 0.5;");
                 } else {
                     tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
@@ -216,14 +203,14 @@ public class ArenaController {
 
                                     double tileW = tile.getWidth();
                                     double spriteW = sprite.getBoundsInParent().getWidth();
-
-                                    // CENTER horizontally
-                                    sprite.setTranslateX((tileW - spriteW) / 2);
-
+                                    
+                                    // ALIGN right (otherwise we draw tile on top of sprites)
+                                    sprite.setTranslateX(tileW - spriteW);
+                                    
                                     // ALIGN bottom
                                     double tileH = tile.getHeight();
                                     double spriteH = sprite.getBoundsInParent().getHeight();
-
+                                    
                                     sprite.setTranslateY(tileH - spriteH);
                                 });
 
@@ -239,7 +226,7 @@ public class ArenaController {
 
                             else {
                                 Pane fallback = new Pane();
-                                fallback.setPrefSize(90, 90);
+                                fallback.setPrefSize(24, 24);
                                 fallback.setStyle("-fx-background-color: gray;");
 
                                 fallback.setOnMouseClicked(ev -> {
@@ -360,7 +347,7 @@ public class ArenaController {
 
         // 2. Check remaining counts (must ALL be 0 except bridges)
         for (var entry : remaining.entrySet()) {
-            if (entry.getKey() != ArenaObjectType.BRIDGE && entry.getValue() > 0) {
+            if (entry.getValue() >= 3 || (entry.getKey() != ArenaObjectType.BRIDGE && entry.getValue() > 0)) {
                 showAlert("Error", "You must place all objects before saving.");
                 return;
             }
@@ -420,10 +407,11 @@ public class ArenaController {
         remaining.put(ArenaObjectType.ENEMY_TOWER, 2);
         remaining.put(ArenaObjectType.OUR_KING, 1);
         remaining.put(ArenaObjectType.ENEMY_KING, 1);
+        remaining.put(ArenaObjectType.BRIDGE, 3);
 
         // scan the map and subtract
-        for (int r = 0; r < 18; r++) {
-            for (int c = 0; c < 10; c++) {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
                 var obj = arenaMap.getObject(r, c);
                 if (obj == null)
                     continue;
@@ -450,8 +438,8 @@ public class ArenaController {
 
         recalcRemainingFromArena();
 
-        for (int r = 0; r < 18; r++) {
-            for (int c = 0; c < 10; c++) {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
                 var obj = arenaMap.getObject(r, c);
                 if (obj == null)
                     continue;
@@ -472,7 +460,7 @@ public class ArenaController {
 
                     double tileW = tile.getWidth();
                     double spriteW = sprite.getBoundsInParent().getWidth();
-                    sprite.setTranslateX((tileW - spriteW) / 2);
+                    sprite.setTranslateX(tileW - spriteW);
 
                     double tileH = tile.getHeight();
                     double spriteH = sprite.getBoundsInParent().getHeight();
@@ -561,6 +549,7 @@ public class ArenaController {
         remaining.put(ArenaObjectType.ENEMY_TOWER, 2);
         remaining.put(ArenaObjectType.OUR_KING, 1);
         remaining.put(ArenaObjectType.ENEMY_KING, 1);
+        remaining.put(ArenaObjectType.BRIDGE, 3);
 
         // update labels
         for (ArenaObjectType t : countLabels.keySet()) {
@@ -572,14 +561,14 @@ public class ArenaController {
             if (n instanceof Pane tile) {
                 tile.getChildren().clear(); // remove sprites
 
-                Integer r = GridPane.getRowIndex(n);
+                // Integer r = GridPane.getRowIndex(n);
                 Integer c = GridPane.getColumnIndex(n);
-                int row = (r == null ? 0 : r);
+                int col = (c == null ? 0 : c);
 
                 // restore tile color
-                if (row <= 6)
+                if (col < cols/2 - 1)
                     tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
-                else if (row <= 9)
+                else if (col <= cols/2)
                     tile.setStyle("-fx-background-color: #42A5F5; -fx-border-color: #64B5F6; -fx-border-width: 0.5;");
                 else
                     tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
