@@ -13,9 +13,9 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.UIManager">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.GameEngine">
    <children>
-      <GridPane gridLinesVisible="true" layoutX="52.0" layoutY="2.0" prefHeight="576.0" prefWidth="1024.0" AnchorPane.bottomAnchor="72.0" AnchorPane.leftAnchor="41.0" AnchorPane.rightAnchor="215.0" AnchorPane.topAnchor="72.0">
+      <GridPane fx:id="arenaGrid" gridLinesVisible="true" layoutX="52.0" layoutY="2.0" prefHeight="576.0" prefWidth="1024.0" AnchorPane.bottomAnchor="72.0" AnchorPane.leftAnchor="41.0" AnchorPane.rightAnchor="215.0" AnchorPane.topAnchor="72.0">
          <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="10.0" prefWidth="100.0" />
@@ -160,6 +160,6 @@
             </Label>
          </children>
       </AnchorPane>
-      <Button layoutX="23.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnStartClicked" text="Back" AnchorPane.leftAnchor="41.0" AnchorPane.topAnchor="23.2" />
+      <Button layoutX="23.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnBackClicked" text="Back" AnchorPane.leftAnchor="41.0" AnchorPane.topAnchor="23.2" />
    </children>
 </AnchorPane>

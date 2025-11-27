@@ -5,8 +5,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public class SpriteLoader {
-    private static final int tileSize = 24;
-
     private static final Image TOWER_OUR = new Image(
             SpriteLoader.class.getResource("/kuroyale/images/Tower 06.png").toExternalForm());
 
@@ -16,7 +14,7 @@ public class SpriteLoader {
     private static final Image BRIDGE = new Image(
             SpriteLoader.class.getResource("/kuroyale/images/singleBridge.png").toExternalForm());
 
-    private static ImageView slice(Image sheet, int index, int sprites_per_row, int w) {
+    private static ImageView slice(Image sheet, int index, int sprites_per_row, int width) {
         double spriteWidth = sheet.getWidth() / sprites_per_row;
         double spriteHeight = sheet.getHeight();
 
@@ -29,21 +27,21 @@ public class SpriteLoader {
         ImageView view = new ImageView(sheet);
         view.setViewport(viewport);
 
-        view.setFitWidth(tileSize * w);
+        view.setFitWidth(width);
         view.setPreserveRatio(true);
 
         return view;
     }
 
-    public static ImageView getSprite(ArenaObjectType type) {
+    public static ImageView getSprite(ArenaObjectType type, int tileSize) {
         return switch (type) {
-            case OUR_TOWER -> slice(TOWER_OUR, 0, 2, 3);
-            case ENEMY_TOWER -> slice(TOWER_ENEMY, 0, 2, 3);
+            case OUR_TOWER -> slice(TOWER_OUR, 0, 2, 3 * tileSize);
+            case ENEMY_TOWER -> slice(TOWER_ENEMY, 0, 2, 3 * tileSize);
 
-            case OUR_KING -> slice(TOWER_OUR, 1, 2, 4);
-            case ENEMY_KING -> slice(TOWER_ENEMY, 1, 2, 4);
+            case OUR_KING -> slice(TOWER_OUR, 1, 2, 4 * tileSize);
+            case ENEMY_KING -> slice(TOWER_ENEMY, 1, 2, 4 * tileSize);
 
-            case BRIDGE -> slice(BRIDGE, 0, 1, 2);
+            case BRIDGE -> slice(BRIDGE, 0, 1, 2 * tileSize);
 
             case ENTITY -> new ImageView("/kuroyale/images/icon.png");
         };

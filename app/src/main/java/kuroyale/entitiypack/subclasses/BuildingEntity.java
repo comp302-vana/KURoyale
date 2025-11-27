@@ -5,8 +5,8 @@ import kuroyale.cardpack.subclasses.BuildingCard;
 public class BuildingEntity extends AliveEntity {
     private final BuildingCard card;
 
-    public BuildingEntity(BuildingCard card) {
-        super(card);
+    public BuildingEntity(BuildingCard card, boolean isPlayer) {
+        super(card, isPlayer);
         this.card = card;
     }
 

@@ -7,14 +7,10 @@ public class AliveEntity extends Entity {
     private AliveCard card;
     private double HP;
 
-    public AliveEntity(AliveCard card) {
-        super(card);
+    public AliveEntity(AliveCard card, boolean isPlayer) {
+        super(card, isPlayer);
         this.card = card;
         this.HP = card.getHp();
-    }
-
-    public void attack(AliveEntity other) {
-        other.reduceHP(getDamage());
     }
 
     public void reduceHP(double damage) {

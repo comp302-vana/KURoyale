@@ -3,12 +3,19 @@ package kuroyale.entitiypack;
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.CardTarget;
 import kuroyale.cardpack.CardType;
+import kuroyale.entitiypack.subclasses.AliveEntity;
 
 public class Entity {
     private final Card card;
+    private final boolean isPlayer;
 
-    public Entity(Card card) {
+    public Entity(Card card, boolean isPlayer) {
         this.card = card;
+        this.isPlayer = isPlayer;
+    }
+
+    public void attack(AliveEntity other) {
+        other.reduceHP(getDamage());
     }
 
     protected double getDamage() {

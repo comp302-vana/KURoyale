@@ -4,6 +4,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import kuroyale.entitiypack.Entity;
+import kuroyale.entitiypack.subclasses.TowerEntity;
+
 public class ArenaMap {
 
     private final int rows = 18;
@@ -11,10 +14,12 @@ public class ArenaMap {
 
     private final ArenaTile[][] grid;
     private final ArenaTile[][] collisions;
+    private final Entity[][] entities;
 
     public ArenaMap() {
         grid = new ArenaTile[rows][cols];
         collisions = new ArenaTile[rows][cols];
+        entities = new Entity[rows][cols];
         initTiles();
     }
 
@@ -182,6 +187,22 @@ public class ArenaMap {
                         for (int rr = r-s; rr<=r; rr++) {
                             for (int cc = c-s; cc<=c; cc++) {
                                 collisions[rr][cc].setPlacedObject(new PlacedObject(type));
+                                switch (type) {
+                                    case ArenaObjectType.OUR_KING:
+                                        entities[rr][cc] = new TowerEntity(true, true);
+                                        break;
+                                    case ArenaObjectType.ENEMY_KING:
+                                        entities[rr][cc] = new TowerEntity(true, false);
+                                        break;
+                                    case ArenaObjectType.OUR_TOWER:
+                                        entities[rr][cc] = new TowerEntity(false, true);
+                                        break;
+                                    case ArenaObjectType.ENEMY_TOWER:
+                                        entities[rr][cc] = new TowerEntity(false, false);
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
                         }
                     }

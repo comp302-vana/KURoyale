@@ -6,8 +6,8 @@ import kuroyale.entitiypack.Entity;
 public class SpellEntity extends Entity {
     private final SpellCard card;
 
-    public SpellEntity(SpellCard card) {
-        super(card);
+    public SpellEntity(SpellCard card, boolean isPlayer) {
+        super(card, isPlayer);
         this.card = card;
     }
 }

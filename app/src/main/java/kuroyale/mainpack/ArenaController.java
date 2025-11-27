@@ -62,6 +62,8 @@ public class ArenaController {
     private final int rows = arenaMap.getRows();
     private final int cols = arenaMap.getCols();
 
+    private final int tileSize = 24;
+
 
     @FXML
     private void initialize() {
@@ -137,7 +139,7 @@ public class ArenaController {
     }
 
     private ImageView loadFullImage(ArenaObjectType type) {
-        ImageView img = SpriteLoader.getSprite(type);
+        ImageView img = SpriteLoader.getSprite(type, tileSize);
         img.setFitWidth(30);
         img.setPreserveRatio(true);
 
@@ -150,8 +152,8 @@ public class ArenaController {
             for (int col = 0; col < cols; col++) {
 
                 Pane tile = new Pane();
-                tile.setPrefWidth(24);
-                tile.setPrefHeight(24);
+                tile.setPrefWidth(tileSize);
+                tile.setPrefHeight(tileSize);
 
                 if (col >= 0 && col < cols/2 - 1) {
                     tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
@@ -193,7 +195,7 @@ public class ArenaController {
                         if (placementOK) {
                             decrement(objType);
                             // Try to get sprite
-                            ImageView sprite = SpriteLoader.getSprite(objType);
+                            ImageView sprite = SpriteLoader.getSprite(objType, tileSize);
                             if (sprite != null) {
                                 tile.getChildren().add(sprite);
 
@@ -226,7 +228,7 @@ public class ArenaController {
 
                             else {
                                 Pane fallback = new Pane();
-                                fallback.setPrefSize(24, 24);
+                                fallback.setPrefSize(tileSize, tileSize);
                                 fallback.setStyle("-fx-background-color: gray;");
 
                                 fallback.setOnMouseClicked(ev -> {
@@ -448,7 +450,7 @@ public class ArenaController {
                 final int cc = c;
 
                 Pane tile = getTile(rr, cc);
-                ImageView sprite = SpriteLoader.getSprite(obj.getType());
+                ImageView sprite = SpriteLoader.getSprite(obj.getType(), tileSize);
                 if (sprite == null)
                     continue;
 
