@@ -18,27 +18,27 @@ public class Entity {
         other.reduceHP(getDamage());
     }
 
-    protected double getDamage() {
+    public double getDamage() {
         return card.getDamage();
     }
 
-    protected double getRadius() {
+    public double getRadius() {
         return card.getRadius();
     }
 
-    protected Card getCard() {
+    public Card getCard() {
         return card;
     }
 
-    protected int getId() {
+    public int getId() {
         return card.getId();
     }
     
-    protected CardType getType() {
+    public CardType getType() {
         return card.getType();
     }
 
-    protected CardTarget getTarget() {
+    public CardTarget getTarget() {
         return card.getTarget();
     }
 }

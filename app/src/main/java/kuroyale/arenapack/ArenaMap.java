@@ -46,21 +46,39 @@ public class ArenaMap {
     public boolean placeObject(int row, int col, ArenaObjectType type) {
 
         ArenaTile tile = grid[row][col];
-        if (type == (ArenaObjectType.BRIDGE)) {
+        if (type == ArenaObjectType.BRIDGE) {
 
             if (tile.getTileType() != TileType.RIVER)
                 return false;
             if (col % 2 == 1)
                 return false;
-            if (tile.getPlacedObject() != null && tile.getPlacedObject().getType() == ArenaObjectType.BRIDGE)
+            if (tile.getPlacedObject() == null) {
+                tile.setPlacedObject(new PlacedObject(type));
+                return true;
+            }
+            if (tile.getPlacedObject().getType() == ArenaObjectType.BRIDGE)
                 return false;
 
             tile.setPlacedObject(new PlacedObject(type));
             return true;
         }
-
+        
         if (grid[row][col].getTileType() == TileType.RIVER)
             return false;
+        
+        if (type == ArenaObjectType.ENTITY) {
+            if (col >= cols/2-1) {
+                return false;
+            } else if (collisions[row][col].getPlacedObject() == null) {
+                tile.setPlacedObject(new PlacedObject(type));
+                return true;
+            } else if (collisions[row][col].getPlacedObject().getType() != ArenaObjectType.ENTITY) {
+                return false;
+            }
+
+            tile.setPlacedObject(new PlacedObject(type));
+            return true;
+        }
         
         int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
         (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;

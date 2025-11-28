@@ -11,19 +11,43 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseButton;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.arenapack.SpriteLoader;
 
+import kuroyale.deckpack.Deck;
+import kuroyale.cardpack.CardFactory;
+import kuroyale.cardpack.CardType;
+import kuroyale.cardpack.Card;
+import kuroyale.cardpack.subclasses.UnitCard;
+import kuroyale.cardpack.subclasses.BuildingCard;
+import kuroyale.cardpack.subclasses.SpellCard;
+
+import kuroyale.entitiypack.Entity;
+import kuroyale.entitiypack.subclasses.UnitEntity;
+import kuroyale.entitiypack.subclasses.BuildingEntity;
+import kuroyale.entitiypack.subclasses.SpellEntity;
+
 public class GameEngine {
     @FXML
     private GridPane arenaGrid;
+    @FXML
+    private AnchorPane cardSlot0;
+    @FXML
+    private AnchorPane cardSlot1;
+    @FXML
+    private AnchorPane cardSlot2;
+    @FXML
+    private AnchorPane cardSlot3;
 
     private ArenaMap arenaMap = new ArenaMap();
 
@@ -31,15 +55,20 @@ public class GameEngine {
     private final int cols = arenaMap.getCols();
     private final int tileSize = 32;
 
+
     public static void main(String[] args) {
         UIManager.launch(UIManager.class, args);
     }
     
     @FXML
     private void initialize() {
+        clipImage(getImageFromPane(cardSlot0), 6);
+        clipImage(getImageFromPane(cardSlot1), 6);
+        clipImage(getImageFromPane(cardSlot2), 6);
+        clipImage(getImageFromPane(cardSlot3), 6);
         // Make draggable palette items
 
-        //makeDraggable(ourtower, "ourtower");
+        makeDraggable(cardSlot0, "1");
 
         fillArenaGrid();
         loadDefaultArenaIfExists();
@@ -51,15 +80,26 @@ public class GameEngine {
             for (int col = 0; col < cols; col++) {
 
                 Pane tile = new Pane();
-                tile.setPrefWidth(32);
-                tile.setPrefHeight(32);
+                tile.setPrefWidth(tileSize);
+                tile.setPrefHeight(tileSize);
 
-                if (col >= 0 && col < cols/2 - 1) {
-                    tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
-                } else if (col >= cols/2 - 1 && col <= cols/2) {
-                    tile.setStyle("-fx-background-color: #42A5F5; -fx-border-color: #64B5F6; -fx-border-width: 0.5;");
+                if (col >= cols/2 - 1 && col <= cols/2) {
+                    tile.setStyle(
+                        "-fx-background-image: url('/kuroyale/images/water.jpg');" +
+                        "-fx-background-size: cover;"
+                    );
                 } else {
-                    tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
+                    if ((col + row) % 2 == 0) {
+                        tile.setStyle(
+                            "-fx-background-image: url('/kuroyale/images/darkGrass.jpg');" +
+                            "-fx-background-size: cover;"
+                        );
+                    } else {
+                        tile.setStyle(
+                            "-fx-background-image: url('/kuroyale/images/lightGrass.jpg');" +
+                            "-fx-background-size: cover;"
+                        );
+                    }
                 }
 
                 int r = row;
@@ -72,12 +112,40 @@ public class GameEngine {
                     event.consume();
                 });
 
-                tile.setOnDragDropped(event -> {    // waht to do when draggable is dropped on tile.
+                tile.setOnDragDropped(event -> {    // what to do when draggable is dropped on tile.
                     var db = event.getDragboard();
                     boolean success = false;
 
                     if (db.hasString()) {
                         String typeStr = db.getString();
+                        int cardID = Integer.parseInt(typeStr);
+                        
+                        Entity playedEntity;
+                        if (cardID <= 15) {
+                            playedEntity = new UnitEntity(((UnitCard) CardFactory.createCard(cardID)), true);
+                        } else if (cardID <= 24) {
+                            playedEntity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), true);
+                        } else if (cardID <= 28) {
+                            playedEntity = new SpellEntity(((SpellCard) CardFactory.createCard(cardID)), true);
+                        } else {
+                            playedEntity = new UnitEntity((UnitCard) CardFactory.createCard(1), true);
+                            ((UnitEntity) playedEntity).reduceHP(9999.9);
+                        }
+                        System.out.println(playedEntity.getCard().getName());
+
+                        boolean placementOK;
+                        int cc = c;
+                        do {
+                            placementOK = arenaMap.placeObject(r, cc, ArenaObjectType.ENTITY);
+                            cc--;
+                        } while(!placementOK && cc >= 0);
+                        cc++;
+                        if (placementOK) {
+                            System.out.println("yey");
+                            System.out.printf("(%d, %d)\n", r, cc);
+                        } else {
+                            System.out.println("no");
+                        }
                     }
                     
                     event.setDropCompleted(success);
@@ -87,6 +155,18 @@ public class GameEngine {
                 arenaGrid.add(tile, col, row);
             }
         }
+    }
+
+    private void makeDraggable(Pane source, String type) {
+        source.setOnDragDetected(event -> {
+            var db = source.startDragAndDrop(TransferMode.COPY);
+
+            ClipboardContent content = new ClipboardContent();
+            content.putString(type);
+
+            db.setContent(content);
+            event.consume();
+        });
     }
 
     private Pane getTile(int row, int col) {
@@ -101,6 +181,15 @@ public class GameEngine {
 
             if (rr == row && cc == col && n instanceof Pane)
                 return (Pane) n;
+        }
+        return null;
+    }
+
+    private ImageView getImageFromPane(AnchorPane ap) {
+        for (Node n : ap.getChildren()) {
+            if (n instanceof Pane p) {
+                return (ImageView) p.getChildren().get(0);
+            }
         }
         return null;
     }
@@ -180,6 +269,15 @@ public class GameEngine {
     }
 
     /** SCENE LOGIC **/
+    private void clipImage(ImageView img, int arch) {
+        Rectangle clip = new Rectangle();
+        clip.setArcWidth(2 * arch);
+        clip.setArcHeight(2 * arch);
+        clip.widthProperty().bind(img.fitWidthProperty());
+        clip.heightProperty().bind(img.fitHeightProperty());
+        img.setClip(clip);
+    }
+
     @FXML
     private void btnBackClicked(ActionEvent event) throws IOException {
         switchToStartBattleScene(event);

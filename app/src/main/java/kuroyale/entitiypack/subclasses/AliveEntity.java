@@ -20,15 +20,15 @@ public class AliveEntity extends Entity {
         }
     }
 
-    protected double getHP() {
+    public double getHP() {
         return HP;
     }
 
-    protected void setHP(double value) {
+    public void setHP(double value) {
         HP = value;
     }
 
-    protected double getRange() {
+    public double getRange() {
         return card.getRange();
     }
 }
