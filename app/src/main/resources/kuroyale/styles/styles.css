@@ -67,3 +67,15 @@
 .scroll-bar .thumb:pressed {
     -fx-background-color: #6A008A; /* darker purple */
 }
+
+.elixir-bar > .track {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
+    -fx-background-radius: 20px;
+}
+
+.elixir-bar> .bar { 
+	-fx-background-color: #ff1fff;
+    	-fx-background-insets: 0;
+   	 -fx-background-radius: 20px;
+}

@@ -2,7 +2,11 @@ package kuroyale.mainpack;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -10,6 +14,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.TransferMode;
@@ -19,12 +25,13 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-
+import javafx.util.Duration;
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.arenapack.SpriteLoader;
 
 import kuroyale.deckpack.Deck;
+import kuroyale.deckpack.DeckManager;
 import kuroyale.cardpack.CardFactory;
 import kuroyale.cardpack.CardType;
 import kuroyale.cardpack.Card;
@@ -48,13 +55,29 @@ public class GameEngine {
     private AnchorPane cardSlot2;
     @FXML
     private AnchorPane cardSlot3;
-
+    @FXML
+    private Label gameTimerLabel;
+    @FXML
+    private Label elixirCountLabel;
+    @FXML
+    private ProgressBar elixirProgressBar;
+    
     private ArenaMap arenaMap = new ArenaMap();
 
     private final int rows = arenaMap.getRows();
     private final int cols = arenaMap.getCols();
     private final int tileSize = 32;
 
+    private Timeline gameLoop;
+    private int totalSeconds = 150;
+    private double timePassedSinceLastSecond = 0;
+
+    private double currentElixir = 5.0;
+    private final double MAX_ELIXIR = 10.0;
+    private final double ELIXIR_REGEN_RATE = 1.0 / 2.8;
+
+    private List<Card> currentDeckCards = new ArrayList<>();
+    private final int CARD_SLOT_COUNT = 4;
 
     public static void main(String[] args) {
         UIManager.launch(UIManager.class, args);
@@ -66,12 +89,22 @@ public class GameEngine {
         clipImage(getImageFromPane(cardSlot1), 6);
         clipImage(getImageFromPane(cardSlot2), 6);
         clipImage(getImageFromPane(cardSlot3), 6);
-        // Make draggable palette items
 
+        Deck currentDeck = DeckManager.getCurrentDeck();
+        if (currentDeck != null) {
+            currentDeckCards = currentDeck.getCards();
+            loadDeckToSlots(); 
+        } else {
+            System.err.println("No active deck.");
+        }
+
+        // Make draggable palette items
         makeDraggable(cardSlot0, "1");
 
         fillArenaGrid();
         loadDefaultArenaIfExists();
+
+        startTimer();
     }
 
     /** ARENA LOGIC **/
@@ -194,6 +227,15 @@ public class GameEngine {
         return null;
     }
 
+    private Label getLabelFromPane(AnchorPane ap) {
+        for (Node n : ap.getChildren()) {
+            if (n instanceof Pane p) {
+                return (Label) p.getChildren().get(2);
+            }
+        }
+        return null;
+    }
+
     private void redrawArena() {
         // clear grid UI
         for (Node n : arenaGrid.getChildren()) {
@@ -276,6 +318,83 @@ public class GameEngine {
         clip.widthProperty().bind(img.fitWidthProperty());
         clip.heightProperty().bind(img.fitHeightProperty());
         img.setClip(clip);
+    }
+
+    /** GAMEPLAY **/
+    
+    private void startTimer()  {
+        final double TICK_DURATION = 0.1; 
+        
+        gameLoop = new Timeline(new KeyFrame(Duration.seconds(TICK_DURATION), e -> {
+            if (currentElixir < MAX_ELIXIR) {
+                currentElixir += (ELIXIR_REGEN_RATE * TICK_DURATION);
+                if (currentElixir > MAX_ELIXIR) currentElixir = MAX_ELIXIR;
+            }
+            updateElixirUI();
+            
+            timePassedSinceLastSecond += TICK_DURATION;
+            if (timePassedSinceLastSecond >= 1.0) {
+                if (totalSeconds > 0) {
+                    totalSeconds--; 
+                    updateTimerLabel();
+                } else {
+                    gameLoop.stop();
+                    // endGame();
+                    gameTimerLabel.setText("00:00");
+                }
+                timePassedSinceLastSecond = 0;
+            }
+        }));
+
+        gameLoop.setCycleCount(Timeline.INDEFINITE);
+        gameLoop.play();
+    }
+    
+    private void loadDeckToSlots() {
+    AnchorPane[] cardSlots = {cardSlot0, cardSlot1, cardSlot2, cardSlot3};
+    
+    for (int i = 0; i < CARD_SLOT_COUNT; i++) {
+        if (i < currentDeckCards.size()) {
+            Card card = currentDeckCards.get(i);
+            AnchorPane slotPane = cardSlots[i];
+            
+            ImageView cardImage = getImageFromPane(slotPane);
+            if (cardImage != null) {
+                String cardName = card.getName().toLowerCase().replaceAll(" ", "");
+                String imagePath = "/kuroyale/images/cards/" + cardName + ".png";
+                cardImage.setImage(new javafx.scene.image.Image(imagePath));
+            }
+            
+            Label costLabel = getLabelFromPane(slotPane);
+            if (costLabel != null) {
+                costLabel.setText(String.valueOf(card.getCost()));
+            }
+
+            makeDraggable(slotPane, String.valueOf(card.getId()));
+            
+        } else {
+
+        }
+    }
+}
+    @FXML
+    private void updateElixirUI() {
+        if (elixirProgressBar != null) {
+            elixirProgressBar.setProgress(currentElixir / MAX_ELIXIR);
+        }
+        if (elixirCountLabel != null) {
+            elixirCountLabel.setText(String.format("%d", (int) Math.floor(currentElixir)));
+        }
+    }
+
+    @FXML
+    private void updateTimerLabel() {
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60; 
+    
+        String timeText = String.format("%02d:%02d", minutes, seconds);
+    
+        gameTimerLabel.setText(timeText);
     }
 
     @FXML
