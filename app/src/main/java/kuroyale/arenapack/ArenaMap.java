@@ -118,6 +118,19 @@ public class ArenaMap {
         }
     }
 
+    public void setEntity(int row, int col, Entity entity) {
+        if (row >= 0 && row < rows && col >= 0 && col < cols) {
+            this.entities[row][col] = entity;
+        }
+    }
+
+    public Entity getEntity(int row, int col) {
+        if (row >= 0 && row < rows && col >= 0 && col < cols) {
+            return this.entities[row][col];
+        }
+        return null;
+    }
+
     /** GET ALL PLACED OBJECTS WITH COORDINATES */
     public List<SavedObject> getAllObjects() {
         List<SavedObject> list = new ArrayList<>();

@@ -98,9 +98,6 @@ public class GameEngine {
             System.err.println("No active deck.");
         }
 
-        // Make draggable palette items
-        makeDraggable(cardSlot0, "1");
-
         fillArenaGrid();
         loadDefaultArenaIfExists();
 
@@ -152,6 +149,16 @@ public class GameEngine {
                     if (db.hasString()) {
                         String typeStr = db.getString();
                         int cardID = Integer.parseInt(typeStr);
+
+                        Card cardToCheck = CardFactory.createCard(cardID);
+                        int cost = cardToCheck.getCost();
+
+                        if (currentElixir < cost) {
+                            System.out.println("Not enough:" + cost);
+                            event.setDropCompleted(false);
+                            event.consume();
+                            return; 
+                        }
                         
                         Entity playedEntity;
                         if (cardID <= 15) {
@@ -174,6 +181,12 @@ public class GameEngine {
                         } while(!placementOK && cc >= 0);
                         cc++;
                         if (placementOK) {
+                            currentElixir -= cost;
+                            updateElixirUI();
+
+                            arenaMap.setEntity(r, cc, playedEntity); 
+                                                        
+                            drawArena();
                             System.out.println("yey");
                             System.out.printf("(%d, %d)\n", r, cc);
                         } else {
@@ -236,6 +249,20 @@ public class GameEngine {
         return null;
     }
 
+    private ImageView getEntitySpriteFromCard(Card card) {
+        if (card == null) return null;
+        
+        String cardName = card.getName().toLowerCase().replaceAll(" ", "");
+        
+        String imagePath = "/kuroyale/images/cards/arena/" + cardName + ".png"; 
+        
+        ImageView img = new ImageView(imagePath);
+        img.setFitWidth(tileSize);
+        img.setFitHeight(tileSize);
+        
+        return img;
+    }
+
     private void redrawArena() {
         // clear grid UI
         for (Node n : arenaGrid.getChildren()) {
@@ -244,6 +271,8 @@ public class GameEngine {
             }
         }
 
+        ImageView sprite = new ImageView("/kuroyale/images/icon.png");
+        
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 var obj = arenaMap.getObject(r, c);
@@ -254,47 +283,104 @@ public class GameEngine {
                 final int cc = c;
 
                 Pane tile = getTile(rr, cc);
-                ImageView sprite = SpriteLoader.getSprite(obj.getType(), tileSize);
-                if (sprite == null)
+
+                if (obj.getType() == ArenaObjectType.ENTITY) {
+                    Entity entity = arenaMap.getEntity(rr, cc);
+                    if (entity != null) {
+                        sprite = getEntitySpriteFromCard(entity.getCard()); 
+                    }
+                } else {
+                    sprite = SpriteLoader.getSprite(obj.getType(), tileSize);
+                }
+                
+                final ImageView finalSprite = sprite;
+
+                if (finalSprite == null)
                     continue;
 
                 tile.getChildren().add(sprite);
 
                 Platform.runLater(() -> {
-                    sprite.applyCss();
-                    sprite.autosize();
+                    finalSprite.applyCss();
+                    finalSprite.autosize();
 
                     double tileW = tile.getWidth();
-                    double spriteW = sprite.getBoundsInParent().getWidth();
-                    sprite.setTranslateX(tileW - spriteW);
+                    double spriteW = finalSprite.getBoundsInParent().getWidth();
+                    finalSprite.setTranslateX(tileW - spriteW);
 
                     double tileH = tile.getHeight();
-                    double spriteH = sprite.getBoundsInParent().getHeight();
-                    sprite.setTranslateY(tileH - spriteH);
+                    double spriteH = finalSprite.getBoundsInParent().getHeight();
+                    finalSprite.setTranslateY(tileH - spriteH);
                 });
             }
         }
 
     }
     
+    private void drawArena() {
+        ImageView sprite = new ImageView("/kuroyale/images/icon.png");
+        
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                var obj = arenaMap.getObject(r, c);
+                if (obj == null)
+                    continue;
+
+                final int rr = r;
+                final int cc = c;
+
+                Pane tile = getTile(rr, cc);
+
+                if (obj.getType() == ArenaObjectType.ENTITY) {
+                    Entity entity = arenaMap.getEntity(rr, cc);
+                    if (entity != null) {
+                        sprite = getEntitySpriteFromCard(entity.getCard()); 
+                    }
+                } else {
+                    sprite = SpriteLoader.getSprite(obj.getType(), tileSize);
+                }
+                
+
+                final ImageView finalSprite = sprite;
+
+                if (finalSprite == null)
+                    continue;
+
+                tile.getChildren().add(sprite);
+
+                Platform.runLater(() -> {
+                    finalSprite.applyCss();
+                    finalSprite.autosize();
+
+                    double tileW = tile.getWidth();
+                    double spriteW = finalSprite.getBoundsInParent().getWidth();
+                    finalSprite.setTranslateX(tileW - spriteW);
+
+                    double tileH = tile.getHeight();
+                    double spriteH = finalSprite.getBoundsInParent().getHeight();
+                    finalSprite.setTranslateY(tileH - spriteH);
+                });
+            }
+        }
+    }
     private void loadDefaultArenaIfExists() {
         try {
             File f = new File("saves/default.txt");
             if (!f.exists()) {
-                switchToStartBattleScene(null);
+
                 return; // no default set
             }
 
             String fileName = new String(java.nio.file.Files.readAllBytes(f.toPath())).trim();
             if (fileName.isEmpty()) {
-                switchToStartBattleScene(null);
+
                 return;
             }
 
             File arenaFile = new File("saves/" + fileName);
             if (!arenaFile.exists()) {
                 System.out.println("Default file missing: " + fileName);
-                switchToStartBattleScene(null);
+ 
                 return;
             }
 
