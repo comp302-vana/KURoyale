@@ -69,12 +69,13 @@ public class GameEngine {
     private final int tileSize = 32;
 
     private Timeline gameLoop;
-    private int totalSeconds = 150;
+    private int totalSeconds = 180;
     private double timePassedSinceLastSecond = 0;
 
     private double currentElixir = 5.0;
-    private final double MAX_ELIXIR = 10.0;
+    private final double MAX_ELIXIR = 10;
     private final double ELIXIR_REGEN_RATE = 1.0 / 2.8;
+    private final double DOUBLE_ELIXIR_REGEN_RATE = 1.0 / 1.4;
 
     private List<Card> currentDeckCards = new ArrayList<>();
     private final int CARD_SLOT_COUNT = 4;
@@ -413,8 +414,14 @@ public class GameEngine {
         
         gameLoop = new Timeline(new KeyFrame(Duration.seconds(TICK_DURATION), e -> {
             if (currentElixir < MAX_ELIXIR) {
-                currentElixir += (ELIXIR_REGEN_RATE * TICK_DURATION);
-                if (currentElixir > MAX_ELIXIR) currentElixir = MAX_ELIXIR;
+                if (totalSeconds >= 60) {
+                    currentElixir += (ELIXIR_REGEN_RATE * TICK_DURATION);
+                    if (currentElixir > MAX_ELIXIR) currentElixir = MAX_ELIXIR;
+                } else {
+                    currentElixir += (DOUBLE_ELIXIR_REGEN_RATE * TICK_DURATION);
+                    if (currentElixir > MAX_ELIXIR) currentElixir = MAX_ELIXIR;
+                }
+                
             }
             updateElixirUI();
             
