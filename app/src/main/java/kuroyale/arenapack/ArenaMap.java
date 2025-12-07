@@ -266,4 +266,9 @@ public class ArenaMap {
         }
         return true;
     }
+    public void moveEntitiy(int oldR, int oldC, int newR, int newC){
+        Entity entitiy=entities[oldR][oldC];
+        entities[newR][newC]=entitiy;
+        entities[oldR][oldC]=null;
+    }
 }
