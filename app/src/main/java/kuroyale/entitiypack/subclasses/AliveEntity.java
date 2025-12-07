@@ -94,7 +94,7 @@ public class AliveEntity extends Entity {
         int targetR=target.getRow();
         int currentC=this.col;
         int currentR=this.row;
-        if (targetC-this.col>=targetR-this.row){
+        if (Math.abs(targetC-this.col)>=Math.abs(targetR-this.row)){
             if (targetC-this.col>0 && map.isWalkable(this.row, this.col+1)){
                 this.col+=1;
                 map.moveEntitiy(currentR,currentC,currentR,currentC+1);
