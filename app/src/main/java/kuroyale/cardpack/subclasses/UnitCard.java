@@ -10,9 +10,9 @@ public class UnitCard extends AliveCard {
     public UnitCard(
             int id, String name, String description, int cost,
             CardCategory category, CardTarget target, CardType type,
-            double hp, double damage, double actSpeed, double range, String speed, double radius) {
+            double hp, double damage, double actSpeed, double range, String speed, double radius, int row, int col) {
 
-        super(id, name, description, cost, hp, range, damage, actSpeed, radius, type, category, target);
+        super(id, name, description, cost, hp, range, damage, actSpeed, radius, type, category, target, row, col);
         this.speed = speed;
     }
 

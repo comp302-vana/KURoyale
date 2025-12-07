@@ -1,0 +1,81 @@
+/* Make scrollpane background transparent */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+/* Hide the default corner background */
+.scroll-pane .corner {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+/* Remove ALL scrollbar background artifacts */
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .background,
+.scroll-bar:horizontal .background {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .track-background,
+.scroll-bar:horizontal .track-background {
+    -fx-background-color: transparent;
+}
+
+/* ===== Scrollbar Track ===== */
+.scroll-bar:vertical .track,
+.scroll-bar:horizontal .track {
+    -fx-background-color: rgba(0,0,0,0.15); /* light track */
+    -fx-background-radius: 3px;
+    -fx-background-insets: 0;
+}
+
+/* ===== Scrollbar Thumb (the draggable bit) ===== */
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: #8A00B8;     /* Your purple */
+    -fx-background-insets: 2;
+    -fx-background-radius: 3px;
+}
+
+/* ===== Scrollbar Arrow Buttons (top/bottom) ===== */
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: transparent;
+}
+
+/* ===== Hover effect for thumb ===== */
+.scroll-bar .thumb:hover {
+    -fx-background-color: #A834D4; /* lighter purple */
+}
+
+/* ===== Pressed effect ===== */
+.scroll-bar .thumb:pressed {
+    -fx-background-color: #6A008A; /* darker purple */
+}
+
+.elixir-bar > .track {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
+    -fx-background-radius: 20px;
+}
+
+.elixir-bar> .bar { 
+	-fx-background-color: #ff1fff;
+    	-fx-background-insets: 0;
+   	 -fx-background-radius: 20px;
+}

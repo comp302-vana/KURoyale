@@ -43,8 +43,8 @@ public class AliveEntity extends Entity {
         col = c;
     }
 
-    public int getRow() { return row; }
-    public int getCol() { return col; }
+    public int getRow() { return card.getRow(); }
+    public int getCol() { return card.getCol(); }
 
     public Entity findClosestTarget(ArenaMap map) {
         int rows = map.getRows();
