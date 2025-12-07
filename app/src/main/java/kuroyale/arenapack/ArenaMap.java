@@ -256,4 +256,19 @@ public class ArenaMap {
 
     public int getRows() {return rows;}
     public int getCols() {return cols;}
+
+    public boolean isWalkable(int r, int c){
+        if (grid[r][c].getPlacedObject()!=null){
+            return false;
+        }
+        if (grid[r][c].getTileType()==TileType.RIVER){
+            return false;
+        }
+        return true;
+    }
+    public void moveEntitiy(int oldR, int oldC, int newR, int newC){
+        Entity entitiy=entities[oldR][oldC];
+        entities[newR][newC]=entitiy;
+        entities[oldR][oldC]=null;
+    }
 }

@@ -88,6 +88,35 @@ public class AliveEntity extends Entity {
         }
         return null;
     }
+    public void move(ArenaMap map){
+        Entity target=findClosestTarget(map);
+        int targetC=target.getCol();
+        int targetR=target.getRow();
+        int currentC=this.col;
+        int currentR=this.row;
+        if (targetC-this.col>=targetR-this.row){
+            if (targetC-this.col>0 && map.isWalkable(this.row, this.col+1)){
+                this.col+=1;
+                map.moveEntitiy(currentR,currentC,currentR,currentC+1);
+                return;
+            }
+            else if(map.isWalkable(this.row, this.col-1){
+                this.col-=1;
+                map.moveEntitiy(currentR,currentC,currentR,currentC-1);
+                return;
+            }
+        }
+        if (targetR-this.row>0){
+            this.row+=1;
+            map.moveEntitiy(currentR,currentC,currentR+1,currentC);
+        }
+        else {
+            this.row -= 1;
+            map.moveEntitiy(currentR, currentC, currentR - 1, currentC);
+        }
+
+
+    }
 
 
 }
