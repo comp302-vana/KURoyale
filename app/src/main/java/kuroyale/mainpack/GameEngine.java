@@ -40,6 +40,7 @@ import kuroyale.cardpack.subclasses.BuildingCard;
 import kuroyale.cardpack.subclasses.SpellCard;
 
 import kuroyale.entitiypack.Entity;
+import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
 import kuroyale.entitiypack.subclasses.SpellEntity;
@@ -161,14 +162,12 @@ public class GameEngine {
                             return; 
                         }
                         
-                        Entity playedEntity;
+                        AliveEntity playedEntity;
                         if (cardID <= 15) {
                             playedEntity = new UnitEntity(((UnitCard) CardFactory.createCard(cardID)), true);
                         } else if (cardID <= 24) {
                             playedEntity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), true);
-                        } else if (cardID <= 28) {
-                            playedEntity = new SpellEntity(((SpellCard) CardFactory.createCard(cardID)), true);
-                        } else {
+                        }  else {
                             playedEntity = new UnitEntity((UnitCard) CardFactory.createCard(1), true);
                             ((UnitEntity) playedEntity).reduceHP(9999.9);
                         }

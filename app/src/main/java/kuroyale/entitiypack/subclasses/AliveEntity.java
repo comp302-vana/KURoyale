@@ -46,7 +46,7 @@ public class AliveEntity extends Entity {
     public int getRow() { return card.getRow(); }
     public int getCol() { return card.getCol(); }
 
-    public Entity findClosestTarget(ArenaMap map) {
+    public AliveEntity findClosestTarget(ArenaMap map) {
         int rows = map.getRows();
         int cols = map.getCols();
         boolean[][] visited = new boolean[rows][cols];
@@ -89,7 +89,7 @@ public class AliveEntity extends Entity {
         return null;
     }
     public void move(ArenaMap map){
-        Entity target=findClosestTarget(map);
+        AliveEntity target=findClosestTarget(map);
         int targetC=target.getCol();
         int targetR=target.getRow();
         int currentC=this.col;

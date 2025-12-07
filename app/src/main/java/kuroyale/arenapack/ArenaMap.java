@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import kuroyale.entitiypack.Entity;
+import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 
 public class ArenaMap {
@@ -14,12 +15,12 @@ public class ArenaMap {
 
     private final ArenaTile[][] grid;
     private final ArenaTile[][] collisions;
-    private final Entity[][] entities;
+    private final AliveEntity[][] entities;
 
     public ArenaMap() {
         grid = new ArenaTile[rows][cols];
         collisions = new ArenaTile[rows][cols];
-        entities = new Entity[rows][cols];
+        entities = new AliveEntity[rows][cols];
         initTiles();
     }
 
@@ -118,13 +119,13 @@ public class ArenaMap {
         }
     }
 
-    public void setEntity(int row, int col, Entity entity) {
+    public void setEntity(int row, int col, AliveEntity entity) {
         if (row >= 0 && row < rows && col >= 0 && col < cols) {
             this.entities[row][col] = entity;
         }
     }
 
-    public Entity getEntity(int row, int col) {
+    public AliveEntity getEntity(int row, int col) {
         if (row >= 0 && row < rows && col >= 0 && col < cols) {
             return this.entities[row][col];
         }
@@ -267,8 +268,8 @@ public class ArenaMap {
         return true;
     }
     public void moveEntitiy(int oldR, int oldC, int newR, int newC){
-        Entity entitiy=entities[oldR][oldC];
-        entities[newR][newC]=entitiy;
+        AliveEntity ent=entities[oldR][oldC];
+        entities[newR][newC]=ent;
         entities[oldR][oldC]=null;
     }
 }
