@@ -100,7 +100,7 @@ public class AliveEntity extends Entity {
                 map.moveEntitiy(currentR,currentC,currentR,currentC+1);
                 return;
             }
-            else if(map.isWalkable(this.row, this.col-1){
+            else if(map.isWalkable(this.row, this.col-1)){
                 this.col-=1;
                 map.moveEntitiy(currentR,currentC,currentR,currentC-1);
                 return;
