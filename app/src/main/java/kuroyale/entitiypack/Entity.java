@@ -41,4 +41,6 @@ public class Entity {
     public CardTarget getTarget() {
         return card.getTarget();
     }
+
+    public boolean isPlayer() { return isPlayer; }
 }
