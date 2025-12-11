@@ -18,7 +18,8 @@ public class UIManager extends Application {
     private Stage stage;
     private Scene scene;
     private Parent root;
-    
+    private static String selectedDifficulty = null;
+
     @Override
     public void start(Stage stage) {
         try {
@@ -65,16 +66,19 @@ public class UIManager extends Application {
 
     @FXML
     void btnSimpleClicked(ActionEvent event) throws IOException {
+        selectedDifficulty = "Simple";
         switchToBattleScene(event);
     }
 
     @FXML
     void btnMediumClicked(ActionEvent event) throws IOException {
+        selectedDifficulty = "Medium";
         switchToBattleScene(event);
     }
 
     @FXML
     void btnAdvancedClicked(ActionEvent event) throws IOException {
+        selectedDifficulty = "Advanced";
         switchToBattleScene(event);
     }
 
@@ -122,5 +126,9 @@ public class UIManager extends Application {
         scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
+    }
+
+    public static String getSelectedDifficulty() {
+        return selectedDifficulty;
     }
 }

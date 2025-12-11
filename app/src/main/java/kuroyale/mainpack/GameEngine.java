@@ -101,6 +101,8 @@ public class GameEngine {
     // Track attack cooldowns for each entity (time remaining until next attack)
     private Map<AliveEntity, Double> attackCooldowns = new HashMap<>();
 
+    private SimpleAI aiOpponent;
+
     public static void main(String[] args) {
         UIManager.launch(UIManager.class, args);
     }
@@ -129,6 +131,14 @@ public class GameEngine {
         
         // Verify all cards are draggable after initialization
         verifyAllCardsDraggable();
+
+        // Initialize the AI opponent
+        String difficulty = UIManager.getSelectedDifficulty();
+        if ("Simple".equals(difficulty)) {
+            aiOpponent = new SimpleAI(arenaMap);
+        } else {
+            aiOpponent = null; // at least for now
+        }
     }
     
     private void verifyAllCardsDraggable() {
@@ -885,6 +895,10 @@ public class GameEngine {
             timePassedSinceLastEntityUpdate += TICK_DURATION;
             if (timePassedSinceLastEntityUpdate >= ENTITY_UPDATE_INTERVAL) {
                 updateEntities();
+                // Update AI opponent
+                if (aiOpponent != null) {
+                    aiOpponent.update(TICK_DURATION, totalSeconds);
+                }
                 timePassedSinceLastEntityUpdate = 0;
             }
         }));
