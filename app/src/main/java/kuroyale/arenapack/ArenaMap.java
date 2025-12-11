@@ -64,21 +64,59 @@ public class ArenaMap {
             return true;
         }
         
-        if (grid[row][col].getTileType() == TileType.RIVER)
-            return false;
-        
         if (type == ArenaObjectType.ENTITY) {
-            if (col >= cols/2-1) {
-                return false;
-            } else if (collisions[row][col].getPlacedObject() == null) {
-                tile.setPlacedObject(new PlacedObject(type));
+            // Check grid for bridges first (bridges are in grid, not collisions)
+            PlacedObject gridObj = grid[row][col].getPlacedObject();
+            
+            // If this tile is a bridge, allow entities here (bridges are at columns 15-16)
+            if (gridObj != null && gridObj.getType() == ArenaObjectType.BRIDGE) {
+                // Bridge tile - entity can walk on bridge, but don't overwrite bridge object
+                // Just return true to indicate placement is allowed (entity is tracked separately in entities grid)
                 return true;
-            } else if (collisions[row][col].getPlacedObject().getType() != ArenaObjectType.ENTITY) {
+            }
+            
+            // TEMPORARY: Allow entities on river tiles for testing
+            // Check if tile is river - temporarily allow entities on river tiles
+            if (grid[row][col].getTileType() == TileType.RIVER) {
+                // River tiles are temporarily walkable for testing
+                // Just return true to allow placement
+            }
+            
+            // REMOVED: Side-restriction - movement should be free to cross to enemy side
+            // Spawn restriction is now enforced in the drag-drop handler instead
+            
+            // Check collisions grid for blocking objects
+            PlacedObject collisionObj = collisions[row][col].getPlacedObject();
+            
+            // Also check grid for non-bridge objects that might block
+            if (gridObj != null && gridObj.getType() != ArenaObjectType.BRIDGE && gridObj.getType() != ArenaObjectType.ENTITY) {
+                // There's a non-bridge, non-entity object in grid - block placement
+                System.out.println("Blocked by grid object: " + gridObj.getType() + " at (" + row + "," + col + ")");
                 return false;
             }
-
-            tile.setPlacedObject(new PlacedObject(type));
-            return true;
+            
+            if (collisionObj == null) {
+                // Empty tile - can place entity (but only if grid doesn't have blocking object)
+                if (gridObj == null || gridObj.getType() == ArenaObjectType.ENTITY) {
+                    tile.setPlacedObject(new PlacedObject(type));
+                    return true;
+                }
+                System.out.println("Cannot place - grid has non-entity object at (" + row + "," + col + ")");
+                return false;
+            } else if (collisionObj.getType() == ArenaObjectType.ENTITY) {
+                // Already has entity - can replace
+                tile.setPlacedObject(new PlacedObject(type));
+                return true;
+            } else {
+                // Other object type blocks entity placement
+                System.out.println("Blocked by collision object: " + collisionObj.getType() + " at (" + row + "," + col + ")");
+                return false;
+            }
+        }
+        
+        // For non-ENTITY types, check river restriction
+        if (grid[row][col].getTileType() == TileType.RIVER && type != ArenaObjectType.BRIDGE) {
+            return false;
         }
         
         int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
@@ -107,8 +145,25 @@ public class ArenaMap {
         if (grid[row][col].getPlacedObject() == null)
             return;
         ArenaObjectType type = grid[row][col].getPlacedObject().getType();
-        grid[row][col].setPlacedObject(null);
         
+        // NEVER clear bridges - they're permanent structures
+        if (type == ArenaObjectType.BRIDGE) {
+            return;
+        }
+        
+        // Only clear ENTITY objects, not bridges or other static objects
+        if (type == ArenaObjectType.ENTITY) {
+            grid[row][col].setPlacedObject(null);
+            // Also clear from collisions if it was there
+            if (collisions[row][col].getPlacedObject() != null && 
+                collisions[row][col].getPlacedObject().getType() == ArenaObjectType.ENTITY) {
+                collisions[row][col].setPlacedObject(null);
+            }
+            return;
+        }
+        
+        // For towers/kings, clear the full area
+        grid[row][col].setPlacedObject(null);
         int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
         (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
 
@@ -216,24 +271,35 @@ public class ArenaMap {
                         int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
                         (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
 
-                        for (int rr = r-s; rr<=r; rr++) {
-                            for (int cc = c-s; cc<=c; cc++) {
-                                collisions[rr][cc].setPlacedObject(new PlacedObject(type));
-                                switch (type) {
-                                    case ArenaObjectType.OUR_KING:
-                                        entities[rr][cc] = new TowerEntity(true, true);
-                                        break;
-                                    case ArenaObjectType.ENEMY_KING:
-                                        entities[rr][cc] = new TowerEntity(true, false);
-                                        break;
-                                    case ArenaObjectType.OUR_TOWER:
-                                        entities[rr][cc] = new TowerEntity(false, true);
-                                        break;
-                                    case ArenaObjectType.ENEMY_TOWER:
-                                        entities[rr][cc] = new TowerEntity(false, false);
-                                        break;
-                                    default:
-                                        break;
+                        // Create a single TowerEntity instance for all tiles in the tower
+                        TowerEntity towerEntity = null;
+                        switch (type) {
+                            case ArenaObjectType.OUR_KING:
+                                towerEntity = new TowerEntity(true, true);
+                                towerEntity.setPosition(r, c); // Set position to the bottom-right corner
+                                break;
+                            case ArenaObjectType.ENEMY_KING:
+                                towerEntity = new TowerEntity(true, false);
+                                towerEntity.setPosition(r, c);
+                                break;
+                            case ArenaObjectType.OUR_TOWER:
+                                towerEntity = new TowerEntity(false, true);
+                                towerEntity.setPosition(r, c);
+                                break;
+                            case ArenaObjectType.ENEMY_TOWER:
+                                towerEntity = new TowerEntity(false, false);
+                                towerEntity.setPosition(r, c);
+                                break;
+                            default:
+                                break;
+                        }
+                        
+                        // Use the same TowerEntity instance for all tiles in the tower
+                        if (towerEntity != null) {
+                            for (int rr = r-s; rr<=r; rr++) {
+                                for (int cc = c-s; cc<=c; cc++) {
+                                    collisions[rr][cc].setPlacedObject(new PlacedObject(type));
+                                    entities[rr][cc] = towerEntity; // Same instance for all tiles
                                 }
                             }
                         }
@@ -259,12 +325,23 @@ public class ArenaMap {
     public int getCols() {return cols;}
 
     public boolean isWalkable(int r, int c){
-        if (grid[r][c].getPlacedObject()!=null){
+        // Check if tile has a placed object
+        PlacedObject obj = grid[r][c].getPlacedObject();
+        if (obj != null) {
+            // Bridges are walkable (they're placed on river tiles)
+            if (obj.getType() == ArenaObjectType.BRIDGE) {
+                return true;
+            }
+            // Other objects (towers, etc.) are not walkable
             return false;
         }
-        if (grid[r][c].getTileType()==TileType.RIVER){
-            return false;
+        // TEMPORARY: Make river tiles walkable for testing
+        // If no object, check tile type
+        if (grid[r][c].getTileType() == TileType.RIVER){
+            // River tiles are temporarily walkable for testing
+            return true;
         }
+        // Grass tiles are walkable
         return true;
     }
     public void moveEntitiy(int oldR, int oldC, int newR, int newC){

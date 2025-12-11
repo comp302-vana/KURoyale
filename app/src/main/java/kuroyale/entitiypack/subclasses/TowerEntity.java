@@ -18,7 +18,14 @@ public class TowerEntity extends BuildingEntity {
         return card;
     }
 
+    private final boolean isKing;
+    
     public TowerEntity(boolean isKing, boolean isPlayer) {
         super(towerCard(isKing), isPlayer);
+        this.isKing = isKing;
+    }
+    
+    public boolean isKing() {
+        return isKing;
     }
 }
