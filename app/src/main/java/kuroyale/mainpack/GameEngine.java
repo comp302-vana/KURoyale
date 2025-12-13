@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,16 +39,22 @@ import kuroyale.deckpack.DeckManager;
 import kuroyale.cardpack.CardFactory;
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.subclasses.UnitCard;
+import kuroyale.cardpack.subclasses.AliveCard;
 import kuroyale.cardpack.subclasses.BuildingCard;
 
 import kuroyale.entitiypack.Entity;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
+import kuroyale.entitiypack.subclasses.TowerEntity;
 
 public class GameEngine {
     @FXML
     private GridPane arenaGrid;
+    @FXML
+    private Pane entityLayer;
+    @FXML
+    private Pane staticLayer;
     @FXML
     private AnchorPane cardSlot0;
     @FXML
@@ -82,7 +89,6 @@ public class GameEngine {
     private double timePassedSinceLastSecond = 0;
     private double timePassedSinceLastEntityUpdate = 0;
     private final double ENTITY_UPDATE_INTERVAL = 0.1; // Update entities every 0.1 seconds
-    private boolean arenaDirty = false;
 
     private double currentElixir = 5.0;
     private final double MAX_ELIXIR = 10;
@@ -97,6 +103,14 @@ public class GameEngine {
     // Track attack cooldowns for each entity (time remaining until next attack)
     private Map<AliveEntity, Double> attackCooldowns = new HashMap<>();
 
+    private final IdentityHashMap<AliveEntity, Boolean> seenTowers = new IdentityHashMap<>();
+
+    private final Map<AliveEntity, ImageView> entitySprites = new HashMap<>();
+    private final Map<AliveEntity, Pane> healthBarsByEntity = new HashMap<>();
+    private final Map<Long, ImageView> staticSpritesByCell = new HashMap<>();
+    private boolean entityDirty = false;
+    private boolean staticDirty = false;  // set to true when a static object changes (tower dies)
+
     private SimpleAI aiOpponent;
 
     public static void main(String[] args) {
@@ -105,6 +119,9 @@ public class GameEngine {
 
     @FXML
     private void initialize() {
+        entityLayer.setPrefSize(cols * tileSize, rows * tileSize);
+        staticLayer.setPrefSize(cols * tileSize, rows * tileSize);
+
         clipImage(getImageFromPane(cardSlot0), 6);
         clipImage(getImageFromPane(cardSlot1), 6);
         clipImage(getImageFromPane(cardSlot2), 6);
@@ -122,7 +139,7 @@ public class GameEngine {
 
         fillArenaGrid();
         loadDefaultArenaIfExists();
-
+        renderStaticObjects();
         startTimer();
 
         // Verify all cards are draggable after initialization
@@ -154,6 +171,189 @@ public class GameEngine {
             }
         }
         System.out.println("=== End verification ===");
+    }
+
+    /** RENDER STUFF **/
+    private long cellKey(int r, int c) {
+        return (((long) r) << 32) ^ (c & 0xffffffffL);
+    }
+
+    private void ensureHealthBar(AliveEntity e, boolean isTower) {
+        if (healthBarsByEntity.containsKey(e)) return;
+
+        var aliveCard = (AliveCard) e.getCard();
+        double maxHP = aliveCard != null ? aliveCard.getHp() : e.getHP();
+
+        Pane hb = createHealthBar(e.getHP(), maxHP, isTower, e.isPlayer());
+        healthBarsByEntity.put(e, hb);
+        entityLayer.getChildren().add(hb);
+    }
+
+    private void ensureEntityNode(AliveEntity e) {
+        if (entitySprites.containsKey(e)) return;
+
+        ImageView iv = getEntitySpriteFromCard(e.getCard());
+        if (iv == null) return;
+
+        ensureHealthBar(e, e instanceof TowerEntity);
+
+        entitySprites.put(e, iv);
+        entityLayer.getChildren().addAll(iv);
+    }
+
+    private void updateHealthBarFor(AliveEntity e) {
+        Pane hb = healthBarsByEntity.get(e);
+        if (hb == null) return;
+
+        var aliveCard = (AliveCard) e.getCard();
+        double maxHP = aliveCard != null ? aliveCard.getHp() : e.getHP();
+        if (maxHP <= 0) return;
+
+        double percent = Math.max(0, Math.min(1, e.getHP() / maxHP));
+
+        Rectangle bg = (Rectangle) hb.getChildren().get(0);
+        Rectangle fg = (Rectangle) hb.getChildren().get(1);
+        fg.setWidth(bg.getWidth() * percent);
+    }
+
+    private void positionEntityNode(AliveEntity e, int row, int col) {
+        ImageView iv = entitySprites.get(e);
+        Pane hb = healthBarsByEntity.get(e);
+        if (iv == null || hb == null) return;
+
+        double x = col * tileSize;
+        double y = row * tileSize;
+
+        // center sprite inside tile
+        double spriteW = iv.getFitWidth();
+        double spriteH = iv.getFitHeight();
+        // iv.relocate(x + (tileSize - spriteW) / 2.0, y + (tileSize - spriteH) / 2.0);
+        iv.relocate(x + (tileSize - spriteW) / 2.0, y);
+
+        // health bar near top of tile
+        hb.relocate(x, y + spriteH - hb.getPrefHeight());
+
+        // update health bar width (or rebuild its rectangles once and just resize)
+        updateHealthBar(hb, e);
+    }
+
+    private void updateHealthBar(Pane hb, AliveEntity e) {
+        double currentHP = e.getHP();
+        double maxHP = ((AliveCard) e.getCard()).getHp();
+        double healthPercent = Math.max(0, Math.min(1, currentHP / maxHP));
+
+        if (hb.getChildren().size() < 2) return;
+
+        Rectangle bg = (Rectangle) hb.getChildren().get(0);
+        Rectangle health = (Rectangle) hb.getChildren().get(1);
+
+        double barWidth = bg.getWidth();
+
+        health.setWidth(barWidth * healthPercent);
+        if (e.isPlayer()) {
+            health.setFill(Color.DODGERBLUE);
+        } else {
+            health.setFill(Color.ORANGERED);
+        }
+        /*
+        if (healthPercent > 0.5) {
+            health.setFill(Color.LIMEGREEN);
+        } else if (healthPercent > 0.25) {
+            health.setFill(Color.YELLOW);
+        } else {
+            health.setFill(Color.RED);
+        }
+        */
+    }
+
+    private void positionTowerHealthBar(TowerEntity tower, int bottomRightRow, int bottomRightCol) {
+        int size = tower.isKing() ? 4 : 3;
+
+        int topLeftRow = bottomRightRow;
+        int topLeftCol = bottomRightCol;
+
+        Pane hb = healthBarsByEntity.get(tower);
+        if (hb == null) return;
+
+        // Put the bar near the top of the tower footprint, centered horizontally
+        double footprintW = size * tileSize;
+        double x = topLeftCol * tileSize;
+        double y = topLeftRow * tileSize;
+
+        double barW = hb.getPrefWidth();
+        double barH = hb.getPrefHeight();
+        hb.relocate(x + (footprintW - barW) / 2.0, y - barH);
+    }
+
+    private void renderTowerHealthBars() {
+        seenTowers.clear();
+
+        // Scan the entity grid; towers may appear in multiple cells if you store them that way
+        // but you only want one health bar per tower entity.
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                AliveEntity e = arenaMap.getEntity(r, c);
+                if (e instanceof TowerEntity tower) {
+                    if (tower.getHP() <= 0) continue;
+
+                    if (seenTowers.put(tower, true) != null) continue;  // already processed
+
+                    ensureHealthBar(tower, true);
+                    updateHealthBarFor(tower);
+                    positionTowerHealthBar(tower, tower.getRow(), tower.getCol()); // assumes this cell is the “representative” one
+                }
+            }
+        }
+    }
+
+    private void renderStaticObjects() {
+        staticLayer.getChildren().clear();
+        staticSpritesByCell.clear();
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                PlacedObject obj = arenaMap.getObject(r, c);
+                if (obj == null) continue;
+                if (obj.getType() == ArenaObjectType.ENTITY) continue;
+
+                ImageView iv = SpriteLoader.getSprite(obj.getType(), tileSize);
+                if (iv == null) continue;
+
+                iv.relocate(c * tileSize, r * tileSize);
+
+                staticLayer.getChildren().add(iv);
+                staticSpritesByCell.put(cellKey(r, c), iv);
+            }
+        }
+
+        staticDirty = false;
+    }
+
+    private void renderEntities() {
+        // Collect entities currently in map
+        List<AliveEntity> aliveNow = new ArrayList<>();
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                AliveEntity e = arenaMap.getEntity(r, c);
+                if (e != null && e.getHP() > 0 && !(e instanceof TowerEntity)) {
+                    aliveNow.add(e);
+                    ensureEntityNode(e);
+                    positionEntityNode(e, r, c);
+                }
+            }
+        }
+
+        // Remove nodes for entities that no longer exist
+        entitySprites.keySet().removeIf(e -> {
+            boolean dead = e.getHP() <= 0 || !aliveNow.contains(e);
+            if (dead) {
+                ImageView iv = entitySprites.get(e);
+                Pane hb = healthBarsByEntity.get(e);
+                entityLayer.getChildren().removeAll(iv, hb);
+                healthBarsByEntity.remove(e);
+            }
+            return dead;
+        });
     }
 
     /** ARENA LOGIC **/
@@ -229,6 +429,8 @@ public class GameEngine {
                         }
                         System.out.println(playedEntity.getCard().getName());
 
+                        ensureEntityNode(playedEntity);
+
                         boolean placementOK;
                         int cc = c;
                         do {
@@ -245,7 +447,7 @@ public class GameEngine {
                             arenaMap.setEntity(r, cc, playedEntity);
 
                             // Redraw arena to show the new entity
-                            arenaDirty = true;
+                            entityDirty = true;
 
                             // Find which slot the card was in and cycle it
                             int slotIndex = findCardSlotIndex(cardID);
@@ -334,25 +536,27 @@ public class GameEngine {
     }
     */
 
-    private javafx.scene.layout.Pane createHealthBar(double currentHP, double maxHP, boolean isTower) {
+    private Pane createHealthBar(double currentHP, double maxHP, boolean isTower, boolean isPlayer) {
         // Create a simple health bar using rectangles
         int barHeight = isTower ? 8 : 4; // Bigger for towers
         int barWidth = isTower ? (int) (tileSize * 1.8) : tileSize; // Much wider for towers
 
-        javafx.scene.layout.Pane healthBarContainer = new javafx.scene.layout.Pane();
+        Pane healthBarContainer = new Pane();
         healthBarContainer.setPrefWidth(barWidth);
         healthBarContainer.setPrefHeight(barHeight);
 
+        Color teamColor = isPlayer ? Color.DODGERBLUE : Color.ORANGERED;
+
         // Background (red/dark)
         Rectangle bg = new Rectangle(barWidth, barHeight);
-        bg.setFill(Color.DARKRED);
         bg.setStroke(Color.BLACK);
+        bg.setFill(teamColor.darker().darker());
         bg.setStrokeWidth(0.5);
 
         // Health (green)
         double healthPercent = Math.max(0, Math.min(1, currentHP / maxHP));
         Rectangle health = new Rectangle(barWidth * healthPercent, barHeight);
-        health.setFill(healthPercent > 0.5 ? Color.LIMEGREEN : (healthPercent > 0.25 ? Color.YELLOW : Color.RED));
+        health.setFill(teamColor);
 
         healthBarContainer.getChildren().addAll(bg, health);
         return healthBarContainer;
@@ -375,7 +579,7 @@ public class GameEngine {
         // Make units bigger - use 24px (75% of tile size)
         int spriteSize = 24;
         img.setFitWidth(spriteSize);
-        img.setFitHeight(spriteSize);
+        // img.setFitHeight(spriteSize);
         img.setPreserveRatio(true);
         img.setSmooth(true);
         // Explicitly set to null to avoid any default broken image
@@ -589,7 +793,7 @@ public class GameEngine {
                         return true; // Remove all ImageViews to redraw fresh
                     }
                     // Remove health bars (Pane with 2 Rectangle children)
-                    if (node instanceof javafx.scene.layout.Pane healthBar) {
+                    if (node instanceof Pane healthBar) {
                         if (healthBar.getChildren().size() == 2 &&
                                 healthBar.getChildren().get(0) instanceof Rectangle &&
                                 healthBar.getChildren().get(1) instanceof Rectangle) {
@@ -623,13 +827,13 @@ public class GameEngine {
 
                         // Add health bar for towers AFTER sprite (so it's on top and visible)
                         Entity towerEntity = arenaMap.getEntity(r, c);
-                        if (towerEntity instanceof kuroyale.entitiypack.subclasses.AliveEntity aliveTower) {
+                        if (towerEntity instanceof AliveEntity aliveTower) {
                             double currentHP = aliveTower.getHP();
-                            kuroyale.cardpack.subclasses.AliveCard towerCard = (kuroyale.cardpack.subclasses.AliveCard) aliveTower
+                            AliveCard towerCard = (AliveCard) aliveTower
                                     .getCard();
                             double maxHP = towerCard != null ? towerCard.getHp() : currentHP;
                             if (maxHP > 0) {
-                                javafx.scene.layout.Pane healthBar = createHealthBar(currentHP, maxHP, true);
+                                Pane healthBar = createHealthBar(currentHP, maxHP, true, aliveTower.isPlayer());
                                 // Position health bar in the middle of tile (centered)
                                 // Position immediately using tileSize
                                 double barH = healthBar.getPrefHeight();
@@ -661,7 +865,7 @@ public class GameEngine {
                 Entity entity = arenaMap.getEntity(r, c);
                 if (entity != null) {
                     // Skip tower entities - they're drawn as static objects above
-                    if (entity instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
+                    if (entity instanceof TowerEntity) {
                         continue;
                     }
 
@@ -730,16 +934,15 @@ public class GameEngine {
 
                                         // Add health bar when sprite is added (not towers - they're handled above)
                                         Entity entityForHealth = arenaMap.getEntity(rr, cc);
-                                        if (entityForHealth instanceof kuroyale.entitiypack.subclasses.AliveEntity aliveEntity
+                                        if (entityForHealth instanceof AliveEntity aliveEntity
                                                 &&
-                                                !(entityForHealth instanceof kuroyale.entitiypack.subclasses.TowerEntity)) {
+                                                !(entityForHealth instanceof TowerEntity)) {
                                             double currentHP = aliveEntity.getHP();
-                                            kuroyale.cardpack.subclasses.AliveCard entityCard = (kuroyale.cardpack.subclasses.AliveCard) aliveEntity
+                                            AliveCard entityCard = (AliveCard) aliveEntity
                                                     .getCard();
                                             double maxHP = entityCard != null ? entityCard.getHp() : currentHP;
                                             if (maxHP > 0) {
-                                                javafx.scene.layout.Pane healthBar = createHealthBar(currentHP, maxHP,
-                                                        false);
+                                                Pane healthBar = createHealthBar(currentHP, maxHP, false, aliveEntity.isPlayer());
                                                 finalTile.getChildren().add(healthBar);
                                                 healthBar.setTranslateY(2);
                                                 healthBar.setTranslateX(0);
@@ -787,13 +990,13 @@ public class GameEngine {
                     tile.getChildren().add(entitySprite);
 
                     // Add health bar for entity (not towers - they're handled above)
-                    if (entity instanceof kuroyale.entitiypack.subclasses.AliveEntity aliveEntity) {
+                    if (entity instanceof AliveEntity aliveEntity) {
                         double currentHP = aliveEntity.getHP();
-                        kuroyale.cardpack.subclasses.AliveCard entityCard = (kuroyale.cardpack.subclasses.AliveCard) aliveEntity
+                        AliveCard entityCard = (AliveCard) aliveEntity
                                 .getCard();
                         double maxHP = entityCard != null ? entityCard.getHp() : currentHP;
                         if (maxHP > 0) {
-                            javafx.scene.layout.Pane healthBar = createHealthBar(currentHP, maxHP, false);
+                            Pane healthBar = createHealthBar(currentHP, maxHP, false, aliveEntity.isPlayer());
                             tile.getChildren().add(healthBar);
                             Platform.runLater(() -> {
                                 // Position health bar at top of tile
@@ -859,7 +1062,7 @@ public class GameEngine {
             arenaMap.loadFromFile(arenaFile.getAbsolutePath());
 
             // Redraw sprites
-            arenaDirty = true;
+            entityDirty = true;
             System.out.println("Loaded default arena: " + fileName);
 
         } catch (Exception e) {
@@ -913,11 +1116,14 @@ public class GameEngine {
             // Update entities (movement and combat)
             timePassedSinceLastEntityUpdate += TICK_DURATION;
             if (timePassedSinceLastEntityUpdate >= ENTITY_UPDATE_INTERVAL) {
-                arenaDirty = false;
+                entityDirty = false;
+                staticDirty = false;
                 updateEntities();
-                if (arenaDirty) {
-                    redrawArena();
+                if (entityDirty) {
+                    renderEntities();
+                    renderTowerHealthBars();
                 }
+                if (staticDirty) renderStaticObjects();
                 // Update AI opponent
                 if (aiOpponent != null) {
                     aiOpponent.update(TICK_DURATION, totalSeconds);
@@ -996,21 +1202,21 @@ public class GameEngine {
             if (entity instanceof UnitEntity) {
                 updateUnitEntity((UnitEntity) entity);
             } else if (entity instanceof BuildingEntity
-                    && !(entity instanceof kuroyale.entitiypack.subclasses.TowerEntity)) {
+                    && !(entity instanceof TowerEntity)) {
                 updateBuildingEntity((BuildingEntity) entity);
-            } else if (entity instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
+            } else if (entity instanceof TowerEntity) {
                 // Towers can also attack
-                updateTowerEntity((kuroyale.entitiypack.subclasses.TowerEntity) entity);
+                updateTowerEntity((TowerEntity) entity);
             }
         }
 
         // Redraw arena after updates
-        arenaDirty = true;
+        entityDirty = true;
     }
 
     private void removeDeadEntity(AliveEntity entity) {
         // Check if this is a king tower - if so, end the game
-        if (entity instanceof kuroyale.entitiypack.subclasses.TowerEntity tower) {
+        if (entity instanceof TowerEntity tower) {
             if (tower.isKing()) {
                 // King died - end the game
                 boolean playerWon = !tower.isPlayer(); // If enemy king died, player won
@@ -1018,6 +1224,9 @@ public class GameEngine {
                 return;
             }
         }
+
+        Pane hb = healthBarsByEntity.remove(entity);
+        if (hb != null) entityLayer.getChildren().remove(hb);
 
         // Find entity position
         for (int r = 0; r < rows; r++) {
@@ -1029,6 +1238,10 @@ public class GameEngine {
                     arenaMap.clearObject(r, c);
                     // Remove from cooldown tracking
                     attackCooldowns.remove(entity);
+
+                    if (entity instanceof TowerEntity) {
+                        staticDirty = true;
+                    }
                     return;
                 }
             }
@@ -1128,7 +1341,7 @@ public class GameEngine {
             unitRange = 1.0; // Normalize melee range to 1 tile
         }
 
-        kuroyale.cardpack.subclasses.AliveCard aliveCard = (kuroyale.cardpack.subclasses.AliveCard) unit.getCard();
+        AliveCard aliveCard = (AliveCard) unit.getCard();
         double actSpeed = aliveCard.getActSpeed();
         double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0;
 
@@ -1136,7 +1349,7 @@ public class GameEngine {
         // treat "hugging the tower sprite" as in-range if ANY orthogonal neighbour tile
         // contains the target tower entity (towers occupy multiple cells)
         boolean adjacentEnemyTowerObject = false;
-        if (isMelee && target instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
+        if (isMelee && target instanceof TowerEntity) {
             int[][] orthoDirs = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
             for (int[] d : orthoDirs) {
                 int rr = currentRow + d[0];
@@ -1191,9 +1404,9 @@ public class GameEngine {
                         : (distance <= unitRange + 0.5)); // ranged: allow a small fudge
 
         // Debug output for melee units attacking towers
-        if (isMelee && target instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
+        if (isMelee && target instanceof TowerEntity) {
             System.out.println("Melee unit at (" + currentRow + "," + currentCol + ") - Target: " +
-                    (((kuroyale.entitiypack.subclasses.TowerEntity) target).isKing() ? "KING_TOWER" : "TOWER") +
+                    (((TowerEntity) target).isKing() ? "KING_TOWER" : "TOWER") +
                     " - Distance: " + distance + " - Range: " + unitRange +
                     " - AdjacentTowerObject: " + adjacentEnemyTowerObject + " - InRange: " + inRange);
         }
@@ -1207,7 +1420,7 @@ public class GameEngine {
 
                 attackCooldowns.put(unit, attackCooldownTime);
 
-                arenaDirty = true;
+                entityDirty = true;
 
                 if (target.getHP() <= 0) {
                     removeDeadEntity(target);
@@ -1215,9 +1428,10 @@ public class GameEngine {
             }
         } else {
             String speedStr = getUnitSpeed(unit);
-            double speedMultiplier = getSpeedMultiplier(speedStr);
+            double speedMultiplier = 1 / getSpeedMultiplier(speedStr);
 
-            if (Math.random() < speedMultiplier * 0.1) {
+            if (unit.getTicksSinceLastMove() >= (speedMultiplier / ENTITY_UPDATE_INTERVAL)) {
+                unit.resetTicksSinceLastMove();
                 int oldRow = currentRow;
                 int oldCol = currentCol;
 
@@ -1250,6 +1464,8 @@ public class GameEngine {
                         }
                     }
                 }
+            } else {
+                unit.incTicksSinceLastMove();
             }
         }
     }
@@ -1289,7 +1505,7 @@ public class GameEngine {
         // Get target position - for towers, find the minimum distance to any cell they
         // occupy
         double distance;
-        if (target instanceof kuroyale.entitiypack.subclasses.TowerEntity towerTarget) {
+        if (target instanceof TowerEntity towerTarget) {
             // Towers occupy multiple cells - find minimum distance to any occupied cell
             int towerSize = towerTarget.isKing() ? 3 : 2;
 
@@ -1353,11 +1569,11 @@ public class GameEngine {
         }
 
         boolean canAttackTower = false;
-        if (target instanceof kuroyale.entitiypack.subclasses.TowerEntity && distance == 1) {
+        if (target instanceof TowerEntity && distance == 1) {
             canAttackTower = true;
         }
 
-        kuroyale.cardpack.subclasses.AliveCard aliveCard = (kuroyale.cardpack.subclasses.AliveCard) building.getCard();
+        AliveCard aliveCard = (AliveCard) building.getCard();
         double actSpeed = aliveCard.getActSpeed();
         double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0;
 
@@ -1370,7 +1586,7 @@ public class GameEngine {
 
                 attackCooldowns.put(building, attackCooldownTime);
 
-                arenaDirty = true;
+                entityDirty = true;
 
                 if (target.getHP() <= 0) {
                     removeDeadEntity(target);
@@ -1384,7 +1600,7 @@ public class GameEngine {
         }
     }
 
-    private void updateTowerEntity(kuroyale.entitiypack.subclasses.TowerEntity tower) {
+    private void updateTowerEntity(TowerEntity tower) {
         // Get current position from arena map
         int currentRow = -1, currentCol = -1;
         for (int r = 0; r < rows; r++) {
@@ -1404,7 +1620,7 @@ public class GameEngine {
         }
 
         // Update tower's internal position tracking
-        tower.setPosition(currentRow, currentCol);
+        // tower.setPosition(currentRow, currentCol);
 
         // Find closest target
         AliveEntity target = tower.findClosestTarget(arenaMap);
@@ -1416,7 +1632,7 @@ public class GameEngine {
         // Get target position - for towers, find the minimum distance to any cell they
         // occupy
         double distance;
-        if (target instanceof kuroyale.entitiypack.subclasses.TowerEntity towerTarget) {
+        if (target instanceof TowerEntity towerTarget) {
             // Towers occupy multiple cells - find minimum distance to any occupied cell
             int targetTowerSize = towerTarget.isKing() ? 3 : 2;
 
@@ -1505,7 +1721,7 @@ public class GameEngine {
         }
 
         // Get attack speed from card
-        kuroyale.cardpack.subclasses.AliveCard aliveCard = (kuroyale.cardpack.subclasses.AliveCard) tower.getCard();
+        AliveCard aliveCard = (AliveCard) tower.getCard();
         double actSpeed = aliveCard.getActSpeed();
         double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0; // Time between attacks in seconds
 
@@ -1524,7 +1740,7 @@ public class GameEngine {
                 attackCooldowns.put(tower, attackCooldownTime);
 
                 // Immediately update health bars after damage
-                arenaDirty = true;
+                entityDirty = true;
 
                 // Check if target died
                 if (target.getHP() <= 0) {

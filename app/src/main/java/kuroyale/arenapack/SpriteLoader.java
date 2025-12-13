@@ -20,7 +20,7 @@ public class SpriteLoader {
     private static final Image BRIDGE = new Image(
             SpriteLoader.class.getResource("/kuroyale/images/singleBridge.png").toExternalForm());
 
-    private static ImageView slice(Image sheet, int width) {
+    private static ImageView slice(Image sheet, int width, int dx, int dy) {
         double spriteWidth = sheet.getWidth();
         double spriteHeight = sheet.getHeight();
 
@@ -36,18 +36,21 @@ public class SpriteLoader {
         view.setFitWidth(width);
         view.setPreserveRatio(true);
 
+        view.setTranslateX(dx);
+        view.setTranslateY(dy);
+
         return view;
     }
 
     public static ImageView getSprite(ArenaObjectType type, int tileSize) {
         return switch (type) {
-            case OUR_TOWER -> slice(OUR_TOWER, 3 * tileSize);
-            case OUR_KING -> slice(OUR_KING, 4 * tileSize);
+            case OUR_TOWER -> slice(OUR_TOWER, 3*tileSize, -2*tileSize, -2*tileSize);
+            case OUR_KING -> slice(OUR_KING, 4*tileSize, -3*tileSize, -3*tileSize);
             
-            case ENEMY_TOWER -> slice(ENEMY_TOWER, 3 * tileSize);
-            case ENEMY_KING -> slice(ENEMY_KING, 4 * tileSize);
+            case ENEMY_TOWER -> slice(ENEMY_TOWER, 3*tileSize, -2*tileSize, -2*tileSize);
+            case ENEMY_KING -> slice(ENEMY_KING, 4*tileSize, -3*tileSize, -3*tileSize);
 
-            case BRIDGE -> slice(BRIDGE, 2 * tileSize);
+            case BRIDGE -> slice(BRIDGE, 2*tileSize, -1*tileSize, 0);
 
             case ENTITY -> new ImageView("/kuroyale/images/icon.png");
         };

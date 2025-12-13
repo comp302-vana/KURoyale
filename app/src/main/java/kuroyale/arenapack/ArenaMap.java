@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import kuroyale.entitiypack.Entity;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 
@@ -170,6 +169,11 @@ public class ArenaMap {
         for (int r = row-s; r<=row; r++) {
             for (int c = col-s; c<=col; c++) {
                 collisions[r][c].setPlacedObject(null);
+
+                if (grid[r][c].getPlacedObject() != null && 
+                    grid[r][c].getPlacedObject().getType() == type) {
+                        grid[r][c].setPlacedObject(null);
+                }
             }
         }
     }
