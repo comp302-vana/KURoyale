@@ -16,7 +16,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.ImageView;
@@ -27,7 +26,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import kuroyale.arenapack.ArenaMap;
@@ -38,17 +36,14 @@ import kuroyale.arenapack.SpriteLoader;
 import kuroyale.deckpack.Deck;
 import kuroyale.deckpack.DeckManager;
 import kuroyale.cardpack.CardFactory;
-import kuroyale.cardpack.CardType;
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.cardpack.subclasses.BuildingCard;
-import kuroyale.cardpack.subclasses.SpellCard;
 
 import kuroyale.entitiypack.Entity;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
-import kuroyale.entitiypack.subclasses.SpellEntity;
 
 public class GameEngine {
     @FXML
@@ -87,6 +82,7 @@ public class GameEngine {
     private double timePassedSinceLastSecond = 0;
     private double timePassedSinceLastEntityUpdate = 0;
     private final double ENTITY_UPDATE_INTERVAL = 0.1; // Update entities every 0.1 seconds
+    private boolean arenaDirty = false;
 
     private double currentElixir = 5.0;
     private final double MAX_ELIXIR = 10;
@@ -250,7 +246,7 @@ public class GameEngine {
                             arenaMap.setEntity(r, cc, playedEntity); 
                                                         
                             // Redraw arena to show the new entity
-                            redrawArena();
+                            arenaDirty = true;
                             
                             // Find which slot the card was in and cycle it
                             int slotIndex = findCardSlotIndex(cardID);
@@ -842,7 +838,7 @@ public class GameEngine {
             arenaMap.loadFromFile(arenaFile.getAbsolutePath());
 
             // Redraw sprites
-            redrawArena();
+            arenaDirty = true;
             System.out.println("Loaded default arena: " + fileName);
 
         } catch (Exception e) {
@@ -894,7 +890,11 @@ public class GameEngine {
             // Update entities (movement and combat)
             timePassedSinceLastEntityUpdate += TICK_DURATION;
             if (timePassedSinceLastEntityUpdate >= ENTITY_UPDATE_INTERVAL) {
+                arenaDirty = false;
                 updateEntities();
+                if (arenaDirty) {
+                    redrawArena();
+                }
                 // Update AI opponent
                 if (aiOpponent != null) {
                     aiOpponent.update(TICK_DURATION, totalSeconds);
@@ -980,7 +980,7 @@ public class GameEngine {
         }
         
         // Redraw arena after updates
-        Platform.runLater(() -> redrawArena());
+        arenaDirty = true;
     }
     
     private void removeDeadEntity(AliveEntity entity) {
@@ -1174,7 +1174,7 @@ public class GameEngine {
                 
                 attackCooldowns.put(unit, attackCooldownTime);
                 
-                Platform.runLater(() -> redrawArena());
+                arenaDirty = true;
                 
                 if (target.getHP() <= 0) {
                     removeDeadEntity(target);
@@ -1332,7 +1332,7 @@ public class GameEngine {
                 
                 attackCooldowns.put(building, attackCooldownTime);
                 
-                Platform.runLater(() -> redrawArena());
+                arenaDirty = true;
                 
         
                 if (target.getHP() <= 0) {
@@ -1483,7 +1483,7 @@ public class GameEngine {
                 attackCooldowns.put(tower, attackCooldownTime);
                 
                 // Immediately update health bars after damage
-                Platform.runLater(() -> redrawArena());
+                arenaDirty = true;
                 
                 // Check if target died
                 if (target.getHP() <= 0) {
