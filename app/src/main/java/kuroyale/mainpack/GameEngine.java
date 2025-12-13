@@ -42,7 +42,7 @@ import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.cardpack.subclasses.AliveCard;
 import kuroyale.cardpack.subclasses.BuildingCard;
 
-import kuroyale.entitiypack.Entity;
+// import kuroyale.entitiypack.Entity;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
@@ -491,6 +491,7 @@ public class GameEngine {
         System.out.println("Made pane draggable with card ID: " + type);
     }
 
+    /*
     private Pane getTile(int row, int col) {
         for (Node n : arenaGrid.getChildren()) {
 
@@ -506,6 +507,7 @@ public class GameEngine {
         }
         return null;
     }
+    */
 
     private ImageView getImageFromPane(AnchorPane ap) {
         for (Node n : ap.getChildren()) {
@@ -777,6 +779,7 @@ public class GameEngine {
         return img;
     }
 
+    /* GONE. REDUCED TO ATOMS.
     private void redrawArena() {
         // clear grid UI - remove all ImageViews (sprites) and health bars, but keep
         // other children
@@ -1029,6 +1032,7 @@ public class GameEngine {
             }
         }
     }
+    */
 
     /*
     private void drawArena() {

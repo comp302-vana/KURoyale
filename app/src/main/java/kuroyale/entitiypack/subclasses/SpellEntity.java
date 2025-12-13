@@ -10,4 +10,8 @@ public class SpellEntity extends Entity {
         super(card, isPlayer);
         this.card = card;
     }
+
+    public SpellCard getCard() {
+        return card;
+    }
 }
