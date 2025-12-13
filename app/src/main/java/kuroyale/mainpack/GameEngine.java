@@ -70,7 +70,7 @@ public class GameEngine {
     private Label elixirCountLabel;
     @FXML
     private ProgressBar elixirProgressBar;
-    
+
     private ArenaMap arenaMap = new ArenaMap();
 
     private final int rows = arenaMap.getRows();
@@ -93,7 +93,7 @@ public class GameEngine {
     private List<Card> currentHand = new ArrayList<>(); // The 4 cards currently in hand
     private int nextCardIndex = 0; // Index of next card to draw from deck
     private final int CARD_SLOT_COUNT = 4;
-    
+
     // Track attack cooldowns for each entity (time remaining until next attack)
     private Map<AliveEntity, Double> attackCooldowns = new HashMap<>();
 
@@ -102,7 +102,7 @@ public class GameEngine {
     public static void main(String[] args) {
         UIManager.launch(UIManager.class, args);
     }
-    
+
     @FXML
     private void initialize() {
         clipImage(getImageFromPane(cardSlot0), 6);
@@ -115,7 +115,7 @@ public class GameEngine {
             currentDeckCards = new ArrayList<>(currentDeck.getCards());
             nextCardIndex = 0;
             currentHand.clear();
-            loadDeckToSlots(); 
+            loadDeckToSlots();
         } else {
             System.err.println("No active deck.");
         }
@@ -124,7 +124,7 @@ public class GameEngine {
         loadDefaultArenaIfExists();
 
         startTimer();
-        
+
         // Verify all cards are draggable after initialization
         verifyAllCardsDraggable();
 
@@ -136,9 +136,9 @@ public class GameEngine {
             aiOpponent = null; // at least for now
         }
     }
-    
+
     private void verifyAllCardsDraggable() {
-        AnchorPane[] cardSlots = {cardSlot0, cardSlot1, cardSlot2, cardSlot3};
+        AnchorPane[] cardSlots = { cardSlot0, cardSlot1, cardSlot2, cardSlot3 };
         System.out.println("=== Verifying all cards are draggable ===");
         for (int i = 0; i < cardSlots.length; i++) {
             Pane innerPane = getInnerPaneFromSlot(cardSlots[i]);
@@ -146,7 +146,8 @@ public class GameEngine {
                 boolean hasHandler = innerPane.getOnDragDetected() != null;
                 System.out.println("Slot " + i + " has drag handler: " + hasHandler);
                 if (i < currentHand.size()) {
-                    System.out.println("  Card: " + currentHand.get(i).getName() + " (ID: " + currentHand.get(i).getId() + ")");
+                    System.out.println(
+                            "  Card: " + currentHand.get(i).getName() + " (ID: " + currentHand.get(i).getId() + ")");
                 }
             } else {
                 System.out.println("Slot " + i + ": Inner pane not found!");
@@ -164,36 +165,34 @@ public class GameEngine {
                 tile.setPrefWidth(tileSize);
                 tile.setPrefHeight(tileSize);
 
-                if (col >= cols/2 - 1 && col <= cols/2) {
+                if (col >= cols / 2 - 1 && col <= cols / 2) {
                     tile.setStyle(
-                        "-fx-background-image: url('/kuroyale/images/water.jpg');" +
-                        "-fx-background-size: cover;"
-                    );
+                            "-fx-background-image: url('/kuroyale/images/water.jpg');" +
+                                    "-fx-background-size: cover;");
                 } else {
                     if ((col + row) % 2 == 0) {
                         tile.setStyle(
-                            "-fx-background-image: url('/kuroyale/images/darkGrass.jpg');" +
-                            "-fx-background-size: cover;"
-                        );
+                                "-fx-background-image: url('/kuroyale/images/darkGrass.jpg');" +
+                                        "-fx-background-size: cover;");
                     } else {
                         tile.setStyle(
-                            "-fx-background-image: url('/kuroyale/images/lightGrass.jpg');" +
-                            "-fx-background-size: cover;"
-                        );
+                                "-fx-background-image: url('/kuroyale/images/lightGrass.jpg');" +
+                                        "-fx-background-size: cover;");
                     }
                 }
 
                 int r = row;
                 int c = col;
 
-                tile.setOnDragOver(event -> {   // what to do when the draggable is hovering over the tile. required for tile to accept droppage of draggable.
+                tile.setOnDragOver(event -> { // what to do when the draggable is hovering over the tile. required for
+                                              // tile to accept droppage of draggable.
                     if (event.getDragboard().hasString())
                         event.acceptTransferModes(TransferMode.COPY);
 
                     event.consume();
                 });
 
-                tile.setOnDragDropped(event -> {    // what to do when draggable is dropped on tile.
+                tile.setOnDragDropped(event -> { // what to do when draggable is dropped on tile.
                     var db = event.getDragboard();
                     boolean success = false;
 
@@ -208,23 +207,23 @@ public class GameEngine {
                             System.out.println("Not enough:" + cost);
                             event.setDropCompleted(false);
                             event.consume();
-                            return; 
+                            return;
                         }
-                        
+
                         // Spawn restriction: don't allow initial placement on enemy side or bridge
-                        if (c >= arenaMap.getCols()/2 - 1) {
+                        if (c >= arenaMap.getCols() / 2 - 1) {
                             System.out.println("Cannot place troops on enemy side or bridge.");
                             event.setDropCompleted(false);
                             event.consume();
                             return;
                         }
-                        
+
                         AliveEntity playedEntity;
                         if (cardID <= 15) {
                             playedEntity = new UnitEntity(((UnitCard) CardFactory.createCard(cardID)), true);
                         } else if (cardID <= 24) {
                             playedEntity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), true);
-                        }  else {
+                        } else {
                             playedEntity = new UnitEntity((UnitCard) CardFactory.createCard(1), true);
                             ((UnitEntity) playedEntity).reduceHP(9999.9);
                         }
@@ -235,7 +234,7 @@ public class GameEngine {
                         do {
                             placementOK = arenaMap.placeObject(r, cc, ArenaObjectType.ENTITY);
                             cc--;
-                        } while(!placementOK && cc >= 0);
+                        } while (!placementOK && cc >= 0);
                         cc++;
                         if (placementOK) {
                             currentElixir -= cost;
@@ -243,18 +242,18 @@ public class GameEngine {
 
                             // Set entity position
                             playedEntity.setPosition(r, cc);
-                            arenaMap.setEntity(r, cc, playedEntity); 
-                                                        
+                            arenaMap.setEntity(r, cc, playedEntity);
+
                             // Redraw arena to show the new entity
                             arenaDirty = true;
-                            
+
                             // Find which slot the card was in and cycle it
                             int slotIndex = findCardSlotIndex(cardID);
                             System.out.println("Card played: " + cardID + " at slot: " + slotIndex);
                             if (slotIndex >= 0) {
                                 cycleCardInSlot(slotIndex);
                             }
-                            
+
                             System.out.println("yey");
                             System.out.printf("(%d, %d)\n", r, cc);
                             success = true;
@@ -262,7 +261,7 @@ public class GameEngine {
                             System.out.println("no");
                         }
                     }
-                    
+
                     event.setDropCompleted(success);
                     event.consume();
                 });
@@ -314,7 +313,7 @@ public class GameEngine {
         }
         return null;
     }
-    
+
     private Pane getInnerPaneFromSlot(AnchorPane ap) {
         for (Node n : ap.getChildren()) {
             if (n instanceof Pane p) {
@@ -324,6 +323,7 @@ public class GameEngine {
         return null;
     }
 
+    /*
     private Label getLabelFromPane(AnchorPane ap) {
         for (Node n : ap.getChildren()) {
             if (n instanceof Pane p) {
@@ -332,42 +332,44 @@ public class GameEngine {
         }
         return null;
     }
+    */
 
     private javafx.scene.layout.Pane createHealthBar(double currentHP, double maxHP, boolean isTower) {
         // Create a simple health bar using rectangles
         int barHeight = isTower ? 8 : 4; // Bigger for towers
-        int barWidth = isTower ? (int)(tileSize * 1.8) : tileSize; // Much wider for towers
-        
+        int barWidth = isTower ? (int) (tileSize * 1.8) : tileSize; // Much wider for towers
+
         javafx.scene.layout.Pane healthBarContainer = new javafx.scene.layout.Pane();
         healthBarContainer.setPrefWidth(barWidth);
         healthBarContainer.setPrefHeight(barHeight);
-        
+
         // Background (red/dark)
         Rectangle bg = new Rectangle(barWidth, barHeight);
         bg.setFill(Color.DARKRED);
         bg.setStroke(Color.BLACK);
         bg.setStrokeWidth(0.5);
-        
+
         // Health (green)
         double healthPercent = Math.max(0, Math.min(1, currentHP / maxHP));
         Rectangle health = new Rectangle(barWidth * healthPercent, barHeight);
         health.setFill(healthPercent > 0.5 ? Color.LIMEGREEN : (healthPercent > 0.25 ? Color.YELLOW : Color.RED));
-        
+
         healthBarContainer.getChildren().addAll(bg, health);
         return healthBarContainer;
     }
-    
+
     private ImageView getEntitySpriteFromCard(Card card) {
-        if (card == null) return null;
-        
+        if (card == null)
+            return null;
+
         String cardName = card.getName().toLowerCase().replaceAll(" ", "");
         System.out.println("Loading sprite for card: " + card.getName() + " (normalized: " + cardName + ")");
-        
+
         // Try arena sprite first
         String arenaImagePath = "/kuroyale/images/cards/arena/" + cardName + ".png";
         String regularImagePath = "/kuroyale/images/cards/" + cardName + ".png";
         System.out.println("  Trying paths: " + arenaImagePath + " and " + regularImagePath);
-        
+
         // Don't create ImageView with any default image - start empty
         ImageView img = new ImageView();
         // Make units bigger - use 24px (75% of tile size)
@@ -378,7 +380,7 @@ public class GameEngine {
         img.setSmooth(true);
         // Explicitly set to null to avoid any default broken image
         img.setImage(null);
-        
+
         // Check if resource exists using getResourceAsStream
         java.io.InputStream arenaStream = getClass().getResourceAsStream(arenaImagePath);
         final boolean arenaExists = (arenaStream != null);
@@ -389,7 +391,7 @@ public class GameEngine {
                 // Ignore
             }
         }
-        
+
         java.io.InputStream regularStream = getClass().getResourceAsStream(regularImagePath);
         final boolean regularExists = (regularStream != null);
         if (regularStream != null) {
@@ -399,10 +401,10 @@ public class GameEngine {
                 // Ignore
             }
         }
-        
+
         String imagePath;
         final boolean useArena;
-        
+
         if (arenaExists) {
             imagePath = arenaImagePath;
             useArena = true;
@@ -410,17 +412,18 @@ public class GameEngine {
             imagePath = regularImagePath;
             useArena = false;
         } else {
-            System.err.println("No image found for card: " + cardName + " (tried: " + arenaImagePath + " and " + regularImagePath + ")");
+            System.err.println("No image found for card: " + cardName + " (tried: " + arenaImagePath + " and "
+                    + regularImagePath + ")");
             return null; // Don't create ImageView with broken image
         }
-        
+
         final String finalImagePath = imagePath;
         final String finalRegularPath = regularImagePath;
-        
+
         // Load image using URL to ensure proper resource loading
         java.net.URL imageURL = getClass().getResource(finalImagePath);
         final String actualImagePath;
-        
+
         if (imageURL == null) {
             System.err.println("Image URL is null for: " + finalImagePath);
             // Try fallback if available
@@ -437,10 +440,10 @@ public class GameEngine {
         } else {
             actualImagePath = finalImagePath;
         }
-        
+
         // Load image from URL
         javafx.scene.image.Image image = new javafx.scene.image.Image(imageURL.toExternalForm());
-        
+
         // Check if image is already loaded (synchronous check)
         if (image.isError()) {
             // Image failed immediately, try fallback
@@ -466,12 +469,12 @@ public class GameEngine {
                 return null;
             }
         }
-        
+
         // Set up listeners to wait for image to load before returning
         // Use a flag to track if we should return the ImageView
-        final boolean[] imageLoaded = {false};
-        final boolean[] imageFailed = {false};
-        
+        final boolean[] imageLoaded = { false };
+        final boolean[] imageFailed = { false };
+
         // Listen for image loading completion
         image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
             if (newProgress.doubleValue() >= 1.0 && !image.isError()) {
@@ -485,13 +488,13 @@ public class GameEngine {
                 });
             }
         });
-        
+
         // Listen for image errors
         image.errorProperty().addListener((obs, wasError, isError) -> {
             if (isError) {
                 System.err.println("Image failed to load: " + actualImagePath + " for card: " + cardName);
                 imageFailed[0] = true;
-                
+
                 // Try fallback if available
                 if (useArena && regularExists) {
                     java.net.URL fallbackURL = getClass().getResource(finalRegularPath);
@@ -519,12 +522,14 @@ public class GameEngine {
                 }
             }
         });
-        
-        // CRITICAL: For resource images, they may load synchronously but width might be 0 initially
-        // Wait a moment to check if image loaded, but don't return ImageView with null image
+
+        // CRITICAL: For resource images, they may load synchronously but width might be
+        // 0 initially
+        // Wait a moment to check if image loaded, but don't return ImageView with null
+        // image
         // Set up listener to set image when it loads
-        final boolean[] imageSet = {false};
-        
+        final boolean[] imageSet = { false };
+
         image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
             if (newProgress.doubleValue() >= 1.0 && !image.isError() && image.getWidth() > 0 && !imageSet[0]) {
                 imageSet[0] = true;
@@ -536,7 +541,7 @@ public class GameEngine {
                 });
             }
         });
-        
+
         image.errorProperty().addListener((obs, wasError, isError) -> {
             if (isError && !imageSet[0]) {
                 // Image failed - don't set it, return null instead
@@ -544,7 +549,7 @@ public class GameEngine {
                 // Don't set image - ImageView will remain with null, caller should check
             }
         });
-        
+
         // Check if image is already loaded (synchronous resources)
         if (image.getWidth() > 0 && !image.isError()) {
             img.setImage(image);
@@ -552,7 +557,7 @@ public class GameEngine {
             System.out.println("  Image already loaded: " + actualImagePath);
             return img;
         }
-        
+
         // For async loading, wait a tiny bit to see if it loads quickly
         // But don't wait too long - return ImageView and let caller check
         Platform.runLater(() -> {
@@ -563,13 +568,14 @@ public class GameEngine {
                 System.out.println("  Image loaded synchronously: " + actualImagePath);
             }
         });
-        
+
         // Return ImageView - caller must check if image is set before adding to scene
         return img;
     }
 
     private void redrawArena() {
-        // clear grid UI - remove all ImageViews (sprites) and health bars, but keep other children
+        // clear grid UI - remove all ImageViews (sprites) and health bars, but keep
+        // other children
         for (Node n : arenaGrid.getChildren()) {
             if (n instanceof Pane tile) {
                 // Remove ImageViews and health bars (Pane with health bar)
@@ -584,9 +590,9 @@ public class GameEngine {
                     }
                     // Remove health bars (Pane with 2 Rectangle children)
                     if (node instanceof javafx.scene.layout.Pane healthBar) {
-                        if (healthBar.getChildren().size() == 2 && 
-                            healthBar.getChildren().get(0) instanceof Rectangle &&
-                            healthBar.getChildren().get(1) instanceof Rectangle) {
+                        if (healthBar.getChildren().size() == 2 &&
+                                healthBar.getChildren().get(0) instanceof Rectangle &&
+                                healthBar.getChildren().get(1) instanceof Rectangle) {
                             return true; // Remove health bars
                         }
                     }
@@ -594,14 +600,15 @@ public class GameEngine {
                 });
             }
         }
-        
+
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 final int rr = r;
                 final int cc = c;
                 Pane tile = getTile(rr, cc);
-                if (tile == null) continue;
-                
+                if (tile == null)
+                    continue;
+
                 // Check for static objects first (towers, bridges, etc.) - these take priority
                 // BUT skip ENTITY type - that's for dynamic entities, not static sprites
                 var obj = arenaMap.getObject(r, c);
@@ -610,15 +617,16 @@ public class GameEngine {
                     if (staticSprite != null) {
                         final ImageView finalSprite = staticSprite;
                         final Pane finalTile = tile;
-                        
+
                         // Add sprite first
                         tile.getChildren().add(staticSprite);
-                        
+
                         // Add health bar for towers AFTER sprite (so it's on top and visible)
                         Entity towerEntity = arenaMap.getEntity(r, c);
                         if (towerEntity instanceof kuroyale.entitiypack.subclasses.AliveEntity aliveTower) {
                             double currentHP = aliveTower.getHP();
-                            kuroyale.cardpack.subclasses.AliveCard towerCard = (kuroyale.cardpack.subclasses.AliveCard) aliveTower.getCard();
+                            kuroyale.cardpack.subclasses.AliveCard towerCard = (kuroyale.cardpack.subclasses.AliveCard) aliveTower
+                                    .getCard();
                             double maxHP = towerCard != null ? towerCard.getHp() : currentHP;
                             if (maxHP > 0) {
                                 javafx.scene.layout.Pane healthBar = createHealthBar(currentHP, maxHP, true);
@@ -644,11 +652,11 @@ public class GameEngine {
                             double spriteH = finalSprite.getBoundsInParent().getHeight();
                             finalSprite.setTranslateY(tileH - spriteH);
                         });
-                        
+
                         continue; // Skip entity check if static object found
                     }
                 }
-                
+
                 // Then check for movable entities (units, buildings placed by player)
                 Entity entity = arenaMap.getEntity(r, c);
                 if (entity != null) {
@@ -656,20 +664,20 @@ public class GameEngine {
                     if (entity instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
                         continue;
                     }
-                    
+
                     ImageView entitySprite = getEntitySpriteFromCard(entity.getCard());
                     if (entitySprite == null) {
                         continue; // No sprite created
                     }
-                    
+
                     javafx.scene.image.Image spriteImage = entitySprite.getImage();
-                    
+
                     // CRITICAL: NEVER add ImageView with null image - this causes logo to appear
                     if (spriteImage == null) {
                         // Image not set yet - wait for it or skip
                         final ImageView finalSprite = entitySprite;
                         final Pane finalTile = tile;
-                        
+
                         // Wait for image to be set on the ImageView
                         // Check periodically if image gets set
                         Platform.runLater(() -> {
@@ -690,21 +698,24 @@ public class GameEngine {
                         });
                         continue; // Skip for now - wait for image
                     }
-                    
+
                     // Check if image is in error state - if so, don't add it
                     if (spriteImage.isError()) {
-                        System.err.println("Entity sprite image is in error state for: " + (entity.getCard() != null ? entity.getCard().getName() : "null"));
+                        System.err.println("Entity sprite image is in error state for: "
+                                + (entity.getCard() != null ? entity.getCard().getName() : "null"));
                         continue; // Skip - don't add broken image
                     }
-                    
-                    // CRITICAL: Only add ImageView if image is fully loaded (width > 0 means loaded)
+
+                    // CRITICAL: Only add ImageView if image is fully loaded (width > 0 means
+                    // loaded)
                     // This prevents the logo from appearing when image is still loading
                     if (spriteImage.getWidth() <= 0) {
                         // Image is still loading - wait for it to load before adding
                         final ImageView finalSprite = entitySprite;
                         final Pane finalTile = tile;
                         spriteImage.progressProperty().addListener((obs, oldProgress, newProgress) -> {
-                            if (newProgress.doubleValue() >= 1.0 && !spriteImage.isError() && spriteImage.getWidth() > 0) {
+                            if (newProgress.doubleValue() >= 1.0 && !spriteImage.isError()
+                                    && spriteImage.getWidth() > 0) {
                                 // Image loaded successfully - now add it
                                 Platform.runLater(() -> {
                                     if (!finalTile.getChildren().contains(finalSprite) && !spriteImage.isError()) {
@@ -716,16 +727,19 @@ public class GameEngine {
                                         double tileH = finalTile.getHeight();
                                         double spriteH = finalSprite.getFitHeight();
                                         finalSprite.setTranslateY((tileH - spriteH) / 2);
-                                        
+
                                         // Add health bar when sprite is added (not towers - they're handled above)
                                         Entity entityForHealth = arenaMap.getEntity(rr, cc);
-                                        if (entityForHealth instanceof kuroyale.entitiypack.subclasses.AliveEntity aliveEntity && 
-                                            !(entityForHealth instanceof kuroyale.entitiypack.subclasses.TowerEntity)) {
+                                        if (entityForHealth instanceof kuroyale.entitiypack.subclasses.AliveEntity aliveEntity
+                                                &&
+                                                !(entityForHealth instanceof kuroyale.entitiypack.subclasses.TowerEntity)) {
                                             double currentHP = aliveEntity.getHP();
-                                            kuroyale.cardpack.subclasses.AliveCard entityCard = (kuroyale.cardpack.subclasses.AliveCard) aliveEntity.getCard();
+                                            kuroyale.cardpack.subclasses.AliveCard entityCard = (kuroyale.cardpack.subclasses.AliveCard) aliveEntity
+                                                    .getCard();
                                             double maxHP = entityCard != null ? entityCard.getHp() : currentHP;
                                             if (maxHP > 0) {
-                                                javafx.scene.layout.Pane healthBar = createHealthBar(currentHP, maxHP, false);
+                                                javafx.scene.layout.Pane healthBar = createHealthBar(currentHP, maxHP,
+                                                        false);
                                                 finalTile.getChildren().add(healthBar);
                                                 healthBar.setTranslateY(2);
                                                 healthBar.setTranslateX(0);
@@ -738,26 +752,29 @@ public class GameEngine {
                         // Also listen for errors
                         spriteImage.errorProperty().addListener((obs, wasError, isError) -> {
                             if (isError) {
-                                System.err.println("Image failed to load for: " + (entity.getCard() != null ? entity.getCard().getName() : "null"));
+                                System.err.println("Image failed to load for: "
+                                        + (entity.getCard() != null ? entity.getCard().getName() : "null"));
                                 // Don't add it - just skip
                             }
                         });
                         continue; // Don't add yet - wait for image to load
                     }
-                    
+
                     // Image is loaded - safe to add, but double-check it's not in error
                     if (spriteImage.isError()) {
-                        System.err.println("Image is in error state, skipping: " + (entity.getCard() != null ? entity.getCard().getName() : "null"));
+                        System.err.println("Image is in error state, skipping: "
+                                + (entity.getCard() != null ? entity.getCard().getName() : "null"));
                         continue;
                     }
-                    
+
                     final ImageView finalSprite = entitySprite;
                     final Pane finalTile = tile;
-                    
+
                     // Set up listener to remove if image fails later
                     spriteImage.errorProperty().addListener((obs, wasError, isError) -> {
                         if (isError) {
-                            System.err.println("Image failed after being set for: " + (entity.getCard() != null ? entity.getCard().getName() : "null"));
+                            System.err.println("Image failed after being set for: "
+                                    + (entity.getCard() != null ? entity.getCard().getName() : "null"));
                             Platform.runLater(() -> {
                                 if (finalTile.getChildren().contains(finalSprite)) {
                                     finalTile.getChildren().remove(finalSprite);
@@ -765,14 +782,15 @@ public class GameEngine {
                             });
                         }
                     });
-                    
+
                     // Add the ImageView since image is loaded and valid
                     tile.getChildren().add(entitySprite);
-                    
+
                     // Add health bar for entity (not towers - they're handled above)
                     if (entity instanceof kuroyale.entitiypack.subclasses.AliveEntity aliveEntity) {
                         double currentHP = aliveEntity.getHP();
-                        kuroyale.cardpack.subclasses.AliveCard entityCard = (kuroyale.cardpack.subclasses.AliveCard) aliveEntity.getCard();
+                        kuroyale.cardpack.subclasses.AliveCard entityCard = (kuroyale.cardpack.subclasses.AliveCard) aliveEntity
+                                .getCard();
                         double maxHP = entityCard != null ? entityCard.getHp() : currentHP;
                         if (maxHP > 0) {
                             javafx.scene.layout.Pane healthBar = createHealthBar(currentHP, maxHP, false);
@@ -784,7 +802,7 @@ public class GameEngine {
                             });
                         }
                     }
-                    
+
                     Platform.runLater(() -> {
                         // Double-check image is still valid before positioning
                         javafx.scene.image.Image checkImage = finalSprite.getImage();
@@ -808,11 +826,14 @@ public class GameEngine {
             }
         }
     }
-    
+
+    /*
     private void drawArena() {
         // Use redrawArena instead - this method is deprecated
         redrawArena();
     }
+    */
+
     private void loadDefaultArenaIfExists() {
         try {
             File f = new File("saves/default.txt");
@@ -830,7 +851,7 @@ public class GameEngine {
             File arenaFile = new File("saves/" + fileName);
             if (!arenaFile.exists()) {
                 System.out.println("Default file missing: " + fileName);
- 
+
                 return;
             }
 
@@ -857,27 +878,29 @@ public class GameEngine {
     }
 
     /** GAMEPLAY **/
-    
-    private void startTimer()  {
-        final double TICK_DURATION = 0.1; 
-        
+
+    private void startTimer() {
+        final double TICK_DURATION = 0.1;
+
         gameLoop = new Timeline(new KeyFrame(Duration.seconds(TICK_DURATION), e -> {
             if (currentElixir < MAX_ELIXIR) {
                 if (totalSeconds >= 60) {
                     currentElixir += (ELIXIR_REGEN_RATE * TICK_DURATION);
-                    if (currentElixir > MAX_ELIXIR) currentElixir = MAX_ELIXIR;
+                    if (currentElixir > MAX_ELIXIR)
+                        currentElixir = MAX_ELIXIR;
                 } else {
                     currentElixir += (DOUBLE_ELIXIR_REGEN_RATE * TICK_DURATION);
-                    if (currentElixir > MAX_ELIXIR) currentElixir = MAX_ELIXIR;
+                    if (currentElixir > MAX_ELIXIR)
+                        currentElixir = MAX_ELIXIR;
                 }
-                
+
             }
             updateElixirUI();
-            
+
             timePassedSinceLastSecond += TICK_DURATION;
             if (timePassedSinceLastSecond >= 1.0) {
                 if (totalSeconds > 0) {
-                    totalSeconds--; 
+                    totalSeconds--;
                     updateTimerLabel();
                 } else {
                     gameLoop.stop();
@@ -886,7 +909,7 @@ public class GameEngine {
                 }
                 timePassedSinceLastSecond = 0;
             }
-            
+
             // Update entities (movement and combat)
             timePassedSinceLastEntityUpdate += TICK_DURATION;
             if (timePassedSinceLastEntityUpdate >= ENTITY_UPDATE_INTERVAL) {
@@ -906,11 +929,11 @@ public class GameEngine {
         gameLoop.setCycleCount(Timeline.INDEFINITE);
         gameLoop.play();
     }
-    
+
     private void updateEntities() {
         List<AliveEntity> entitiesToUpdate = new ArrayList<>();
         List<AliveEntity> deadEntities = new ArrayList<>();
-        
+
         // Collect all entities
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
@@ -923,12 +946,12 @@ public class GameEngine {
                 }
             }
         }
-        
+
         // Remove dead entities first
         for (AliveEntity deadEntity : deadEntities) {
             removeDeadEntity(deadEntity);
         }
-        
+
         // Update attack cooldowns
         for (AliveEntity entity : new ArrayList<>(attackCooldowns.keySet())) {
             if (entity.getHP() <= 0 || !entitiesToUpdate.contains(entity)) {
@@ -945,7 +968,7 @@ public class GameEngine {
                 }
             }
         }
-        
+
         // Update each entity
         for (AliveEntity entity : entitiesToUpdate) {
             // Find entity's actual position in map (don't use getRow/getCol from card)
@@ -958,31 +981,33 @@ public class GameEngine {
                         break;
                     }
                 }
-                if (entityRow >= 0) break;
+                if (entityRow >= 0)
+                    break;
             }
-            
+
             if (entityRow < 0 || entityCol < 0 || entity.getHP() <= 0) {
                 continue; // Entity not found or dead
             }
-            
+
             // Update entity's internal position tracking
             entity.setPosition(entityRow, entityCol);
-            
+
             // Only units can move (not buildings)
             if (entity instanceof UnitEntity) {
                 updateUnitEntity((UnitEntity) entity);
-            } else if (entity instanceof BuildingEntity && !(entity instanceof kuroyale.entitiypack.subclasses.TowerEntity)) {
+            } else if (entity instanceof BuildingEntity
+                    && !(entity instanceof kuroyale.entitiypack.subclasses.TowerEntity)) {
                 updateBuildingEntity((BuildingEntity) entity);
             } else if (entity instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
                 // Towers can also attack
                 updateTowerEntity((kuroyale.entitiypack.subclasses.TowerEntity) entity);
             }
         }
-        
+
         // Redraw arena after updates
         arenaDirty = true;
     }
-    
+
     private void removeDeadEntity(AliveEntity entity) {
         // Check if this is a king tower - if so, end the game
         if (entity instanceof kuroyale.entitiypack.subclasses.TowerEntity tower) {
@@ -993,7 +1018,7 @@ public class GameEngine {
                 return;
             }
         }
-        
+
         // Find entity position
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
@@ -1009,26 +1034,26 @@ public class GameEngine {
             }
         }
     }
-    
+
     private void endGame(boolean playerWon) {
         // Stop the game loop
         if (gameLoop != null) {
             gameLoop.stop();
         }
-        
+
         // Show game end screen
         Platform.runLater(() -> {
             try {
                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                    playerWon ? javafx.scene.control.Alert.AlertType.INFORMATION : javafx.scene.control.Alert.AlertType.WARNING
-                );
+                        playerWon ? javafx.scene.control.Alert.AlertType.INFORMATION
+                                : javafx.scene.control.Alert.AlertType.WARNING);
                 alert.setTitle("Game Over");
                 alert.setHeaderText(playerWon ? "Victory!" : "Defeat!");
                 alert.setContentText(playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!");
-                
+
                 // Show and wait
                 alert.showAndWait();
-                
+
                 // Switch back to start battle scene
                 Parent root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
                 root.setStyle("-fx-background-color: BD7FFF;");
@@ -1041,7 +1066,7 @@ public class GameEngine {
             }
         });
     }
-    
+
     private void updateUnitEntity(UnitEntity unit) {
         // Get current position from arena map
         int currentRow = -1, currentCol = -1;
@@ -1053,26 +1078,27 @@ public class GameEngine {
                     break;
                 }
             }
-            if (currentRow >= 0) break;
+            if (currentRow >= 0)
+                break;
         }
-        
+
         if (currentRow < 0 || currentCol < 0) {
             return; // Entity not found in map
         }
-        
+
         // Update entity's internal position tracking
         unit.setPosition(currentRow, currentCol);
-        
+
         // Find closest target
         AliveEntity target = unit.findClosestTarget(arenaMap);
-        
+
         if (target == null) {
             return; // No target found
         }
-        
+
         // --- find target position on the entity grid ---
         int targetRow = -1, targetCol = -1;
-        
+
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 if (arenaMap.getEntity(r, c) == target) {
@@ -1081,50 +1107,53 @@ public class GameEngine {
                     break;
                 }
             }
-            if (targetRow >= 0) break;
+            if (targetRow >= 0)
+                break;
         }
-        
+
         if (targetRow < 0 || targetCol < 0) {
             return; // target vanished from map
         }
-        
+
         int dRow = Math.abs(targetRow - currentRow);
         int dCol = Math.abs(targetCol - currentCol);
-        
+
         // default: Manhattan distance
         double distance = dRow + dCol;
-        
+
         // Make melee detection robust - treat ≤1 tile as melee
         double unitRange = unit.getRange();
         boolean isMelee = unitRange <= 1.0;
         if (isMelee) {
             unitRange = 1.0; // Normalize melee range to 1 tile
         }
-        
+
         kuroyale.cardpack.subclasses.AliveCard aliveCard = (kuroyale.cardpack.subclasses.AliveCard) unit.getCard();
         double actSpeed = aliveCard.getActSpeed();
-        double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0; 
-        
+        double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0;
+
         // --- special case: melee vs tower ---
         // treat "hugging the tower sprite" as in-range if ANY orthogonal neighbour tile
         // contains the target tower entity (towers occupy multiple cells)
         boolean adjacentEnemyTowerObject = false;
         if (isMelee && target instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
-            int[][] orthoDirs = { {1,0}, {-1,0}, {0,1}, {0,-1} };
+            int[][] orthoDirs = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
             for (int[] d : orthoDirs) {
                 int rr = currentRow + d[0];
                 int cc = currentCol + d[1];
-                if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) continue;
-                
+                if (rr < 0 || rr >= rows || cc < 0 || cc >= cols)
+                    continue;
+
                 // Check if the target tower entity is in this neighbor cell
                 // (towers occupy multiple cells, so check entity grid directly)
                 AliveEntity neighborEntity = arenaMap.getEntity(rr, cc);
                 if (neighborEntity == target) {
                     adjacentEnemyTowerObject = true;
-                    System.out.println("  DEBUG: Found target tower entity at neighbor (" + rr + "," + cc + ") → adjacentEnemyTowerObject = true");
+                    System.out.println("  DEBUG: Found target tower entity at neighbor (" + rr + "," + cc
+                            + ") → adjacentEnemyTowerObject = true");
                     break;
                 }
-                
+
                 // Also check collision layer for tower objects (backup check)
                 var obj = arenaMap.getObject(rr, cc);
                 if (obj != null && obj.getType() != null) {
@@ -1132,50 +1161,54 @@ public class GameEngine {
                         case ENEMY_TOWER, ENEMY_KING -> {
                             if (unit.isPlayer()) {
                                 adjacentEnemyTowerObject = true;
-                                System.out.println("  DEBUG: Found ENEMY_TOWER/KING object at (" + rr + "," + cc + ") → adjacentEnemyTowerObject = true");
+                                System.out.println("  DEBUG: Found ENEMY_TOWER/KING object at (" + rr + "," + cc
+                                        + ") → adjacentEnemyTowerObject = true");
                                 break;
                             }
                         }
                         case OUR_TOWER, OUR_KING -> {
                             if (!unit.isPlayer()) {
                                 adjacentEnemyTowerObject = true;
-                                System.out.println("  DEBUG: Found OUR_TOWER/KING object at (" + rr + "," + cc + ") → adjacentEnemyTowerObject = true");
+                                System.out.println("  DEBUG: Found OUR_TOWER/KING object at (" + rr + "," + cc
+                                        + ") → adjacentEnemyTowerObject = true");
                                 break;
                             }
                         }
-                        default -> {}
+                        default -> {
+                        }
                     }
                 }
-                
-                if (adjacentEnemyTowerObject) break;
+
+                if (adjacentEnemyTowerObject)
+                    break;
             }
         }
-        
+
         // Melee: strict 1-tile range, Ranged: allow small fudge factor
         // If melee unit is hugging tower sprite, force inRange = true
-        boolean inRange = adjacentEnemyTowerObject ||    // melee hugging tower sprite
-            (isMelee ? (distance <= unitRange)           // melee: strict 1-tile range
-                     : (distance <= unitRange + 0.5));    // ranged: allow a small fudge
-        
+        boolean inRange = adjacentEnemyTowerObject || // melee hugging tower sprite
+                (isMelee ? (distance <= unitRange) // melee: strict 1-tile range
+                        : (distance <= unitRange + 0.5)); // ranged: allow a small fudge
+
         // Debug output for melee units attacking towers
         if (isMelee && target instanceof kuroyale.entitiypack.subclasses.TowerEntity) {
-            System.out.println("Melee unit at (" + currentRow + "," + currentCol + ") - Target: " + 
-                (((kuroyale.entitiypack.subclasses.TowerEntity)target).isKing() ? "KING_TOWER" : "TOWER") + 
-                " - Distance: " + distance + " - Range: " + unitRange + 
-                " - AdjacentTowerObject: " + adjacentEnemyTowerObject + " - InRange: " + inRange);
+            System.out.println("Melee unit at (" + currentRow + "," + currentCol + ") - Target: " +
+                    (((kuroyale.entitiypack.subclasses.TowerEntity) target).isKing() ? "KING_TOWER" : "TOWER") +
+                    " - Distance: " + distance + " - Range: " + unitRange +
+                    " - AdjacentTowerObject: " + adjacentEnemyTowerObject + " - InRange: " + inRange);
         }
-        
+
         if (inRange) {
             double currentCooldown = attackCooldowns.getOrDefault(unit, 0.0);
             if (currentCooldown <= 0) {
                 double originalDamage = unit.getDamage();
                 double multipliedDamage = originalDamage * 5.0;
                 target.reduceHP(multipliedDamage);
-                
+
                 attackCooldowns.put(unit, attackCooldownTime);
-                
+
                 arenaDirty = true;
-                
+
                 if (target.getHP() <= 0) {
                     removeDeadEntity(target);
                 }
@@ -1183,23 +1216,24 @@ public class GameEngine {
         } else {
             String speedStr = getUnitSpeed(unit);
             double speedMultiplier = getSpeedMultiplier(speedStr);
-            
+
             if (Math.random() < speedMultiplier * 0.1) {
                 int oldRow = currentRow;
                 int oldCol = currentCol;
-                
+
                 unit.move(arenaMap);
-                
+
                 int newRow = unit.getRow();
                 int newCol = unit.getCol();
-                
-                if ((newRow != oldRow || newCol != oldCol) && newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+
+                if ((newRow != oldRow || newCol != oldCol) && newRow >= 0 && newRow < rows && newCol >= 0
+                        && newCol < cols) {
                     PlacedObject oldObj = arenaMap.getObject(oldRow, oldCol);
                     if (oldObj == null || oldObj.getType() == ArenaObjectType.ENTITY) {
                         arenaMap.clearObject(oldRow, oldCol);
                     }
                     boolean placementSuccess = arenaMap.placeObject(newRow, newCol, ArenaObjectType.ENTITY);
-                    
+
                     if (!placementSuccess) {
                         unit.setPosition(oldRow, oldCol);
                         arenaMap.moveEntitiy(newRow, newCol, oldRow, oldCol);
@@ -1219,7 +1253,7 @@ public class GameEngine {
             }
         }
     }
-    
+
     private void updateBuildingEntity(BuildingEntity building) {
         int currentRow = -1, currentCol = -1;
         for (int r = 0; r < rows; r++) {
@@ -1230,17 +1264,18 @@ public class GameEngine {
                     break;
                 }
             }
-            if (currentRow >= 0) break;
+            if (currentRow >= 0)
+                break;
         }
-        
+
         if (currentRow < 0 || currentCol < 0) {
             return; // Building not found in map
         }
-        
+
         building.setPosition(currentRow, currentCol);
-        
+
         AliveEntity target = building.findClosestTarget(arenaMap);
-        
+
         if (target == null) {
             // Reduce lifetime for buildings
             building.reduceLifetime(ENTITY_UPDATE_INTERVAL);
@@ -1250,13 +1285,14 @@ public class GameEngine {
             }
             return;
         }
-        
-        // Get target position - for towers, find the minimum distance to any cell they occupy
+
+        // Get target position - for towers, find the minimum distance to any cell they
+        // occupy
         double distance;
         if (target instanceof kuroyale.entitiypack.subclasses.TowerEntity towerTarget) {
             // Towers occupy multiple cells - find minimum distance to any occupied cell
             int towerSize = towerTarget.isKing() ? 3 : 2;
-            
+
             // Find the bottom-right corner where the tower is stored
             int bottomRightRow = -1, bottomRightCol = -1;
             for (int r = 0; r < rows; r++) {
@@ -1267,18 +1303,19 @@ public class GameEngine {
                         break;
                     }
                 }
-                if (bottomRightRow >= 0) break;
+                if (bottomRightRow >= 0)
+                    break;
             }
-            
+
             if (bottomRightRow < 0 || bottomRightCol < 0) {
                 return; // Target not found
             }
-            
+
             // Calculate minimum distance to any cell the tower occupies
             double minDistance = Double.MAX_VALUE;
             int startRow = bottomRightRow - towerSize + 1;
             int startCol = bottomRightCol - towerSize + 1;
-            
+
             for (int tr = startRow; tr <= bottomRightRow; tr++) {
                 for (int tc = startCol; tc <= bottomRightCol; tc++) {
                     int rowDiff = Math.abs(tr - currentRow);
@@ -1289,7 +1326,7 @@ public class GameEngine {
                     }
                 }
             }
-            
+
             distance = minDistance;
         } else {
             // For non-tower entities, use single cell position
@@ -1302,51 +1339,51 @@ public class GameEngine {
                         break;
                     }
                 }
-                if (targetRow >= 0) break;
+                if (targetRow >= 0)
+                    break;
             }
-            
+
             if (targetRow < 0 || targetCol < 0) {
                 return; // Target not found
             }
-            
+
             int rowDiff = Math.abs(targetRow - currentRow);
             int colDiff = Math.abs(targetCol - currentCol);
             distance = rowDiff + colDiff;
         }
-        
+
         boolean canAttackTower = false;
         if (target instanceof kuroyale.entitiypack.subclasses.TowerEntity && distance == 1) {
             canAttackTower = true;
         }
-        
+
         kuroyale.cardpack.subclasses.AliveCard aliveCard = (kuroyale.cardpack.subclasses.AliveCard) building.getCard();
         double actSpeed = aliveCard.getActSpeed();
-        double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0; 
-        
+        double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0;
+
         if (distance <= building.getRange() + 0.5 || canAttackTower) {
             double currentCooldown = attackCooldowns.getOrDefault(building, 0.0);
             if (currentCooldown <= 0) {
                 double originalDamage = building.getDamage();
                 double multipliedDamage = originalDamage * 5.0;
                 target.reduceHP(multipliedDamage);
-                
+
                 attackCooldowns.put(building, attackCooldownTime);
-                
+
                 arenaDirty = true;
-                
-        
+
                 if (target.getHP() <= 0) {
                     removeDeadEntity(target);
                 }
             }
         }
-        
+
         building.reduceLifetime(ENTITY_UPDATE_INTERVAL);
         if (building.getHP() <= 0) {
             removeDeadEntity(building);
         }
     }
-    
+
     private void updateTowerEntity(kuroyale.entitiypack.subclasses.TowerEntity tower) {
         // Get current position from arena map
         int currentRow = -1, currentCol = -1;
@@ -1358,29 +1395,31 @@ public class GameEngine {
                     break;
                 }
             }
-            if (currentRow >= 0) break;
+            if (currentRow >= 0)
+                break;
         }
-        
+
         if (currentRow < 0 || currentCol < 0) {
             return; // Tower not found in map
         }
-        
+
         // Update tower's internal position tracking
         tower.setPosition(currentRow, currentCol);
-        
+
         // Find closest target
         AliveEntity target = tower.findClosestTarget(arenaMap);
-        
+
         if (target == null) {
             return; // No target found
         }
-        
-        // Get target position - for towers, find the minimum distance to any cell they occupy
+
+        // Get target position - for towers, find the minimum distance to any cell they
+        // occupy
         double distance;
         if (target instanceof kuroyale.entitiypack.subclasses.TowerEntity towerTarget) {
             // Towers occupy multiple cells - find minimum distance to any occupied cell
             int targetTowerSize = towerTarget.isKing() ? 3 : 2;
-            
+
             // Find the bottom-right corner where the target tower is stored
             int bottomRightRow = -1, bottomRightCol = -1;
             for (int r = 0; r < rows; r++) {
@@ -1391,23 +1430,24 @@ public class GameEngine {
                         break;
                     }
                 }
-                if (bottomRightRow >= 0) break;
+                if (bottomRightRow >= 0)
+                    break;
             }
-            
+
             if (bottomRightRow < 0 || bottomRightCol < 0) {
                 return; // Target not found
             }
-            
+
             // Calculate minimum distance to any cell the target tower occupies
             // But also consider that the attacking tower occupies multiple cells
             int attackerTowerSize = tower.isKing() ? 3 : 2;
             int attackerStartRow = currentRow - attackerTowerSize + 1;
             int attackerStartCol = currentCol - attackerTowerSize + 1;
-            
+
             double minDistance = Double.MAX_VALUE;
             int targetStartRow = bottomRightRow - targetTowerSize + 1;
             int targetStartCol = bottomRightCol - targetTowerSize + 1;
-            
+
             // Check distance from any cell of attacker tower to any cell of target tower
             for (int ar = attackerStartRow; ar <= currentRow; ar++) {
                 for (int ac = attackerStartCol; ac <= currentCol; ac++) {
@@ -1423,7 +1463,7 @@ public class GameEngine {
                     }
                 }
             }
-            
+
             distance = minDistance;
         } else {
             // For non-tower entities, use single cell position
@@ -1436,18 +1476,19 @@ public class GameEngine {
                         break;
                     }
                 }
-                if (targetRow >= 0) break;
+                if (targetRow >= 0)
+                    break;
             }
-            
+
             if (targetRow < 0 || targetCol < 0) {
                 return; // Target not found
             }
-            
+
             // Calculate distance from any cell of the attacking tower to the target
             int attackerTowerSize = tower.isKing() ? 3 : 2;
             int attackerStartRow = currentRow - attackerTowerSize + 1;
             int attackerStartCol = currentCol - attackerTowerSize + 1;
-            
+
             double minDistance = Double.MAX_VALUE;
             for (int ar = attackerStartRow; ar <= currentRow; ar++) {
                 for (int ac = attackerStartCol; ac <= currentCol; ac++) {
@@ -1459,15 +1500,15 @@ public class GameEngine {
                     }
                 }
             }
-            
+
             distance = minDistance;
         }
-        
+
         // Get attack speed from card
         kuroyale.cardpack.subclasses.AliveCard aliveCard = (kuroyale.cardpack.subclasses.AliveCard) tower.getCard();
         double actSpeed = aliveCard.getActSpeed();
         double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0; // Time between attacks in seconds
-        
+
         // Check if in attack range
         if (distance <= tower.getRange() + 0.5) {
             // Check attack cooldown
@@ -1478,13 +1519,13 @@ public class GameEngine {
                 double originalDamage = tower.getDamage();
                 double multipliedDamage = originalDamage * 5.0;
                 target.reduceHP(multipliedDamage);
-                
+
                 // Set cooldown for next attack
                 attackCooldowns.put(tower, attackCooldownTime);
-                
+
                 // Immediately update health bars after damage
                 arenaDirty = true;
-                
+
                 // Check if target died
                 if (target.getHP() <= 0) {
                     removeDeadEntity(target);
@@ -1492,7 +1533,7 @@ public class GameEngine {
             }
         }
     }
-    
+
     private String getUnitSpeed(UnitEntity unit) {
         // Access the protected getSpeed() method through the card
         try {
@@ -1504,9 +1545,10 @@ public class GameEngine {
             return "Medium"; // Default speed
         }
     }
-    
+
     private double getSpeedMultiplier(String speed) {
-        if (speed == null) return 1.0;
+        if (speed == null)
+            return 1.0;
         switch (speed.toLowerCase()) {
             case "very fast":
                 return 3.0;
@@ -1522,12 +1564,12 @@ public class GameEngine {
                 return 1.0;
         }
     }
-    
+
     private void loadDeckToSlots() {
-        AnchorPane[] cardSlots = {cardSlot0, cardSlot1, cardSlot2, cardSlot3};
-        Label[] costLabels = {card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel};
+        AnchorPane[] cardSlots = { cardSlot0, cardSlot1, cardSlot2, cardSlot3 };
+        Label[] costLabels = { card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel };
         currentHand.clear();
-        
+
         // Draw initial 4 cards
         for (int i = 0; i < CARD_SLOT_COUNT; i++) {
             if (nextCardIndex < currentDeckCards.size()) {
@@ -1541,25 +1583,25 @@ public class GameEngine {
             }
         }
     }
-    
+
     private void updateCardSlot(AnchorPane slotPane, Label costLabel, Card card, int slotIndex) {
         if (slotPane == null) {
             System.err.println("Slot pane is null for slot " + slotIndex);
             return;
         }
-        
+
         if (card == null) {
             System.err.println("Card is null for slot " + slotIndex);
             return;
         }
-        
+
         ImageView cardImage = getImageFromPane(slotPane);
         if (cardImage != null) {
             String cardName = card.getName().toLowerCase().replaceAll(" ", "");
             String imagePath = "/kuroyale/images/cards/" + cardName + ".png";
-            
+
             System.out.println("Updating image for slot " + slotIndex + " with path: " + imagePath);
-            
+
             // Use the class resource to load the image
             try {
                 java.io.InputStream imageStream = getClass().getResourceAsStream(imagePath);
@@ -1584,7 +1626,7 @@ public class GameEngine {
         } else {
             System.err.println("Card image view is null for slot " + slotIndex);
         }
-        
+
         if (costLabel != null) {
             costLabel.setText(String.valueOf(card.getCost()));
             System.out.println("Updated cost label in slot " + slotIndex + " to: " + card.getCost());
@@ -1592,7 +1634,8 @@ public class GameEngine {
             System.err.println("Cost label is null for slot " + slotIndex);
         }
 
-        // Remove old drag handler from both AnchorPane and inner Pane, then add new one to inner Pane
+        // Remove old drag handler from both AnchorPane and inner Pane, then add new one
+        // to inner Pane
         slotPane.setOnDragDetected(null);
         Pane innerPane = getInnerPaneFromSlot(slotPane);
         if (innerPane != null) {
@@ -1606,22 +1649,23 @@ public class GameEngine {
             }
             // Make the inner pane draggable
             makeDraggable(innerPane, String.valueOf(card.getId()));
-            System.out.println("Made card draggable in slot " + slotIndex + " with ID: " + card.getId() + ", Card name: " + card.getName());
+            System.out.println("Made card draggable in slot " + slotIndex + " with ID: " + card.getId()
+                    + ", Card name: " + card.getName());
         } else {
             System.err.println("ERROR: Inner pane not found for slot " + slotIndex);
         }
     }
-    
+
     private void clearCardSlot(AnchorPane slotPane, Label costLabel, int slotIndex) {
         ImageView cardImage = getImageFromPane(slotPane);
         if (cardImage != null) {
             cardImage.setImage(null);
         }
-        
+
         if (costLabel != null) {
             costLabel.setText("");
         }
-        
+
         // Remove drag functionality from both AnchorPane and inner Pane
         slotPane.setOnDragDetected(null);
         Pane innerPane = getInnerPaneFromSlot(slotPane);
@@ -1634,7 +1678,7 @@ public class GameEngine {
             }
         }
     }
-    
+
     private int findCardSlotIndex(int cardID) {
         System.out.println("Looking for card ID: " + cardID);
         System.out.println("Current hand size: " + currentHand.size());
@@ -1649,40 +1693,42 @@ public class GameEngine {
         System.out.println("Card not found in hand!");
         return -1;
     }
-    
+
     private void cycleCardInSlot(int slotIndex) {
         System.out.println("=== CYCLE CARD IN SLOT " + slotIndex + " ===");
-        AnchorPane[] cardSlots = {cardSlot0, cardSlot1, cardSlot2, cardSlot3};
-        Label[] costLabels = {card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel};
-        
+        AnchorPane[] cardSlots = { cardSlot0, cardSlot1, cardSlot2, cardSlot3 };
+        Label[] costLabels = { card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel };
+
         if (slotIndex < 0 || slotIndex >= cardSlots.length) {
             System.out.println("ERROR: Invalid slot index: " + slotIndex);
             return;
         }
-        
+
         System.out.println("Current nextCardIndex: " + nextCardIndex + ", Deck size: " + currentDeckCards.size());
-        
+
         // If deck is exhausted, cycle back to the beginning
         if (nextCardIndex >= currentDeckCards.size()) {
             nextCardIndex = 0;
             System.out.println("Deck cycled back to beginning");
         }
-        
+
         // Draw next card from deck
         if (nextCardIndex < currentDeckCards.size() && !currentDeckCards.isEmpty()) {
             Card nextCard = currentDeckCards.get(nextCardIndex);
-            System.out.println("Drawing next card: " + nextCard.getName() + " (ID: " + nextCard.getId() + ") to slot " + slotIndex);
-            
+            System.out.println("Drawing next card: " + nextCard.getName() + " (ID: " + nextCard.getId() + ") to slot "
+                    + slotIndex);
+
             // Replace the card at this slot index
             if (slotIndex < currentHand.size()) {
                 Card oldCard = currentHand.get(slotIndex);
-                System.out.println("Replacing card: " + oldCard.getName() + " (ID: " + oldCard.getId() + ") with " + nextCard.getName() + " (ID: " + nextCard.getId() + ")");
+                System.out.println("Replacing card: " + oldCard.getName() + " (ID: " + oldCard.getId() + ") with "
+                        + nextCard.getName() + " (ID: " + nextCard.getId() + ")");
                 currentHand.set(slotIndex, nextCard);
             } else {
                 System.out.println("Adding new card to hand at slot " + slotIndex);
                 currentHand.add(slotIndex, nextCard);
             }
-            
+
             System.out.println("Calling updateCardSlot for slot " + slotIndex);
             updateCardSlot(cardSlots[slotIndex], costLabels[slotIndex], nextCard, slotIndex);
             nextCardIndex++;
@@ -1697,6 +1743,7 @@ public class GameEngine {
         }
         System.out.println("=== END CYCLE CARD ===");
     }
+
     @FXML
     private void updateElixirUI() {
         if (elixirProgressBar != null) {
@@ -1710,10 +1757,10 @@ public class GameEngine {
     @FXML
     private void updateTimerLabel() {
         int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60; 
-    
+        int seconds = totalSeconds % 60;
+
         String timeText = String.format("%02d:%02d", minutes, seconds);
-    
+
         gameTimerLabel.setText(timeText);
     }
 

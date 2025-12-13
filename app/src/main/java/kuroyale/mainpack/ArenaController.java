@@ -315,6 +315,7 @@ public class ArenaController {
         }
     }
 
+    /*
     private String showLoadDialog() throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/kuroyale/scenes/LoadArenaDialog.fxml"));
         Parent root = loader.load();
@@ -326,6 +327,7 @@ public class ArenaController {
 
         return (String) stage.getUserData(); // selected file or null
     }
+    */
 
     @FXML
     private void onSaveClicked() {
