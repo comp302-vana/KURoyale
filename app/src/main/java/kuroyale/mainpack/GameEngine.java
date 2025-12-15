@@ -80,8 +80,8 @@ public class GameEngine {
 
     private ArenaMap arenaMap = new ArenaMap();
 
-    private final int rows = arenaMap.getRows();
-    private final int cols = arenaMap.getCols();
+    private final int rows = ArenaMap.getRows();
+    private final int cols = ArenaMap.getCols();
     private final int tileSize = 32;
 
     private Timeline gameLoop;
@@ -149,8 +149,14 @@ public class GameEngine {
         String difficulty = UIManager.getSelectedDifficulty();
         if ("Simple".equals(difficulty)) {
             aiOpponent = new SimpleAI(arenaMap);
-        } else {
+        } else if ("NoAI".equals(difficulty)) {
+            aiOpponent = null;
+        } else if ("Medium".equals(difficulty)) {
             aiOpponent = null; // at least for now
+        } else if ("Advanced".equals(difficulty)) {
+            aiOpponent = null; // at least for now
+        } else {
+            aiOpponent = null;
         }
     }
 
@@ -411,7 +417,7 @@ public class GameEngine {
                         }
 
                         // Spawn restriction: don't allow initial placement on enemy side or bridge
-                        if (c >= arenaMap.getCols() / 2 - 1) {
+                        if (c >= cols / 2 - 1) {
                             System.out.println("Cannot place troops on enemy side or bridge.");
                             event.setDropCompleted(false);
                             event.consume();
@@ -1180,6 +1186,10 @@ public class GameEngine {
         }
 
         // Update each entity
+        AliveEntity.resetGraphs(arenaMap);
+        AliveEntity.fillEnemyGraph();
+        AliveEntity.fillOurGraph();
+
         for (AliveEntity entity : entitiesToUpdate) {
             // Find entity's actual position in map (don't use getRow/getCol from card)
             int entityRow = -1, entityCol = -1;
@@ -1285,31 +1295,13 @@ public class GameEngine {
     }
 
     private void updateUnitEntity(UnitEntity unit) {
-        // Get current position from arena map
-        int currentRow = -1, currentCol = -1;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (arenaMap.getEntity(r, c) == unit) {
-                    currentRow = r;
-                    currentCol = c;
-                    break;
-                }
-            }
-            if (currentRow >= 0)
-                break;
-        }
-
-        if (currentRow < 0 || currentCol < 0) {
-            return; // Entity not found in map
-        }
-
-        // Update entity's internal position tracking
-        unit.setPosition(currentRow, currentCol);
-
+        int currentRow = unit.getRow();
+        int currentCol = unit.getCol();
         // Find closest target
-        AliveEntity target = unit.findClosestTarget(arenaMap);
+        AliveEntity target = unit.findClosestTarget();
 
         if (target == null) {
+            System.err.printf("NO target found for unit %s\n", unit.getCard().getName());
             return; // No target found
         }
 
@@ -1475,26 +1467,10 @@ public class GameEngine {
     }
 
     private void updateBuildingEntity(BuildingEntity building) {
-        int currentRow = -1, currentCol = -1;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (arenaMap.getEntity(r, c) == building) {
-                    currentRow = r;
-                    currentCol = c;
-                    break;
-                }
-            }
-            if (currentRow >= 0)
-                break;
-        }
-
-        if (currentRow < 0 || currentCol < 0) {
-            return; // Building not found in map
-        }
-
-        building.setPosition(currentRow, currentCol);
-
-        AliveEntity target = building.findClosestTarget(arenaMap);
+        int currentRow = building.getRow();
+        int currentCol = building.getCol();
+        
+        AliveEntity target = building.findClosestTarget();
 
         if (target == null) {
             // Reduce lifetime for buildings
@@ -1605,29 +1581,11 @@ public class GameEngine {
     }
 
     private void updateTowerEntity(TowerEntity tower) {
-        // Get current position from arena map
-        int currentRow = -1, currentCol = -1;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (arenaMap.getEntity(r, c) == tower) {
-                    currentRow = r;
-                    currentCol = c;
-                    break;
-                }
-            }
-            if (currentRow >= 0)
-                break;
-        }
-
-        if (currentRow < 0 || currentCol < 0) {
-            return; // Tower not found in map
-        }
-
-        // Update tower's internal position tracking
-        // tower.setPosition(currentRow, currentCol);
+        int currentRow = tower.getRow();
+        int currentCol = tower.getCol();
 
         // Find closest target
-        AliveEntity target = tower.findClosestTarget(arenaMap);
+        AliveEntity target = tower.findClosestTarget();
 
         if (target == null) {
             return; // No target found

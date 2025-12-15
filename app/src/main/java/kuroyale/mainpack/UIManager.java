@@ -65,6 +65,12 @@ public class UIManager extends Application {
     }
 
     @FXML
+    void btnNoAIClicked(ActionEvent event) throws IOException {
+        selectedDifficulty = "NoAI";
+        switchToBattleScene(event);
+    }
+
+    @FXML
     void btnSimpleClicked(ActionEvent event) throws IOException {
         selectedDifficulty = "Simple";
         switchToBattleScene(event);

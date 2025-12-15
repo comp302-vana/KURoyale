@@ -9,8 +9,8 @@ import kuroyale.entitiypack.subclasses.TowerEntity;
 
 public class ArenaMap {
 
-    private final int rows = 18;
-    private final int cols = 32;
+    private static final int rows = 18;
+    private static final int cols = 32;
 
     private final ArenaTile[][] grid;
     private final ArenaTile[][] collisions;
@@ -325,8 +325,8 @@ public class ArenaMap {
         return grid[row][col].getPlacedObject();
     }
 
-    public int getRows() {return rows;}
-    public int getCols() {return cols;}
+    public static int getRows() {return rows;}
+    public static int getCols() {return cols;}
 
     public boolean isWalkable(int r, int c){
         // Check if tile has a placed object
