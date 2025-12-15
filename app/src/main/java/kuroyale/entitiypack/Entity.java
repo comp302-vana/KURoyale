@@ -43,15 +43,6 @@ public class Entity {
     }
 
     public boolean isPlayer() { return isPlayer; }
-
-    public int getRow() { 
-        return card.getRow(); 
-    }
-
-    public int getCol() { 
-        return card.getCol(); 
-    }
-
     
     
 }

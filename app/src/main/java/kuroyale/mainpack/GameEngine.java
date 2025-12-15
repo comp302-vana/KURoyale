@@ -17,6 +17,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.ImageView;
@@ -110,6 +111,7 @@ public class GameEngine {
     private final Map<Long, ImageView> staticSpritesByCell = new HashMap<>();
     private boolean entityDirty = false;
     private boolean staticDirty = false;  // set to true when a static object changes (tower dies)
+    private boolean paused = false;
 
     private SimpleAI aiOpponent;
 
@@ -300,7 +302,7 @@ public class GameEngine {
 
                     ensureHealthBar(tower, true);
                     updateHealthBarFor(tower);
-                    positionTowerHealthBar(tower, tower.getRow(), tower.getCol()); // assumes this cell is the “representative” one
+                    positionTowerHealthBar(tower, tower.getRow(), tower.getCol()); // assumes this cell is the "representative" one
                 }
             }
         }
@@ -1996,5 +1998,21 @@ public class GameEngine {
         Scene scene = new Scene(root, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
+    }
+
+    @FXML
+    private void btnPauseClicked(ActionEvent event) {
+        if (gameLoop == null) return;
+
+        if (!paused) {
+            gameLoop.pause();
+            paused = true;
+            // optionally change button text:
+            ((Button) event.getSource()).setText("Resume");
+        } else {
+            gameLoop.play();
+            paused = false;
+            ((Button) event.getSource()).setText("Pause");
+        }
     }
 }

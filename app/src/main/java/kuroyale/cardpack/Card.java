@@ -11,12 +11,10 @@ public abstract class Card {
     private final CardType type;
     private final CardCategory category;
     private final CardTarget target;
-    private final int row;
-    private final int col;
-
+    
     public Card(
             int id, String name, String description, int cost, double damage,
-            double radius, CardType type, CardCategory category, CardTarget target, int row, int col) {
+            double radius, CardType type, CardCategory category, CardTarget target) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -26,8 +24,6 @@ public abstract class Card {
         this.type = type;
         this.category = category;
         this.target = target;
-        this.row = row;
-        this.col = col;
     }
 
     public int getId() {
@@ -64,14 +60,6 @@ public abstract class Card {
 
     public String getDescription() {
         return description;
-    }
-
-    public int getRow() { 
-        return row; 
-    }
-    
-    public int getCol() { 
-        return col; 
     }
 
     @Override

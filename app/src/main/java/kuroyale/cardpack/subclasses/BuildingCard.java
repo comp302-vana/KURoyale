@@ -10,9 +10,9 @@ public class BuildingCard extends AliveCard {
     public BuildingCard(
             int id, String name, String description, int cost,
             CardCategory category, CardTarget target,
-            double hp, double damage, double actSpeed, double range, double radius, double lifetime, int row, int col) {
+            double hp, double damage, double actSpeed, double range, double radius, double lifetime) {
 
-        super(id, name, description, cost, hp, range, damage, actSpeed, radius, CardType.BUILDING, category, target, row, col);
+        super(id, name, description, cost, hp, range, damage, actSpeed, radius, CardType.BUILDING, category, target);
         this.lifetime = lifetime;
     }
 

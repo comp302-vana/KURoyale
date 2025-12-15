@@ -12,7 +12,7 @@ public class TowerEntity extends BuildingEntity {
 
         BuildingCard card = new BuildingCard(
             id, name, null, 0, CardCategory.DEFENSIVE_BUILDING, CardTarget.AIR_GROUND,
-            Hp, 100, 0.8, 7.5, 0.0, 0, -1, -1
+            Hp, 100, 0.8, 7.5, 0.0, 0
         );
 
         return card;
