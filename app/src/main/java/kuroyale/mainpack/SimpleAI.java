@@ -48,16 +48,16 @@ public class SimpleAI {
         loadDecktoHand();
     }
     
-    private void createAIDeck(){
-        aiDeckCards.add(CardFactory.createCard(1));
-        aiDeckCards.add(CardFactory.createCard(2));
-        aiDeckCards.add(CardFactory.createCard(3));
-        aiDeckCards.add(CardFactory.createCard(9));
-        aiDeckCards.add(CardFactory.createCard(12));
-        aiDeckCards.add(CardFactory.createCard(13));
-        aiDeckCards.add(CardFactory.createCard(19));
-        aiDeckCards.add(CardFactory.createCard(22));
-
+    private void createAIDeck(){ // AI Deck Randomized
+        List<Integer> selectedCards = new ArrayList<>();
+        while(aiDeckCards.size() < 8){
+            int a = random.nextInt(1, 28);
+            while(selectedCards.contains(a)){
+                a = random.nextInt(1,28);
+            }
+            selectedCards.add(a);
+            aiDeckCards.add(CardFactory.createCard(a));
+        }
         nextCardIndex = 0;
     }
 
