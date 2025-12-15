@@ -1934,9 +1934,32 @@ public class GameEngine {
             System.out.println("Deck cycled back to beginning");
         }
 
-        // Draw next card from deck
-        if (nextCardIndex < currentDeckCards.size() && !currentDeckCards.isEmpty()) {
-            Card nextCard = currentDeckCards.get(nextCardIndex);
+        // Draw next card from deck, but skip cards that are already in hand
+        Card nextCard = null;
+        
+        while (nextCardIndex < currentDeckCards.size() && !currentDeckCards.isEmpty()) {
+            Card candidateCard = currentDeckCards.get(nextCardIndex);
+            
+            //  We need to check if this card is already in the hand
+            boolean cardInHand = false;
+            for (Card handCard : currentHand) {
+                if (handCard.getId() == candidateCard.getId()) {
+                    cardInHand = true;
+                    break;
+                }
+            }
+            if (!cardInHand) {
+                nextCard = candidateCard;
+                break;
+            }
+            nextCardIndex++;
+            
+            if (nextCardIndex >= currentDeckCards.size()) {
+                nextCardIndex = 0;
+            }
+        }
+        
+        if (nextCard != null) {
             System.out.println("Drawing next card: " + nextCard.getName() + " (ID: " + nextCard.getId() + ") to slot "
                     + slotIndex);
 
@@ -1954,10 +1977,13 @@ public class GameEngine {
             System.out.println("Calling updateCardSlot for slot " + slotIndex);
             updateCardSlot(cardSlots[slotIndex], costLabels[slotIndex], nextCard, slotIndex);
             nextCardIndex++;
+            if (nextCardIndex >= currentDeckCards.size()) {
+                nextCardIndex = 0;
+            }
             System.out.println("Next card index is now: " + nextCardIndex);
         } else {
-            // Deck is empty, clear slot
-            System.out.println("Deck exhausted, clearing slot " + slotIndex);
+             // No valid card found
+             System.out.println("Deck exhausted or all cards in hand, clearing slot " + slotIndex);
             if (slotIndex < currentHand.size()) {
                 currentHand.remove(slotIndex);
             }
