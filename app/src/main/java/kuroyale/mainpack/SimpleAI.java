@@ -35,11 +35,13 @@ public class SimpleAI {
     private Random random = new Random();
     private final double PLAY_CARD_PROBABILITY = 0.67;
 
+    private GameEngine gameEngine;
     private double timeSinceLastAICheck = 0.0;
     private double AI_CHECK_INTERVAL = 2.8;
 
-    public SimpleAI(ArenaMap arenaMap) {
+    public SimpleAI(ArenaMap arenaMap, GameEngine gameEngine) {
         this.arenaMap = arenaMap;
+        this.gameEngine = gameEngine;
         this.rows = arenaMap.getRows();
         this.cols = arenaMap.getCols();
         
@@ -133,6 +135,19 @@ public class SimpleAI {
 
     private boolean placeCard(int cardID, int cost){
         int enemySideStartCol = cols / 2 - 1;
+
+        boolean isSpell = (cardID >= 25 && cardID <= 28);
+
+        if(isSpell){
+            int spellRow = random.nextInt(rows);
+            int spellCol = random.nextInt(cols / 2 - 1); // Player's side
+    
+            // Need access to GameEngine - see step 4
+            gameEngine.executeSpell(cardID, spellRow, spellCol, false); // false = AI spell
+            currentElixir -= cost;
+            System.out.println("AI cast spell " + cardID + " at (" + spellRow + ", " + spellCol + ")");
+            return true;
+        }
 
         for (int attempt = 0; attempt < 10; attempt++) {
             int row = random.nextInt(rows);
