@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -41,6 +43,7 @@ import kuroyale.cardpack.CardFactory;
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.cardpack.subclasses.AliveCard;
+import kuroyale.cardpack.subclasses.SpellCard;
 import kuroyale.cardpack.subclasses.BuildingCard;
 
 // import kuroyale.entitiypack.Entity;
@@ -103,6 +106,8 @@ public class GameEngine {
 
     // Track attack cooldowns for each entity (time remaining until next attack)
     private Map<AliveEntity, Double> attackCooldowns = new HashMap<>();
+    // Track stun durations for each entity (time remaining until stun expires)
+    private Map<AliveEntity, Double> stunDurations = new HashMap<>();
 
     private final IdentityHashMap<AliveEntity, Boolean> seenTowers = new IdentityHashMap<>();
 
@@ -112,6 +117,7 @@ public class GameEngine {
     private boolean entityDirty = false;
     private boolean staticDirty = false;  // set to true when a static object changes (tower dies)
     private boolean paused = false;
+    private boolean speed2x = false;
 
     private SimpleAI aiOpponent;
 
@@ -150,7 +156,7 @@ public class GameEngine {
         // Initialize the AI opponent
         String difficulty = UIManager.getSelectedDifficulty();
         if ("Simple".equals(difficulty)) {
-            aiOpponent = new SimpleAI(arenaMap);
+            aiOpponent = new SimpleAI(arenaMap, this);
         } else {
             aiOpponent = null; // at least for now
         }
@@ -412,8 +418,26 @@ public class GameEngine {
                             return;
                         }
 
-                        // Spawn restriction: don't allow initial placement on enemy side or bridge
-                        if (c >= arenaMap.getCols() / 2 - 1) {
+                        boolean isSpell = (cardID >= 25 && cardID <= 28);
+                        // As Spell is not an alive entity, spell card handling is different
+
+                        if (isSpell) {
+                            executeSpell(cardID, r, c, true);
+                            currentElixir -= cost;
+                            updateElixirUI();
+                            
+                            int slotIndex = findCardSlotIndex(cardID);
+                            if (slotIndex >= 0) {
+                                cycleCardInSlot(slotIndex);
+                            }
+                            
+                            System.out.println("Spell cast at (" + r + ", " + c + ")");
+                            event.setDropCompleted(true);
+                            event.consume();
+                            return;
+                        }
+
+                        if (!isSpell && c >= arenaMap.getCols() / 2 - 1) {
                             System.out.println("Cannot place troops on enemy side or bridge.");
                             event.setDropCompleted(false);
                             event.consume();
@@ -423,11 +447,8 @@ public class GameEngine {
                         AliveEntity playedEntity;
                         if (cardID <= 15) {
                             playedEntity = new UnitEntity(((UnitCard) CardFactory.createCard(cardID)), true);
-                        } else if (cardID <= 24) {
-                            playedEntity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), true);
                         } else {
-                            playedEntity = new UnitEntity((UnitCard) CardFactory.createCard(1), true);
-                            ((UnitEntity) playedEntity).reduceHP(9999.9);
+                            playedEntity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), true);
                         }
                         System.out.println(playedEntity.getCard().getName());
 
@@ -1181,6 +1202,23 @@ public class GameEngine {
             }
         }
 
+        // Update stun durations
+        for (AliveEntity entity : new ArrayList<>(stunDurations.keySet())) {
+            if (entity.getHP() <= 0 || !entitiesToUpdate.contains(entity)) {
+                // Remove stun for dead or missing entities
+                stunDurations.remove(entity);
+            } else {
+                // Decrease stun duration
+                double currentStun = stunDurations.get(entity);
+                double newStun = Math.max(0, currentStun - ENTITY_UPDATE_INTERVAL);
+                if (newStun > 0) {
+                    stunDurations.put(entity, newStun);
+                } else {
+                    stunDurations.remove(entity);
+                }
+            }
+        }
+
         // Update each entity
         for (AliveEntity entity : entitiesToUpdate) {
             // Find entity's actual position in map (don't use getRow/getCol from card)
@@ -1220,6 +1258,59 @@ public class GameEngine {
         entityDirty = true;
     }
 
+    public void executeSpell(int spellCardID, int targetRow, int targetCol, boolean isPlayerSpell) {
+        SpellCard spellCard = (SpellCard) CardFactory.createCard(spellCardID);
+        double damage = spellCard.getDamage();
+        double radius = spellCard.getRadius();
+        boolean isZap = (spellCardID == 25);
+        
+        Set<AliveEntity> affectedEntities = new HashSet<>();
+        
+        int minRow = Math.max(0, (int)(targetRow - radius - 1));
+        int maxRow = Math.min(rows - 1, (int)(targetRow + radius + 1));
+        int minCol = Math.max(0, (int)(targetCol - radius - 1));
+        int maxCol = Math.min(cols - 1, (int)(targetCol + radius + 1));
+        
+        for (int r = minRow; r <= maxRow; r++) {
+            for (int c = minCol; c <= maxCol; c++) {
+                double rowDist = Math.abs(r - targetRow);
+                double colDist = Math.abs(c - targetCol);
+                double distance = rowDist + colDist;
+                
+                // The +0.5 is for tile size
+                if (distance <= radius + 0.5) {
+                    AliveEntity entity = arenaMap.getEntity(r, c);
+                    if (entity != null && entity.getHP() > 0 && entity.isPlayer() != isPlayerSpell) {
+                        affectedEntities.add(entity);
+                    }
+                }
+            }
+        }
+        
+        for (AliveEntity entity : affectedEntities) {
+            double actualDamage = damage;
+            if (entity instanceof TowerEntity) {
+                actualDamage = damage * 0.4; //towers got affected by %40 of the damage
+            }
+            
+            // Apply damage
+            entity.reduceHP(actualDamage);
+
+            if (isZap) {
+                stunDurations.put(entity, 0.5);
+            }
+            
+            if (entity.getHP() <= 0) {
+                removeDeadEntity(entity);
+            }
+        }
+
+        // Mark entities as dirty to update health bars
+        entityDirty = true;
+        
+        System.out.println("Spell " + spellCard.getName() + " cast at (" + targetRow + ", " + targetCol + ")");
+    }
+
     private void removeDeadEntity(AliveEntity entity) {
         // Check if this is a king tower - if so, end the game
         if (entity instanceof TowerEntity tower) {
@@ -1244,6 +1335,8 @@ public class GameEngine {
                     arenaMap.clearObject(r, c);
                     // Remove from cooldown tracking
                     attackCooldowns.remove(entity);
+                    // Remove from stun tracking
+                    stunDurations.remove(entity);
 
                     if (entity instanceof TowerEntity) {
                         staticDirty = true;
@@ -1286,7 +1379,15 @@ public class GameEngine {
         });
     }
 
+    private boolean isStunned(AliveEntity entity) {
+        return stunDurations.containsKey(entity) && stunDurations.get(entity) > 0;
+    }
+
     private void updateUnitEntity(UnitEntity unit) {
+        if (isStunned(unit)) {
+            return; // Stunned units cannot be updated
+        }
+
         // Get current position from arena map
         int currentRow = -1, currentCol = -1;
         for (int r = 0; r < rows; r++) {
@@ -1918,8 +2019,8 @@ public class GameEngine {
 
     private void cycleCardInSlot(int slotIndex) {
         System.out.println("=== CYCLE CARD IN SLOT " + slotIndex + " ===");
-        AnchorPane[] cardSlots = { cardSlot0, cardSlot1, cardSlot2, cardSlot3 };
-        Label[] costLabels = { card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel };
+        AnchorPane[] cardSlots = {cardSlot0, cardSlot1, cardSlot2, cardSlot3 };
+        Label[] costLabels = {card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel };
 
         if (slotIndex < 0 || slotIndex >= cardSlots.length) {
             System.out.println("ERROR: Invalid slot index: " + slotIndex);
@@ -2039,6 +2140,23 @@ public class GameEngine {
             gameLoop.play();
             paused = false;
             ((Button) event.getSource()).setText("Pause");
+        }
+    }
+
+    @FXML
+    private void btnSpeedClicked(ActionEvent event) {
+        if (gameLoop == null) return;
+
+        if (!speed2x) {
+            // Switch to 2x speed
+            gameLoop.setRate(2.0);
+            speed2x = true;
+            ((Button) event.getSource()).setText("1x");
+        } else {
+            // Switch back to 1x speed
+            gameLoop.setRate(1.0);
+            speed2x = false;
+            ((Button) event.getSource()).setText("2x");
         }
     }
 }

@@ -177,7 +177,8 @@
          </children>
       </AnchorPane>
       <Button layoutX="23.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnBackClicked" text="Back" AnchorPane.rightAnchor="41.0" AnchorPane.topAnchor="23.2" />
-      <Button layoutX="90.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnPauseClicked" text="Pause" AnchorPane.rightAnchor="120.0" AnchorPane.topAnchor="23.2" />
+      <Button layoutX="90.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnPauseClicked" text="Pause" AnchorPane.rightAnchor="142.0" AnchorPane.topAnchor="23.2" />
+      <Button layoutX="157.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnSpeedClicked" text="2x" AnchorPane.rightAnchor="100.0" AnchorPane.topAnchor="23.2" />
       <Rectangle arcHeight="20.0" arcWidth="20.0" fill="WHITE" height="26.0" layoutX="605.0" layoutY="24.0" stroke="#d7c8c8" strokeType="INSIDE" style="-fx: 10;" width="70.0" />
       <Label fx:id="gameTimerLabel" alignment="CENTER" contentDisplay="CENTER" layoutX="626.0" layoutY="28.0">
          <font>
