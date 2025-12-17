@@ -81,6 +81,8 @@ public class GameEngine {
     private Label elixirCountLabel;
     @FXML
     private ProgressBar elixirProgressBar;
+    @FXML
+    private PointsCounter pointsCounter;
 
     private ArenaMap arenaMap = new ArenaMap();
 
@@ -129,6 +131,11 @@ public class GameEngine {
     private void initialize() {
         entityLayer.setPrefSize(cols * tileSize, rows * tileSize);
         staticLayer.setPrefSize(cols * tileSize, rows * tileSize);
+
+        int size=24;
+        pointsCounter=new PointsCounter(size);
+        pointsCounter.setLayoutX(((cols)*tileSize)/2-(3/2)*size);
+        pointsCounter.setLayoutY(5);
 
         clipImage(getImageFromPane(cardSlot0), 6);
         clipImage(getImageFromPane(cardSlot1), 6);
@@ -317,6 +324,7 @@ public class GameEngine {
     private void renderStaticObjects() {
         staticLayer.getChildren().clear();
         staticSpritesByCell.clear();
+        staticLayer.getChildren().add(pointsCounter);
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
@@ -1312,18 +1320,6 @@ public class GameEngine {
     }
 
     private void removeDeadEntity(AliveEntity entity) {
-        // Check if this is a king tower - if so, end the game
-        if (entity instanceof TowerEntity tower) {
-            if (tower.isKing()) {
-                // King died - end the game
-                boolean playerWon = !tower.isPlayer(); // If enemy king died, player won
-                endGame(playerWon);
-                return;
-            }
-        }
-
-        Pane hb = healthBarsByEntity.remove(entity);
-        if (hb != null) entityLayer.getChildren().remove(hb);
 
         // Find entity position
         for (int r = 0; r < rows; r++) {
@@ -1341,7 +1337,50 @@ public class GameEngine {
                     if (entity instanceof TowerEntity) {
                         staticDirty = true;
                     }
-                    return;
+                }
+            }
+        }
+        Pane hb = healthBarsByEntity.remove(entity);
+        if (hb != null) {
+            entityLayer.getChildren().remove(hb);
+            updaterOfBrokenTowers(entity);
+        }
+    }
+
+    private void updaterOfBrokenTowers(AliveEntity entity){
+        if (entity instanceof TowerEntity tower){
+            if(tower.isKing()){
+                if(tower.isPlayer()){
+                    pointsCounter.setEnemyPoints(3);
+                }
+                else {
+                    pointsCounter.setOurPoints(3);
+                }
+                boolean playerWon = !tower.isPlayer();
+                kingIsDown(tower.isPlayer());
+                endGame(playerWon);
+                kingIsDown(tower.isPlayer());
+                gameLoop.pause();
+                paused = true;
+            }
+            else{
+                if(tower.isPlayer()){
+                    pointsCounter.addToEnemy();
+                }
+                else{
+                    pointsCounter.addToUs();
+                }
+            }
+        }
+    }
+
+    private void kingIsDown(boolean isPlayer){
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                AliveEntity entity=arenaMap.getEntity(r,c);
+                if (entity instanceof TowerEntity tower && tower.isPlayer()==isPlayer && tower.getHP()>0){
+                    tower.setHP(0);
+                    removeDeadEntity(tower);
                 }
             }
         }
@@ -2116,6 +2155,8 @@ public class GameEngine {
     @FXML
     private void btnBackClicked(ActionEvent event) throws IOException {
         switchToStartBattleScene(event);
+        gameLoop.pause();
+        paused = true;
     }
 
     private void switchToStartBattleScene(ActionEvent event) throws IOException {
