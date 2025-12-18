@@ -132,9 +132,8 @@ public class GameEngine {
         entityLayer.setPrefSize(cols * tileSize, rows * tileSize);
         staticLayer.setPrefSize(cols * tileSize, rows * tileSize);
 
-        int size=24;
-        pointsCounter=new PointsCounter(size);
-        pointsCounter.setLayoutX(((cols)*tileSize)/2-(3/2)*size);
+        pointsCounter=new PointsCounter();
+        pointsCounter.setLayoutX(((cols*tileSize)/2)-55);
         pointsCounter.setLayoutY(5);
 
         clipImage(getImageFromPane(cardSlot0), 6);
@@ -1117,6 +1116,71 @@ public class GameEngine {
 
     /** GAMEPLAY **/
 
+    private void tieBreaker(){
+        if(pointsCounter.getEnemyPoints()>pointsCounter.getOurPoints()){
+            endGame(false);
+            return;
+        }
+        else if(pointsCounter.getEnemyPoints()<pointsCounter.getOurPoints()){
+            endGame(true);
+            return;
+        }
+        double minPlayer=999999999;
+        double minEnemy=999999999;
+        for (int r=0; r<rows;r++){
+            for (int c=0;c<cols;c++){
+                AliveEntity entity=arenaMap.getEntity(r,c);
+                if (entity instanceof TowerEntity tower && entity.getHP()>0){
+                    if (entity.isPlayer()){
+                        if(entity.getHP()<minPlayer){
+                            minPlayer=entity.getHP();
+                        }
+                    }
+                    else{
+                        if (entity.getHP()<minEnemy){
+                            minEnemy=entity.getHP();
+                        }
+                    }
+                }
+            }
+        }
+        if (minPlayer>minEnemy){
+            endGame(true);
+            return;
+        }
+        else if(minPlayer<minEnemy){
+            endGame(false);
+            return;
+        }
+        // Stop the game loop
+        if (gameLoop != null) {
+            gameLoop.stop();
+        }
+
+        // Show game end screen
+        Platform.runLater(() -> {
+            try {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+                alert.setTitle("Game Over");
+                alert.setHeaderText("Draw");
+                alert.setContentText("Time is up and tower health is same.");
+
+                // Show and wait
+                alert.showAndWait();
+
+                // Switch back to start battle scene
+                Parent root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
+                root.setStyle("-fx-background-color: BD7FFF;");
+                Stage stage = (Stage) arenaGrid.getScene().getWindow();
+                Scene scene = new Scene(root, 1280, 720, javafx.scene.paint.Color.web("0xBD7FFF"));
+                stage.setScene(scene);
+                stage.show();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     private void startTimer() {
         final double TICK_DURATION = 0.1;
 
@@ -1141,6 +1205,7 @@ public class GameEngine {
                     totalSeconds--;
                     updateTimerLabel();
                 } else {
+                    tieBreaker();
                     gameLoop.stop();
                     // endGame();
                     gameTimerLabel.setText("00:00");
@@ -1381,6 +1446,12 @@ public class GameEngine {
                 if (entity instanceof TowerEntity tower && tower.isPlayer()==isPlayer && tower.getHP()>0){
                     tower.setHP(0);
                     removeDeadEntity(tower);
+                    if (tower.isPlayer()){
+                        pointsCounter.setEnemyPoints(3);
+                    }
+                    else{
+                        pointsCounter.setOurPoints(3);
+                    }
                 }
             }
         }
