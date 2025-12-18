@@ -785,268 +785,6 @@ public class GameEngine {
         return img;
     }
 
-    /* GONE. REDUCED TO ATOMS.
-    private void redrawArena() {
-        // clear grid UI - remove all ImageViews (sprites) and health bars, but keep
-        // other children
-        for (Node n : arenaGrid.getChildren()) {
-            if (n instanceof Pane tile) {
-                // Remove ImageViews and health bars (Pane with health bar)
-                tile.getChildren().removeIf(node -> {
-                    if (node instanceof ImageView imgView) {
-                        // Also check if image is broken before removing
-                        javafx.scene.image.Image img = imgView.getImage();
-                        if (img != null && img.isError()) {
-                            return true; // Remove broken images
-                        }
-                        return true; // Remove all ImageViews to redraw fresh
-                    }
-                    // Remove health bars (Pane with 2 Rectangle children)
-                    if (node instanceof Pane healthBar) {
-                        if (healthBar.getChildren().size() == 2 &&
-                                healthBar.getChildren().get(0) instanceof Rectangle &&
-                                healthBar.getChildren().get(1) instanceof Rectangle) {
-                            return true; // Remove health bars
-                        }
-                    }
-                    return false;
-                });
-            }
-        }
-
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                final int rr = r;
-                final int cc = c;
-                Pane tile = getTile(rr, cc);
-                if (tile == null)
-                    continue;
-
-                // Check for static objects first (towers, bridges, etc.) - these take priority
-                // BUT skip ENTITY type - that's for dynamic entities, not static sprites
-                var obj = arenaMap.getObject(r, c);
-                if (obj != null && obj.getType() != ArenaObjectType.ENTITY) {
-                    ImageView staticSprite = SpriteLoader.getSprite(obj.getType(), tileSize);
-                    if (staticSprite != null) {
-                        final ImageView finalSprite = staticSprite;
-                        final Pane finalTile = tile;
-
-                        // Add sprite first
-                        tile.getChildren().add(staticSprite);
-
-                        // Add health bar for towers AFTER sprite (so it's on top and visible)
-                        Entity towerEntity = arenaMap.getEntity(r, c);
-                        if (towerEntity instanceof AliveEntity aliveTower) {
-                            double currentHP = aliveTower.getHP();
-                            AliveCard towerCard = (AliveCard) aliveTower
-                                    .getCard();
-                            double maxHP = towerCard != null ? towerCard.getHp() : currentHP;
-                            if (maxHP > 0) {
-                                Pane healthBar = createHealthBar(currentHP, maxHP, true, aliveTower.isPlayer());
-                                // Position health bar in the middle of tile (centered)
-                                // Position immediately using tileSize
-                                double barH = healthBar.getPrefHeight();
-                                double barW = healthBar.getPrefWidth();
-                                healthBar.setTranslateY((tileSize - barH) / 2);
-                                healthBar.setTranslateX((tileSize - barW) / 2);
-                                // Make sure health bar is visible
-                                healthBar.setVisible(true);
-                                healthBar.setManaged(true);
-                                tile.getChildren().add(healthBar);
-                            }
-                        }
-                        Platform.runLater(() -> {
-                            finalSprite.applyCss();
-                            // Don't call autosize() - we've already set fitWidth/fitHeight
-                            double tileW = finalTile.getWidth();
-                            double spriteW = finalSprite.getBoundsInParent().getWidth();
-                            finalSprite.setTranslateX(tileW - spriteW);
-                            double tileH = finalTile.getHeight();
-                            double spriteH = finalSprite.getBoundsInParent().getHeight();
-                            finalSprite.setTranslateY(tileH - spriteH);
-                        });
-
-                        continue; // Skip entity check if static object found
-                    }
-                }
-
-                // Then check for movable entities (units, buildings placed by player)
-                Entity entity = arenaMap.getEntity(r, c);
-                if (entity != null) {
-                    // Skip tower entities - they're drawn as static objects above
-                    if (entity instanceof TowerEntity) {
-                        continue;
-                    }
-
-                    ImageView entitySprite = getEntitySpriteFromCard(entity.getCard());
-                    if (entitySprite == null) {
-                        continue; // No sprite created
-                    }
-
-                    javafx.scene.image.Image spriteImage = entitySprite.getImage();
-
-                    // CRITICAL: NEVER add ImageView with null image - this causes logo to appear
-                    if (spriteImage == null) {
-                        // Image not set yet - wait for it or skip
-                        final ImageView finalSprite = entitySprite;
-                        final Pane finalTile = tile;
-
-                        // Wait for image to be set on the ImageView
-                        // Check periodically if image gets set
-                        Platform.runLater(() -> {
-                            javafx.scene.image.Image checkImage = finalSprite.getImage();
-                            if (checkImage != null && !checkImage.isError() && checkImage.getWidth() > 0) {
-                                // Image is now loaded - add it
-                                if (!finalTile.getChildren().contains(finalSprite)) {
-                                    finalTile.getChildren().add(finalSprite);
-                                    // Center the sprite
-                                    double tileW = finalTile.getWidth();
-                                    double spriteW = finalSprite.getFitWidth();
-                                    finalSprite.setTranslateX((tileW - spriteW) / 2);
-                                    double tileH = finalTile.getHeight();
-                                    double spriteH = finalSprite.getFitHeight();
-                                    finalSprite.setTranslateY((tileH - spriteH) / 2);
-                                }
-                            }
-                        });
-                        continue; // Skip for now - wait for image
-                    }
-
-                    // Check if image is in error state - if so, don't add it
-                    if (spriteImage.isError()) {
-                        System.err.println("Entity sprite image is in error state for: "
-                                + (entity.getCard() != null ? entity.getCard().getName() : "null"));
-                        continue; // Skip - don't add broken image
-                    }
-
-                    // CRITICAL: Only add ImageView if image is fully loaded (width > 0 means
-                    // loaded)
-                    // This prevents the logo from appearing when image is still loading
-                    if (spriteImage.getWidth() <= 0) {
-                        // Image is still loading - wait for it to load before adding
-                        final ImageView finalSprite = entitySprite;
-                        final Pane finalTile = tile;
-                        spriteImage.progressProperty().addListener((obs, oldProgress, newProgress) -> {
-                            if (newProgress.doubleValue() >= 1.0 && !spriteImage.isError()
-                                    && spriteImage.getWidth() > 0) {
-                                // Image loaded successfully - now add it
-                                Platform.runLater(() -> {
-                                    if (!finalTile.getChildren().contains(finalSprite) && !spriteImage.isError()) {
-                                        finalTile.getChildren().add(finalSprite);
-                                        // Center the sprite in the tile
-                                        double tileW = finalTile.getWidth();
-                                        double spriteW = finalSprite.getFitWidth();
-                                        finalSprite.setTranslateX((tileW - spriteW) / 2);
-                                        double tileH = finalTile.getHeight();
-                                        double spriteH = finalSprite.getFitHeight();
-                                        finalSprite.setTranslateY((tileH - spriteH) / 2);
-
-                                        // Add health bar when sprite is added (not towers - they're handled above)
-                                        Entity entityForHealth = arenaMap.getEntity(rr, cc);
-                                        if (entityForHealth instanceof AliveEntity aliveEntity
-                                                &&
-                                                !(entityForHealth instanceof TowerEntity)) {
-                                            double currentHP = aliveEntity.getHP();
-                                            AliveCard entityCard = (AliveCard) aliveEntity
-                                                    .getCard();
-                                            double maxHP = entityCard != null ? entityCard.getHp() : currentHP;
-                                            if (maxHP > 0) {
-                                                Pane healthBar = createHealthBar(currentHP, maxHP, false, aliveEntity.isPlayer());
-                                                finalTile.getChildren().add(healthBar);
-                                                healthBar.setTranslateY(2);
-                                                healthBar.setTranslateX(0);
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        });
-                        // Also listen for errors
-                        spriteImage.errorProperty().addListener((obs, wasError, isError) -> {
-                            if (isError) {
-                                System.err.println("Image failed to load for: "
-                                        + (entity.getCard() != null ? entity.getCard().getName() : "null"));
-                                // Don't add it - just skip
-                            }
-                        });
-                        continue; // Don't add yet - wait for image to load
-                    }
-
-                    // Image is loaded - safe to add, but double-check it's not in error
-                    if (spriteImage.isError()) {
-                        System.err.println("Image is in error state, skipping: "
-                                + (entity.getCard() != null ? entity.getCard().getName() : "null"));
-                        continue;
-                    }
-
-                    final ImageView finalSprite = entitySprite;
-                    final Pane finalTile = tile;
-
-                    // Set up listener to remove if image fails later
-                    spriteImage.errorProperty().addListener((obs, wasError, isError) -> {
-                        if (isError) {
-                            System.err.println("Image failed after being set for: "
-                                    + (entity.getCard() != null ? entity.getCard().getName() : "null"));
-                            Platform.runLater(() -> {
-                                if (finalTile.getChildren().contains(finalSprite)) {
-                                    finalTile.getChildren().remove(finalSprite);
-                                }
-                            });
-                        }
-                    });
-
-                    // Add the ImageView since image is loaded and valid
-                    tile.getChildren().add(entitySprite);
-
-                    // Add health bar for entity (not towers - they're handled above)
-                    if (entity instanceof AliveEntity aliveEntity) {
-                        double currentHP = aliveEntity.getHP();
-                        AliveCard entityCard = (AliveCard) aliveEntity
-                                .getCard();
-                        double maxHP = entityCard != null ? entityCard.getHp() : currentHP;
-                        if (maxHP > 0) {
-                            Pane healthBar = createHealthBar(currentHP, maxHP, false, aliveEntity.isPlayer());
-                            tile.getChildren().add(healthBar);
-                            Platform.runLater(() -> {
-                                // Position health bar at top of tile
-                                healthBar.setTranslateY(2);
-                                healthBar.setTranslateX(0);
-                            });
-                        }
-                    }
-
-                    Platform.runLater(() -> {
-                        // Double-check image is still valid before positioning
-                        javafx.scene.image.Image checkImage = finalSprite.getImage();
-                        if (checkImage != null && !checkImage.isError() && checkImage.getWidth() > 0) {
-                            // Don't call autosize() - we've already set fitWidth/fitHeight
-                            // Just center the sprite in the tile
-                            double tileW = finalTile.getWidth();
-                            double spriteW = finalSprite.getFitWidth();
-                            finalSprite.setTranslateX((tileW - spriteW) / 2);
-                            double tileH = finalTile.getHeight();
-                            double spriteH = finalSprite.getFitHeight();
-                            finalSprite.setTranslateY((tileH - spriteH) / 2);
-                        } else {
-                            // Image became invalid, remove it immediately
-                            if (finalTile.getChildren().contains(finalSprite)) {
-                                finalTile.getChildren().remove(finalSprite);
-                            }
-                        }
-                    });
-                }
-            }
-        }
-    }
-    */
-
-    /*
-    private void drawArena() {
-        // Use redrawArena instead - this method is deprecated
-        redrawArena();
-    }
-    */
-
     private void loadDefaultArenaIfExists() {
         try {
             File f = new File("saves/default.txt");
@@ -1187,8 +925,8 @@ public class GameEngine {
 
         // Update each entity
         AliveEntity.resetGraphs(arenaMap);
-        AliveEntity.fillEnemyGraph();
-        AliveEntity.fillOurGraph();
+        AliveEntity.fillGraph(true);
+        AliveEntity.fillGraph(false);
 
         for (AliveEntity entity : entitiesToUpdate) {
             // Find entity's actual position in map (don't use getRow/getCol from card)
@@ -1298,7 +1036,7 @@ public class GameEngine {
         int currentRow = unit.getRow();
         int currentCol = unit.getCol();
         // Find closest target
-        AliveEntity target = unit.findClosestTarget();
+        AliveEntity target = unit.findClosestTarget(arenaMap);
 
         if (target == null) {
             System.err.printf("NO target found for unit %s\n", unit.getCard().getName());
@@ -1431,7 +1169,7 @@ public class GameEngine {
                 int oldRow = currentRow;
                 int oldCol = currentCol;
 
-                unit.move(arenaMap);
+                unit.move(arenaMap, target);
 
                 int newRow = unit.getRow();
                 int newCol = unit.getCol();
@@ -1470,7 +1208,7 @@ public class GameEngine {
         int currentRow = building.getRow();
         int currentCol = building.getCol();
         
-        AliveEntity target = building.findClosestTarget();
+        AliveEntity target = building.findClosestTarget(arenaMap);
 
         if (target == null) {
             // Reduce lifetime for buildings
@@ -1585,7 +1323,7 @@ public class GameEngine {
         int currentCol = tower.getCol();
 
         // Find closest target
-        AliveEntity target = tower.findClosestTarget();
+        AliveEntity target = tower.findClosestTarget(arenaMap);
 
         if (target == null) {
             return; // No target found

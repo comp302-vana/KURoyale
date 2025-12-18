@@ -1,5 +1,6 @@
 package kuroyale.entitiypack.subclasses;
 
+import kuroyale.cardpack.CardType;
 import kuroyale.cardpack.subclasses.AliveCard;
 import kuroyale.entitiypack.Entity;
 import kuroyale.arenapack.ArenaMap;
@@ -10,8 +11,8 @@ public class AliveEntity extends Entity {
     private static final int ROWS = ArenaMap.getRows();
     private static final int COLS = ArenaMap.getCols();
     private static final int[][] directions = {{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}};
-    private static Entity[] ourEntities = new Entity[ROWS * COLS];
-    private static Entity[] enemyEntities = new Entity[ROWS * COLS];
+    private static AliveEntity[] ourEntities = new AliveEntity[ROWS * COLS];
+    private static AliveEntity[] enemyEntities = new AliveEntity[ROWS * COLS];
     private static short[] ourDistances = new short[ROWS * COLS];
     private static short[] enemyDistances = new short[ROWS * COLS];
     
@@ -58,7 +59,7 @@ public class AliveEntity extends Entity {
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0; c < COLS; c++) {
                 Entity entity = map.getEntity(r, c);
-                if (entity instanceof AliveEntity aliveEntity) {
+                if (entity instanceof AliveEntity aliveEntity && aliveEntity.getHP() > 0) {
                     if (aliveEntity.isPlayer()) {
                         ourEntities[r * COLS + c] = aliveEntity;
                         ourDistances[r * COLS + c] = 0;
@@ -76,11 +77,13 @@ public class AliveEntity extends Entity {
         }
     }
 
-    public static void fillEnemyGraph() {
-        // BFS to fill enemyEntities and enemyDistances
+    public static void fillGraph(boolean isPlayer) {
+        // BFS to fill ourEntities, ourDistances, enemyEntities, and enemyDistances
+        short[] targetDistances = isPlayer ? enemyDistances : ourDistances;
+        AliveEntity[] targetEntities = isPlayer ? enemyEntities : ourEntities;
         Queue<int[]> queue = new ArrayDeque<>();
-        for (int i = 0; i < enemyEntities.length; i++) {
-            if (enemyEntities[i] != null) {
+        for (int i = 0; i < targetEntities.length; i++) {
+            if (targetEntities[i] != null && targetEntities[i].getHP() > 0) {
                 int row = i / COLS;
                 int colmun = i % COLS;
                 queue.add(new int[]{row, colmun});
@@ -89,15 +92,15 @@ public class AliveEntity extends Entity {
 
         while (!queue.isEmpty()) {
             int[] cur = queue.poll();
-            int curDist = enemyDistances[cur[0] * COLS + cur[1]];
+            int curDist = targetDistances[cur[0] * COLS + cur[1]];
 
             for (int[] dir : directions) {
                 int newR = cur[0] + dir[0];
                 int newC = cur[1] + dir[1];
                 if (newR >= 0 && newR < ROWS && newC >= 0 && newC < COLS) {
-                    if (enemyDistances[newR * COLS + newC] > curDist + 1) {
-                        enemyDistances[newR * COLS + newC] = (short)(curDist + 1);
-                        enemyEntities[newR * COLS + newC] = enemyEntities[cur[0] * COLS + cur[1]];
+                    if (targetDistances[newR * COLS + newC] > curDist + 1) {
+                        targetDistances[newR * COLS + newC] = (short)(curDist + 1);
+                        targetEntities[newR * COLS + newC] = targetEntities[cur[0] * COLS + cur[1]];
                         queue.add(new int[]{newR, newC});
                     }
                 }
@@ -105,169 +108,29 @@ public class AliveEntity extends Entity {
         }
     }
 
-    public static void fillOurGraph() {
-        // BFS to fill ourEntities and ourDistances
-        Queue<int[]> queue = new ArrayDeque<>();
-        for (int i = 0; i < ourEntities.length; i++) {
-            if (ourEntities[i] != null) {
-                int row = i / COLS;
-                int colmun = i % COLS;
-                queue.add(new int[]{row, colmun});
-            }
-        }
-
-        while (!queue.isEmpty()) {
-            int[] cur = queue.poll();
-            int curDist = ourDistances[cur[0] * COLS + cur[1]];
-
-            for (int[] dir : directions) {
-                int newR = cur[0] + dir[0];
-                int newC = cur[1] + dir[1];
-                if (newR >= 0 && newR < ROWS && newC >= 0 && newC < COLS) {
-                    if (ourDistances[newR * COLS + newC] > curDist + 1) {
-                        ourDistances[newR * COLS + newC] = (short)(curDist + 1);
-                        ourEntities[newR * COLS + newC] = ourEntities[cur[0] * COLS + cur[1]];
-                        queue.add(new int[]{newR, newC});
-                    }
-                }
-            }
-        }
-    }
-
-    public AliveEntity findClosestTarget() {
+    public AliveEntity findClosestTarget(ArenaMap arenaMap) {
         short minDist = Short.MAX_VALUE;
         AliveEntity closestEnemy = null;
-        Entity[] targetGraph = isPlayer() ? enemyEntities : ourEntities;
+        AliveEntity[] targetGraph = isPlayer() ? enemyEntities : ourEntities;
         short[] distanceGraph = isPlayer() ? enemyDistances : ourDistances;
         for (int[] dir : directions) {
             int newR = row + dir[0];
             int newC = col + dir[1];
             if (newR >= 0 && newR < ROWS && newC >= 0 && newC < COLS) {
+                if (card.getType() != CardType.AIR && !arenaMap.isWalkable(newR, newC, card.getType() == CardType.AIR))
+                    continue;
                 int index = newR * COLS + newC;
                 short dist = distanceGraph[index];
-                if (dist < minDist) {
+                if (dist < minDist && targetGraph[index] != null) {
                     minDist = dist;
-                    closestEnemy = (AliveEntity) targetGraph[index];
+                    closestEnemy = targetGraph[index];
                 }
             }
         }
         return closestEnemy;
     }
 
-    /*
-    public AliveEntity findClosestTarget(ArenaMap map) {
-        boolean[][] visited = new boolean[ROWS][COLS];
-
-        Queue<int[]> q = new ArrayDeque<>();
-        q.add(new int[]{row, col});
-        visited[row][col] = true;
-
-        while (!q.isEmpty()) {
-            int[] cur = q.poll();
-            int r = cur[0], c = cur[1];
-
-            // Check for enemy entity at current position
-            Entity e = map.getEntity(r, c);
-            if (e instanceof AliveEntity a && a.isPlayer() != isPlayer() && a.getHP() > 0) {
-                return a;
-            }
-
-            // Check for enemy towers/kings at current position
-            var obj = map.getObject(r, c);
-            if (obj != null && obj.getType() != null) {
-                switch (obj.getType()) {
-                    case ENEMY_TOWER, ENEMY_KING -> {
-                        if (isPlayer()) {
-                            Entity tower = map.getEntity(r, c);
-                            if (tower instanceof AliveEntity towerEntity && towerEntity.getHP() > 0) {
-                                return towerEntity;
-                            }
-                        }
-                    }
-                    case OUR_TOWER, OUR_KING -> {
-                        if (!isPlayer()) {
-                            Entity tower = map.getEntity(r, c);
-                            if (tower instanceof AliveEntity towerEntity && towerEntity.getHP() > 0) {
-                                return towerEntity;
-                            }
-                        }
-                    }
-                    default -> {}
-                }
-            }
-
-            // Expand to walkable neighbors, but also check adjacent non-walkable tiles for towers
-            for (int[] d : directions) {
-                int nr = r + d[0], nc = c + d[1];
-                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !visited[nr][nc]) {
-                    // Check if this tile has an enemy tower/king (even if not walkable)
-                    var neighborObj = map.getObject(nr, nc);
-                    if (neighborObj != null && neighborObj.getType() != null) {
-                        switch (neighborObj.getType()) {
-                            case ENEMY_TOWER, ENEMY_KING -> {
-                                if (isPlayer()) {
-                                    Entity tower = map.getEntity(nr, nc);
-                                    if (tower instanceof AliveEntity towerEntity && towerEntity.getHP() > 0) {
-                                        return towerEntity;
-                                    }
-                                }
-                            }
-                            case OUR_TOWER, OUR_KING -> {
-                                if (!isPlayer()) {
-                                    Entity tower = map.getEntity(nr, nc);
-                                    if (tower instanceof AliveEntity towerEntity && towerEntity.getHP() > 0) {
-                                        return towerEntity;
-                                    }
-                                }
-                            }
-                            default -> {}
-                        }
-                    }
-                    
-                    // Only add to queue if the tile is walkable (for pathfinding)
-                    if (map.isWalkable(nr, nc)) {
-                        visited[nr][nc] = true;
-                        q.add(new int[]{nr, nc});
-                    }
-                }
-            }
-        }
-        
-        // If BFS didn't find any target through walkable paths, do a direct search for towers/kings
-        // This handles cases where towers are on non-walkable tiles
-        for (int r = 0; r < ROWS; r++) {
-            for (int c = 0; c < COLS; c++) {
-                var obj = map.getObject(r, c);
-                if (obj != null && obj.getType() != null) {
-                    switch (obj.getType()) {
-                        case ENEMY_TOWER, ENEMY_KING -> {
-                            if (isPlayer()) {
-                                Entity tower = map.getEntity(r, c);
-                                if (tower instanceof AliveEntity towerEntity && towerEntity.getHP() > 0) {
-                                    return towerEntity;
-                                }
-                            }
-                        }
-                        case OUR_TOWER, OUR_KING -> {
-                            if (!isPlayer()) {
-                                Entity tower = map.getEntity(r, c);
-                                if (tower instanceof AliveEntity towerEntity && towerEntity.getHP() > 0) {
-                                    return towerEntity;
-                                }
-                            }
-                        }
-                        default -> {}
-                    }
-                }
-            }
-        }
-        
-        return null;
-    }
-    */
-
-    public void move(ArenaMap map){
-        AliveEntity target = findClosestTarget();
+    public void move(ArenaMap map, AliveEntity target) {
         if (target == null) {
             return; // No target found, don't move
         }
@@ -288,7 +151,7 @@ public class AliveEntity extends Entity {
             int nr = currentR + d[0];
             int nc = currentC + d[1];
             
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && map.isWalkable(nr, nc)) {
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && map.isWalkable(nr, nc, card.getType() == CardType.AIR)) {
                 // Calculate distance to target from this new position
                 int dist = Math.abs(targetR - nr) + Math.abs(targetC - nc);
                 if (dist < minDist && dist < currentDist) {
@@ -325,7 +188,7 @@ public class AliveEntity extends Entity {
                     int nr = currentR + d[0];
                     int nc = currentC + d[1];
                     
-                    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && map.isWalkable(nr, nc)) {
+                    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && map.isWalkable(nr, nc, card.getType() == CardType.AIR)) {
                         int dist = Math.abs(bridgeRow - nr) + Math.abs(bridgeCol - nc);
                         int currentBridgeDist = Math.abs(bridgeRow - currentR) + Math.abs(bridgeCol - currentC);
                         if (dist < currentBridgeDist && (bestDir < 0 || dist < minDist)) {
@@ -369,11 +232,11 @@ public class AliveEntity extends Entity {
     }
 
     private static String printEntities(boolean isPlayer) {
-        Entity[] graph = isPlayer ? ourEntities : enemyEntities;
+        AliveEntity[] graph = isPlayer ? ourEntities : enemyEntities;
         String result = "\n";
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0; c < COLS; c++) {
-                Entity e = graph[r * COLS + c];
+                AliveEntity e = graph[r * COLS + c];
                 if (e == null) {
                     result += "   ";
                 } else if (e instanceof TowerEntity) {

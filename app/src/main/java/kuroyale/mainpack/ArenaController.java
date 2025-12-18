@@ -191,11 +191,27 @@ public class ArenaController {
                             return;
                         }
 
-                        boolean placementOK = arenaMap.placeObject(r, c, objType);
+                        boolean placementOK = true;
+                        if (objType == ArenaObjectType.BRIDGE) {
+                            if (c == 15) {
+                                placementOK = false;
+                            }
+                        }
+                        if (placementOK) {
+                            placementOK = arenaMap.placeObject(r, c, objType);
+                        }
                         if (placementOK) {
                             decrement(objType);
                             // Try to get sprite
-                            ImageView sprite = SpriteLoader.getSprite(objType, tileSize);
+                            ImageView sprite;
+                            if (objType == ArenaObjectType.BRIDGE) {
+                                sprite = SpriteLoader.getBuilderBridgeSprite(tileSize);
+                                arenaMap.setObject(r, c + (2 * (c % 2) - 1), ArenaObjectType.BRIDGE);
+                                System.out.printf("placed first bridge on %d, %d\n", r, c);
+                                System.out.printf("placed second bridge on %d, %d\n", r, c + (2 * (c % 2) - 1));
+                            } else {
+                                sprite = SpriteLoader.getSprite(objType, tileSize);
+                            }
                             if (sprite != null) {
                                 tile.getChildren().add(sprite);
 
