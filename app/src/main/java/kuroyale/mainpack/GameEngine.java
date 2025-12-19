@@ -46,7 +46,6 @@ import kuroyale.cardpack.subclasses.AliveCard;
 import kuroyale.cardpack.subclasses.SpellCard;
 import kuroyale.cardpack.subclasses.BuildingCard;
 
-// import kuroyale.entitiypack.Entity;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
@@ -475,6 +474,7 @@ public class GameEngine {
                             // Set entity position
                             playedEntity.setPosition(r, cc);
                             arenaMap.setEntity(r, cc, playedEntity);
+                            arenaMap.addEntity(playedEntity);
 
                             // Redraw arena to show the new entity
                             entityDirty = true;
@@ -1129,6 +1129,7 @@ public class GameEngine {
     private void removeDeadEntity(AliveEntity entity) {
 
         // Find entity position
+        arenaMap.removeEntity(entity);
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 if (arenaMap.getEntity(r, c) == entity) {
@@ -1369,8 +1370,11 @@ public class GameEngine {
                 int newRow = unit.getRow();
                 int newCol = unit.getCol();
 
-                if ((newRow != oldRow || newCol != oldCol) && newRow >= 0 && newRow < rows && newCol >= 0
-                        && newCol < cols) {
+                if (
+                    (newRow != oldRow || newCol != oldCol) &&
+                    (newRow >= 0 && newRow < rows) &&
+                    (newCol >= 0 && newCol < cols)
+                ) {
                     PlacedObject oldObj = arenaMap.getObject(oldRow, oldCol);
                     if (oldObj == null || oldObj.getType() == ArenaObjectType.ENTITY) {
                         arenaMap.clearObject(oldRow, oldCol);

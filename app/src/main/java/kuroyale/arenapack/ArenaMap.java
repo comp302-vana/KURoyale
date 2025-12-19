@@ -2,6 +2,7 @@ package kuroyale.arenapack;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import kuroyale.entitiypack.subclasses.AliveEntity;
@@ -14,12 +15,17 @@ public class ArenaMap {
 
     private final ArenaTile[][] grid;
     private final ArenaTile[][] collisions;
-    private final AliveEntity[][] entities;
+    private final AliveEntity[][] entityArray;
+
+    private List<AliveEntity> entityList;
+    private List<Integer> bridges;
 
     public ArenaMap() {
         grid = new ArenaTile[rows][cols];
         collisions = new ArenaTile[rows][cols];
-        entities = new AliveEntity[rows][cols];
+        entityArray = new AliveEntity[rows][cols];
+        entityList = new LinkedList<>();
+        bridges = new LinkedList<>();
         initTiles();
     }
 
@@ -30,9 +36,9 @@ public class ArenaMap {
 
                 TileType type;
 
-                if (c >= 0 && c < cols/2 - 1)
+                if (c >= 0 && c < cols / 2 - 1)
                     type = TileType.GRASS;
-                else if (c >= cols/2 - 1 && c <= cols/2)
+                else if (c >= cols / 2 - 1 && c <= cols / 2)
                     type = TileType.RIVER;
                 else
                     type = TileType.GRASS;
@@ -60,38 +66,32 @@ public class ArenaMap {
             tile.setPlacedObject(new PlacedObject(type));
             return true;
         }
-        
+
         if (type == ArenaObjectType.ENTITY) {
             // Check grid for bridges first (bridges are in grid, not collisions)
             PlacedObject gridObj = grid[row][col].getPlacedObject();
-            
+
             // If this tile is a bridge, allow entities here (bridges are at columns 15-16)
             if (gridObj != null && gridObj.getType() == ArenaObjectType.BRIDGE) {
-                // Bridge tile - entity can walk on bridge, but don't overwrite bridge object
-                // Just return true to indicate placement is allowed (entity is tracked separately in entities grid)
                 return true;
             }
-            
-            // TEMPORARY: Allow entities on river tiles for testing
-            // Check if tile is river - temporarily allow entities on river tiles
+
+            // Check if tile is river
             if (grid[row][col].getTileType() == TileType.RIVER) {
-                // River tiles are temporarily walkable for testing
-                // Just return true to allow placement
+                
             }
-            
-            // REMOVED: Side-restriction - movement should be free to cross to enemy side
-            // Spawn restriction is now enforced in the drag-drop handler instead
-            
+
             // Check collisions grid for blocking objects
             PlacedObject collisionObj = collisions[row][col].getPlacedObject();
-            
+
             // Also check grid for non-bridge objects that might block
-            if (gridObj != null && gridObj.getType() != ArenaObjectType.BRIDGE && gridObj.getType() != ArenaObjectType.ENTITY) {
+            if (gridObj != null && gridObj.getType() != ArenaObjectType.BRIDGE
+                    && gridObj.getType() != ArenaObjectType.ENTITY) {
                 // There's a non-bridge, non-entity object in grid - block placement
                 System.out.println("Blocked by grid object: " + gridObj.getType() + " at (" + row + "," + col + ")");
                 return false;
             }
-            
+
             if (collisionObj == null) {
                 // Empty tile - can place entity (but only if grid doesn't have blocking object)
                 if (gridObj == null || gridObj.getType() == ArenaObjectType.ENTITY) {
@@ -106,30 +106,31 @@ public class ArenaMap {
                 return true;
             } else {
                 // Other object type blocks entity placement
-                System.out.println("Blocked by collision object: " + collisionObj.getType() + " at (" + row + "," + col + ")");
+                System.out.println(
+                        "Blocked by collision object: " + collisionObj.getType() + " at (" + row + "," + col + ")");
                 return false;
             }
         }
-        
+
         // For non-ENTITY types, check river restriction
         if (grid[row][col].getTileType() == TileType.RIVER && type != ArenaObjectType.BRIDGE) {
             return false;
         }
-        
-        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
-        (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
-        
-        for (int r = row-s; r<=row; r++) {
-            for (int c = col-s; c<=col; c++) {
+
+        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2
+                : (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
+
+        for (int r = row - s; r <= row; r++) {
+            for (int c = col - s; c <= col; c++) {
                 if (!collisions[r][c].isEmpty())
                     return false;
             }
         }
 
         grid[row][col].setPlacedObject(new PlacedObject(type));
-        
-        for (int r = row-s; r<=row; r++) {
-            for (int c = col-s; c<=col; c++) {
+
+        for (int r = row - s; r <= row; r++) {
+            for (int c = col - s; c <= col; c++) {
                 collisions[r][c].setPlacedObject(new PlacedObject(type));
             }
         }
@@ -142,35 +143,35 @@ public class ArenaMap {
         if (grid[row][col].getPlacedObject() == null)
             return;
         ArenaObjectType type = grid[row][col].getPlacedObject().getType();
-        
+
         // NEVER clear bridges - they're permanent structures
         if (type == ArenaObjectType.BRIDGE) {
             return;
         }
-        
+
         // Only clear ENTITY objects, not bridges or other static objects
         if (type == ArenaObjectType.ENTITY) {
             grid[row][col].setPlacedObject(null);
             // Also clear from collisions if it was there
-            if (collisions[row][col].getPlacedObject() != null && 
-                collisions[row][col].getPlacedObject().getType() == ArenaObjectType.ENTITY) {
+            if (collisions[row][col].getPlacedObject() != null &&
+                    collisions[row][col].getPlacedObject().getType() == ArenaObjectType.ENTITY) {
                 collisions[row][col].setPlacedObject(null);
             }
             return;
         }
-        
+
         // For towers/kings, clear the full area
         grid[row][col].setPlacedObject(null);
-        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
-        (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
+        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2
+                : (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
 
-        for (int r = row-s; r<=row; r++) {
-            for (int c = col-s; c<=col; c++) {
+        for (int r = row - s; r <= row; r++) {
+            for (int c = col - s; c <= col; c++) {
                 collisions[r][c].setPlacedObject(null);
 
-                if (grid[r][c].getPlacedObject() != null && 
-                    grid[r][c].getPlacedObject().getType() == type) {
-                        grid[r][c].setPlacedObject(null);
+                if (grid[r][c].getPlacedObject() != null &&
+                        grid[r][c].getPlacedObject().getType() == type) {
+                    grid[r][c].setPlacedObject(null);
                 }
             }
         }
@@ -178,13 +179,13 @@ public class ArenaMap {
 
     public void setEntity(int row, int col, AliveEntity entity) {
         if (row >= 0 && row < rows && col >= 0 && col < cols) {
-            this.entities[row][col] = entity;
+            this.entityArray[row][col] = entity;
         }
     }
 
     public AliveEntity getEntity(int row, int col) {
         if (row >= 0 && row < rows && col >= 0 && col < cols) {
-            return this.entities[row][col];
+            return this.entityArray[row][col];
         }
         return null;
     }
@@ -270,12 +271,15 @@ public class ArenaMap {
                     } else {
                         ArenaObjectType type = ArenaObjectType.valueOf(tok);
                         grid[r][c].setPlacedObject(new PlacedObject(type));
-                        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2 :
-                        (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
+                        int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2
+                                : (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
 
                         // Create a single TowerEntity instance for all tiles in the tower
                         TowerEntity towerEntity = null;
                         switch (type) {
+                            case ArenaObjectType.BRIDGE:
+                                bridges.add(r);
+                                break;
                             case ArenaObjectType.OUR_KING:
                                 towerEntity = new TowerEntity(true, true);
                                 towerEntity.setPosition(r, c); // Set position to the bottom-right corner
@@ -295,15 +299,16 @@ public class ArenaMap {
                             default:
                                 break;
                         }
-                        
+
                         // Use the same TowerEntity instance for all tiles in the tower
                         if (towerEntity != null) {
-                            for (int rr = r-s; rr<=r; rr++) {
-                                for (int cc = c-s; cc<=c; cc++) {
+                            for (int rr = r - s; rr <= r; rr++) {
+                                for (int cc = c - s; cc <= c; cc++) {
                                     collisions[rr][cc].setPlacedObject(new PlacedObject(type));
-                                    entities[rr][cc] = towerEntity; // Same instance for all tiles
+                                    entityArray[rr][cc] = towerEntity; // Same instance for all tiles
                                 }
                             }
+                            entityList.add(towerEntity);
                         }
                     }
                 }
@@ -327,10 +332,15 @@ public class ArenaMap {
         grid[row][col].setPlacedObject(new PlacedObject(type));
     }
 
-    public static int getRows() {return rows;}
-    public static int getCols() {return cols;}
+    public static int getRows() {
+        return rows;
+    }
 
-    public boolean isWalkable(int r, int c, boolean flying){
+    public static int getCols() {
+        return cols;
+    }
+
+    public boolean isWalkable(int r, int c, boolean flying) {
         // Check if tile has a placed object
         PlacedObject obj = grid[r][c].getPlacedObject();
         if (obj != null) {
@@ -348,9 +358,39 @@ public class ArenaMap {
         // Grass tiles are walkable
         return true;
     }
-    public void moveEntitiy(int oldR, int oldC, int newR, int newC){
-        AliveEntity ent=entities[oldR][oldC];
-        entities[newR][newC]=ent;
-        entities[oldR][oldC]=null;
+
+    public void moveEntitiy(int oldR, int oldC, int newR, int newC) {
+        AliveEntity ent = entityArray[oldR][oldC];
+        entityArray[newR][newC] = ent;
+        entityArray[oldR][oldC] = null;
+    }
+
+    public List<AliveEntity> getEntities() {
+        return entityList;
+    }
+
+    public void addEntity(AliveEntity entity) {
+        entityList.add(entity);
+    }
+
+    public void removeEntity(AliveEntity entity) {
+        entityList.remove(entity);
+    }
+
+    public void removeEntity(int row, int col) {
+        for (AliveEntity entity : entityList) {
+            if (entity.getRow() == row && entity.getCol() == col) {
+                entityList.remove(entity);
+                return;
+            }
+        }
+    }
+
+    public void clearEntities() {
+        entityList.clear();
+    }
+
+    public List<Integer> getBridges() {
+        return bridges;
     }
 }

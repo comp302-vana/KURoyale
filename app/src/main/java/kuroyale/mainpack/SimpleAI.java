@@ -42,8 +42,8 @@ public class SimpleAI {
     public SimpleAI(ArenaMap arenaMap, GameEngine gameEngine) {
         this.arenaMap = arenaMap;
         this.gameEngine = gameEngine;
-        this.rows = arenaMap.getRows();
-        this.cols = arenaMap.getCols();
+        this.rows = ArenaMap.getRows();
+        this.cols = ArenaMap.getCols();
         
         this.currentElixir = 5.0;
         createAIDeck();
@@ -134,7 +134,7 @@ public class SimpleAI {
     }
 
     private boolean placeCard(int cardID, int cost){
-        int enemySideStartCol = cols / 2 - 1;
+        int enemySideStartCol = cols / 2 + 1;
 
         boolean isSpell = (cardID >= 25 && cardID <= 28);
 
@@ -176,6 +176,7 @@ public class SimpleAI {
             if (placementOK) {
                 playedEntity.setPosition(row, cc);
                 arenaMap.setEntity(row, cc, playedEntity);
+                arenaMap.addEntity(playedEntity);
                 currentElixir -= cost;
                 System.out.println("AI played: " + playedEntity.getCard().getName() + " at (" + row + ", " + cc + ")");
                 return true;
