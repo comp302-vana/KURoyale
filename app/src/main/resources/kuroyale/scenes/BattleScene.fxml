@@ -78,8 +78,8 @@
                   <RowConstraints minHeight="10.0" percentHeight="5.55" prefHeight="30.0" vgrow="SOMETIMES" />
                </rowConstraints>
             </GridPane>
-            <Pane fx:id="entityLayer" pickOnBounds="false" />
             <Pane fx:id="staticLayer" pickOnBounds="false" />
+            <Pane fx:id="entityLayer" pickOnBounds="false" />
          </children>
       </StackPane>
       <VBox layoutX="950.0" layoutY="124.0" prefHeight="540.0" prefWidth="114.0" spacing="12.0" style="-fx-background-color: #00000041;" AnchorPane.bottomAnchor="90.0" AnchorPane.leftAnchor="50.0" AnchorPane.topAnchor="90.0">

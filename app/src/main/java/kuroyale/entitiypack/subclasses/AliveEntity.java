@@ -4,17 +4,19 @@ import kuroyale.cardpack.CardType;
 import kuroyale.cardpack.subclasses.AliveCard;
 import kuroyale.entitiypack.Entity;
 import kuroyale.arenapack.ArenaMap;
+import kuroyale.arenapack.ArenaObjectType;
+
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 public class AliveEntity extends Entity {
+    public static final int[][] directions = {{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}};
     private static final int ROWS = ArenaMap.getRows();
     private static final int COLS = ArenaMap.getCols();
-    private static final int[][] directions = {{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}};
     private static AliveEntity[] ourEntities = new AliveEntity[ROWS * COLS];
     private static AliveEntity[] enemyEntities = new AliveEntity[ROWS * COLS];
-    private static short[] ourDistances = new short[ROWS * COLS];
-    private static short[] enemyDistances = new short[ROWS * COLS];
+    private static float[] ourDistances = new float[ROWS * COLS];
+    private static float[] enemyDistances = new float[ROWS * COLS];
     
     private AliveCard card;
     private double HP;
@@ -79,7 +81,7 @@ public class AliveEntity extends Entity {
 
     public static void fillGraph(boolean isPlayer) {
         // BFS to fill ourEntities, ourDistances, enemyEntities, and enemyDistances
-        short[] targetDistances = isPlayer ? enemyDistances : ourDistances;
+        float[] targetDistances = isPlayer ? enemyDistances : ourDistances;
         AliveEntity[] targetEntities = isPlayer ? enemyEntities : ourEntities;
         Queue<int[]> queue = new ArrayDeque<>();
         for (int i = 0; i < targetEntities.length; i++) {
@@ -92,16 +94,18 @@ public class AliveEntity extends Entity {
 
         while (!queue.isEmpty()) {
             int[] cur = queue.poll();
-            int curDist = targetDistances[cur[0] * COLS + cur[1]];
+            float curDist = targetDistances[cur[0] * COLS + cur[1]];
 
             for (int[] dir : directions) {
+                boolean diagonal = (dir[0] != 0 && dir[1] != 0);
+                float dist = diagonal ? 1.4f : 1.0f;
                 int newR = cur[0] + dir[0];
                 int newC = cur[1] + dir[1];
                 if (newR >= 0 && newR < ROWS && newC >= 0 && newC < COLS) {
-                    if (targetDistances[newR * COLS + newC] > curDist + 1) {
-                        targetDistances[newR * COLS + newC] = (short)(curDist + 1);
+                    if (targetDistances[newR * COLS + newC] > curDist + dist) {
+                        targetDistances[newR * COLS + newC] = (curDist + dist);
                         targetEntities[newR * COLS + newC] = targetEntities[cur[0] * COLS + cur[1]];
-                        queue.add(new int[]{newR, newC});
+                        queue.add(new int[] {newR, newC});
                     }
                 }
             }
@@ -109,10 +113,10 @@ public class AliveEntity extends Entity {
     }
 
     public AliveEntity findClosestTarget(ArenaMap arenaMap) {
-        short minDist = Short.MAX_VALUE;
+        float minDist = Float.MAX_VALUE;
         AliveEntity closestEnemy = null;
         AliveEntity[] targetGraph = isPlayer() ? enemyEntities : ourEntities;
-        short[] distanceGraph = isPlayer() ? enemyDistances : ourDistances;
+        float[] distanceGraph = isPlayer() ? enemyDistances : ourDistances;
         for (int[] dir : directions) {
             int newR = row + dir[0];
             int newC = col + dir[1];
@@ -120,7 +124,7 @@ public class AliveEntity extends Entity {
                 if (card.getType() != CardType.AIR && !arenaMap.isWalkable(newR, newC, card.getType() == CardType.AIR))
                     continue;
                 int index = newR * COLS + newC;
-                short dist = distanceGraph[index];
+                float dist = distanceGraph[index];
                 if (dist < minDist && targetGraph[index] != null) {
                     minDist = dist;
                     closestEnemy = targetGraph[index];
@@ -151,7 +155,8 @@ public class AliveEntity extends Entity {
             int nr = currentR + d[0];
             int nc = currentC + d[1];
             
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && map.isWalkable(nr, nc, card.getType() == CardType.AIR)) {
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && map.isWalkable(nr, nc, card.getType() == CardType.AIR) &&
+                    (map.getObject(nr, nc) == null || map.getObject(nr, nc).getType() == ArenaObjectType.BRIDGE)) {
                 // Calculate distance to target from this new position
                 int dist = Math.abs(targetR - nr) + Math.abs(targetC - nc);
                 if (dist < minDist && dist < currentDist) {
@@ -212,17 +217,17 @@ public class AliveEntity extends Entity {
     }
 
     private static String printDistances(boolean isPlayer) {
-        short[] graph = isPlayer ? ourDistances : enemyDistances;
+        float[] graph = isPlayer ? ourDistances : enemyDistances;
         String result = "\n";
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0; c < COLS; c++) {
-                short val = graph[r * COLS + c];
-                if (val == Short.MAX_VALUE) {
+                float val = graph[r * COLS + c];
+                if (val == Float.MAX_VALUE) {
                     result += "   ";
                 } else if (val == 0) {
                     result += " * ";
-                }else {
-                    result += (val < 10 ? " " : "") + val + " ";
+                } else {
+                    result += (val < 10 ? " " : "") + (int) val + " ";
                 }
             }
             result += "\n";

@@ -59,8 +59,8 @@ public class ArenaController {
 
     private EnumMap<ArenaObjectType, Label> countLabels = new EnumMap<>(ArenaObjectType.class);
 
-    private final int rows = arenaMap.getRows();
-    private final int cols = arenaMap.getCols();
+    private final int rows = ArenaMap.getRows();
+    private final int cols = ArenaMap.getCols();
 
     private final int tileSize = 24;
 
@@ -139,7 +139,7 @@ public class ArenaController {
     }
 
     private ImageView loadFullImage(ArenaObjectType type) {
-        ImageView img = SpriteLoader.getSprite(type, tileSize);
+        ImageView img = SpriteLoader.getImage(type, tileSize);
         img.setFitWidth(30);
         img.setPreserveRatio(true);
 
@@ -155,12 +155,20 @@ public class ArenaController {
                 tile.setPrefWidth(tileSize);
                 tile.setPrefHeight(tileSize);
 
-                if (col >= 0 && col < cols/2 - 1) {
-                    tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
-                } else if (col >= cols/2 - 1 && col <= cols/2) {
-                    tile.setStyle("-fx-background-color: #42A5F5; -fx-border-color: #64B5F6; -fx-border-width: 0.5;");
+                if (col >= cols / 2 - 1 && col <= cols / 2) {
+                    tile.setStyle(
+                            "-fx-background-image: url('/kuroyale/images/water.png');" +
+                                    "-fx-background-size: cover;");
                 } else {
-                    tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
+                    if ((col + row) % 2 == 0) {
+                        tile.setStyle(
+                                "-fx-background-image: url('/kuroyale/images/darkGrass.png');" +
+                                        "-fx-background-size: cover;");
+                    } else {
+                        tile.setStyle(
+                                "-fx-background-image: url('/kuroyale/images/lightGrass.png');" +
+                                        "-fx-background-size: cover;");
+                    }
                 }
 
                 int r = row;
@@ -583,15 +591,26 @@ public class ArenaController {
 
                 // Integer r = GridPane.getRowIndex(n);
                 Integer c = GridPane.getColumnIndex(n);
+                Integer r = GridPane.getRowIndex(n);
                 int col = (c == null ? 0 : c);
+                int row = (r == null ? 0 : r);
 
                 // restore tile color
-                if (col < cols/2 - 1)
-                    tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
-                else if (col <= cols/2)
-                    tile.setStyle("-fx-background-color: #42A5F5; -fx-border-color: #64B5F6; -fx-border-width: 0.5;");
-                else
-                    tile.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #9CCC65; -fx-border-width: 0.5;");
+                if (col >= cols / 2 - 1 && col <= cols / 2) {
+                    tile.setStyle(
+                            "-fx-background-image: url('/kuroyale/images/water.png');" +
+                                    "-fx-background-size: cover;");
+                } else {
+                    if ((col + row) % 2 == 0) {
+                        tile.setStyle(
+                                "-fx-background-image: url('/kuroyale/images/darkGrass.png');" +
+                                        "-fx-background-size: cover;");
+                    } else {
+                        tile.setStyle(
+                                "-fx-background-image: url('/kuroyale/images/lightGrass.png');" +
+                                        "-fx-background-size: cover;");
+                    }
+                }
             }
         }
 

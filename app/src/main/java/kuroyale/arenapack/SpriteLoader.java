@@ -78,6 +78,20 @@ public class SpriteLoader {
         };
     }
 
+    public static ImageView getImage(ArenaObjectType type, int tileSize) {
+        return switch (type) {
+            case OUR_TOWER -> slice(OUR_TOWER, 3*tileSize, 0, 0);
+            case OUR_KING -> slice(OUR_KING, 4*tileSize, 0, 0);
+            
+            case ENEMY_TOWER -> slice(ENEMY_TOWER, 3*tileSize, 0, 0);
+            case ENEMY_KING -> slice(ENEMY_KING, 4*tileSize, 0, 0);
+
+            case BRIDGE -> slice(BRIDGE, 1*tileSize, 0, 0);
+
+            case ENTITY -> new ImageView("/kuroyale/images/icon.png");
+        };
+    }
+
     public static ImageView getBuilderBridgeSprite(int tileSize) {
         return specialBridgeSlice(LONG_BRIDGE, tileSize);
     }

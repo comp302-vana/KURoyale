@@ -382,16 +382,16 @@ public class GameEngine {
 
                 if (col >= cols / 2 - 1 && col <= cols / 2) {
                     tile.setStyle(
-                            "-fx-background-image: url('/kuroyale/images/water.jpg');" +
+                            "-fx-background-image: url('/kuroyale/images/water.png');" +
                                     "-fx-background-size: cover;");
                 } else {
                     if ((col + row) % 2 == 0) {
                         tile.setStyle(
-                                "-fx-background-image: url('/kuroyale/images/darkGrass.jpg');" +
+                                "-fx-background-image: url('/kuroyale/images/darkGrass.png');" +
                                         "-fx-background-size: cover;");
                     } else {
                         tile.setStyle(
-                                "-fx-background-image: url('/kuroyale/images/lightGrass.jpg');" +
+                                "-fx-background-image: url('/kuroyale/images/lightGrass.png');" +
                                         "-fx-background-size: cover;");
                     }
                 }
@@ -868,7 +868,7 @@ public class GameEngine {
         for (int r=0; r<rows;r++){
             for (int c=0;c<cols;c++){
                 AliveEntity entity=arenaMap.getEntity(r,c);
-                if (entity instanceof TowerEntity tower && entity.getHP()>0){
+                if (entity instanceof TowerEntity && entity.getHP()>0){
                     if (entity.isPlayer()){
                         if(entity.getHP()<minPlayer){
                             minPlayer=entity.getHP();
@@ -1251,19 +1251,8 @@ public class GameEngine {
         }
 
         // --- find target position on the entity grid ---
-        int targetRow = -1, targetCol = -1;
-
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                if (arenaMap.getEntity(r, c) == target) {
-                    targetRow = r;
-                    targetCol = c;
-                    break;
-                }
-            }
-            if (targetRow >= 0)
-                break;
-        }
+        int targetRow = target.getRow();
+        int targetCol = target.getCol();
 
         if (targetRow < 0 || targetCol < 0) {
             return; // target vanished from map
@@ -1282,8 +1271,7 @@ public class GameEngine {
             unitRange = 1.0; // Normalize melee range to 1 tile
         }
 
-        AliveCard aliveCard = (AliveCard) unit.getCard();
-        double actSpeed = aliveCard.getActSpeed();
+        double actSpeed = ((AliveCard) unit.getCard()).getActSpeed();
         double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0;
 
         // --- special case: melee vs tower ---
@@ -1291,10 +1279,9 @@ public class GameEngine {
         // contains the target tower entity (towers occupy multiple cells)
         boolean adjacentEnemyTowerObject = false;
         if (isMelee && target instanceof TowerEntity) {
-            int[][] orthoDirs = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
-            for (int[] d : orthoDirs) {
-                int rr = currentRow + d[0];
-                int cc = currentCol + d[1];
+            for (int[] direction : AliveEntity.directions) {
+                int rr = currentRow + direction[0];
+                int cc = currentCol + direction[1];
                 if (rr < 0 || rr >= rows || cc < 0 || cc >= cols)
                     continue;
 
@@ -1303,8 +1290,8 @@ public class GameEngine {
                 AliveEntity neighborEntity = arenaMap.getEntity(rr, cc);
                 if (neighborEntity == target) {
                     adjacentEnemyTowerObject = true;
-                    System.out.println("  DEBUG: Found target tower entity at neighbor (" + rr + "," + cc
-                            + ") → adjacentEnemyTowerObject = true");
+                    // System.out.println("  DEBUG: Found target tower entity at neighbor (" + rr + "," + cc
+                    //         + ") → adjacentEnemyTowerObject = true");
                     break;
                 }
 
@@ -1315,16 +1302,16 @@ public class GameEngine {
                         case ENEMY_TOWER, ENEMY_KING -> {
                             if (unit.isPlayer()) {
                                 adjacentEnemyTowerObject = true;
-                                System.out.println("  DEBUG: Found ENEMY_TOWER/KING object at (" + rr + "," + cc
-                                        + ") → adjacentEnemyTowerObject = true");
+                                //System.out.println("  DEBUG: Found ENEMY_TOWER/KING object at (" + rr + "," + cc
+                                //        + ") → adjacentEnemyTowerObject = true");
                                 break;
                             }
                         }
                         case OUR_TOWER, OUR_KING -> {
                             if (!unit.isPlayer()) {
                                 adjacentEnemyTowerObject = true;
-                                System.out.println("  DEBUG: Found OUR_TOWER/KING object at (" + rr + "," + cc
-                                        + ") → adjacentEnemyTowerObject = true");
+                                //System.out.println("  DEBUG: Found OUR_TOWER/KING object at (" + rr + "," + cc
+                                //        + ") → adjacentEnemyTowerObject = true");
                                 break;
                             }
                         }
@@ -1342,15 +1329,16 @@ public class GameEngine {
         // If melee unit is hugging tower sprite, force inRange = true
         boolean inRange = adjacentEnemyTowerObject || // melee hugging tower sprite
                 (isMelee ? (distance <= unitRange) // melee: strict 1-tile range
-                        : (distance <= unitRange + 0.5)); // ranged: allow a small fudge
+                        : (distance <= unitRange)); // + 0.5)); // ranged: allow a small fudge
 
-        // Debug output for melee units attacking towers
+        /*/ Debug output for melee units attacking towers
         if (isMelee && target instanceof TowerEntity) {
             System.out.println("Melee unit at (" + currentRow + "," + currentCol + ") - Target: " +
                     (((TowerEntity) target).isKing() ? "KING_TOWER" : "TOWER") +
                     " - Distance: " + distance + " - Range: " + unitRange +
                     " - AdjacentTowerObject: " + adjacentEnemyTowerObject + " - InRange: " + inRange);
         }
+        */
 
         if (inRange) {
             double currentCooldown = attackCooldowns.getOrDefault(unit, 0.0);
