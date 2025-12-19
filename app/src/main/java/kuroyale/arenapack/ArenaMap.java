@@ -9,8 +9,8 @@ import kuroyale.entitiypack.subclasses.TowerEntity;
 
 public class ArenaMap {
 
-    private final int rows = 18;
-    private final int cols = 32;
+    private static final int rows = 18;
+    private static final int cols = 32;
 
     private final ArenaTile[][] grid;
     private final ArenaTile[][] collisions;
@@ -49,8 +49,6 @@ public class ArenaMap {
         if (type == ArenaObjectType.BRIDGE) {
 
             if (tile.getTileType() != TileType.RIVER)
-                return false;
-            if (col % 2 == 1)
                 return false;
             if (tile.getPlacedObject() == null) {
                 tile.setPlacedObject(new PlacedObject(type));
@@ -325,10 +323,14 @@ public class ArenaMap {
         return grid[row][col].getPlacedObject();
     }
 
-    public int getRows() {return rows;}
-    public int getCols() {return cols;}
+    public void setObject(int row, int col, ArenaObjectType type) {
+        grid[row][col].setPlacedObject(new PlacedObject(type));
+    }
 
-    public boolean isWalkable(int r, int c){
+    public static int getRows() {return rows;}
+    public static int getCols() {return cols;}
+
+    public boolean isWalkable(int r, int c, boolean flying){
         // Check if tile has a placed object
         PlacedObject obj = grid[r][c].getPlacedObject();
         if (obj != null) {
@@ -339,11 +341,9 @@ public class ArenaMap {
             // Other objects (towers, etc.) are not walkable
             return false;
         }
-        // TEMPORARY: Make river tiles walkable for testing
         // If no object, check tile type
-        if (grid[r][c].getTileType() == TileType.RIVER){
-            // River tiles are temporarily walkable for testing
-            return true;
+        if (grid[r][c].getTileType() == TileType.RIVER) {
+            return flying;
         }
         // Grass tiles are walkable
         return true;
