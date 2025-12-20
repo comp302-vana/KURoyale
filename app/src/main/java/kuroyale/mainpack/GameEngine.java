@@ -542,7 +542,7 @@ public class GameEngine {
     private ImageView getImageFromPane(AnchorPane ap) {
         for (Node n : ap.getChildren()) {
             if (n instanceof Pane p) {
-                return (ImageView) p.getChildren().get(0);
+                return (ImageView) p.getChildren().get(1);
             }
         }
         return null;

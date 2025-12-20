@@ -90,7 +90,7 @@ public class DeckBuilder {
         btn.setStyle(
                 "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
                 "-fx-background-size: cover;" +
-                "-fx-background-color: transparent;" +
+                "-fx-background-color: #5D3F7F;" +
                 "-fx-background-radius: 5;" +
                 "-fx-padding: 0;" +
                 "-fx-border-color: #333; " +
@@ -463,7 +463,7 @@ public class DeckBuilder {
         btn.setStyle(
                 "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
                 "-fx-background-size: cover;" +
-                "-fx-background-color: transparent;" +
+                "-fx-background-color: #5D3F7F;" +
                 "-fx-background-radius: 5;" +
                 "-fx-padding: 0;" +
                 "-fx-border-color: #333; " +

@@ -3,7 +3,6 @@ package kuroyale.mainpack;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Paths;
 
 import javafx.application.Application;
 import javafx.application.Platform;
