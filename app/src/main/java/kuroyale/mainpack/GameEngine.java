@@ -1031,10 +1031,6 @@ public class GameEngine {
         }
 
         // Update each entity
-        AliveEntity.resetGraphs(arenaMap);
-        AliveEntity.fillGraph(true);
-        AliveEntity.fillGraph(false);
-
         for (AliveEntity entity : entitiesToUpdate) {
             // Find entity's actual position in map (don't use getRow/getCol from card)
             int entityRow = -1, entityCol = -1;
