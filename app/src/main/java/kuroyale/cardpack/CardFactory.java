@@ -16,122 +16,122 @@ public class CardFactory {
                 return new UnitCard(1, "Knight",
                         "A tough soldier with a sword. Good for soaking up damage.",
                         3, CardCategory.SINGLE_TARGET, CardTarget.GROUND, CardType.GROUND,
-                        600, 75, 1.1, 0, "Medium", 0.0);
+                        600, 75, 1.1, 0, "Medium", 0.0, 1);
             case 2:
                 return new UnitCard(2, "Musketeer",
                         "A ranged shooter. Can hit ground and air targets.",
                         4, CardCategory.SINGLE_TARGET, CardTarget.AIR_GROUND, CardType.GROUND,
-                        340, 100, 1.1, 6.5, "Medium", 0.0);
+                        340, 100, 1.1, 6, "Medium", 0.0, 1);
             case 3:
                 return new UnitCard(3, "Mini P.E.K.K.A",
                         "A powerful armored warrior. Slow but deals massive damage.",
                         4, CardCategory.SINGLE_TARGET, CardTarget.GROUND, CardType.GROUND,
-                        600, 325, 1.8, 0, "Slow", 0.0);
+                        600, 325, 1.8, 0, "Fast", 0.0, 1);
             case 4:
                 return new UnitCard(4, "Giant",
                         "A huge tank unit. Ignores soldiers and attacks buildings/towers only.",
                         5, CardCategory.SINGLE_TARGET, CardTarget.BUILDINGS, CardType.GROUND,
-                        2000, 126, 1.5, 0, "Very Slow", 0.0);
+                        2000, 126, 1.5, 0, "Slow", 0.0, 1);
             case 5:
                 return new UnitCard(5, "Hog Rider",
                         "Fast unit that rushes toward buildings. Ignores soldiers.",
                         4, CardCategory.SINGLE_TARGET, CardTarget.BUILDINGS, CardType.GROUND,
-                        800, 160, 1.5, 0, "Fast", 0.0);
+                        800, 160, 1.5, 0, "Very Fast", 0.0, 1);
             case 6:
                 return new UnitCard(6, "Bomber",
                         "Throws bombs that explode on impact.",
                         3, CardCategory.AOE, CardTarget.GROUND, CardType.GROUND,
-                        150, 100, 1.9, 5, "Medium", 0.5);
+                        150, 100, 1.9, 4.5, "Medium", 0.5, 1);
             case 7:
                 return new UnitCard(7, "Valkyrie",
                         "Spins and damages all nearby enemies.",
                         4, CardCategory.AOE, CardTarget.GROUND, CardType.GROUND,
-                        880, 120, 1.5, 0, "Medium", 1.0);
+                        880, 120, 1.5, 0, "Medium", 1.0, 1);
             case 8:
                 return new UnitCard(8, "Wizard",
                         "Shoots fireballs that explode.",
                         5, CardCategory.AOE, CardTarget.AIR_GROUND, CardType.GROUND,
-                        340, 130, 1.7, 5, "Medium", 1.0);
+                        340, 130, 1.7, 5, "Medium", 1.0, 1);
             case 9:
                 return new UnitCard(9, "Skeletons",
                         "Spawns 4 very weak but very fast soldiers.",
                         1, CardCategory.SWARM, CardTarget.GROUND, CardType.GROUND,
-                        30, 30, 1.1, 0, "Very Fast", 0.0);
+                        30, 30, 1, 0, "Fast", 0.0, 4);
             case 10:
                 return new UnitCard(10, "Goblins",
                         "Spawns 3 fast, weak melee fighters.",
                         2, CardCategory.SWARM, CardTarget.GROUND, CardType.GROUND,
-                        80, 50, 1.1, 0, "Fast", 0.0);
+                        80, 50, 1.1, 0, "Very Fast", 0.0, 3);
             case 11:
                 return new UnitCard(11, "Spear Goblins",
                         "Spawns 3 ranged goblins (can hit air).",
                         2, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.GROUND,
-                        52, 24, 1.7, 5.5, "Fast", 0.0);
+                        52, 24, 1.3, 5, "Very Fast", 0.0, 3);
             case 12:
                 return new UnitCard(12, "Archers",
                         "Spawns 2 ranged soldiers.",
                         3, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.GROUND,
-                        125, 40, 0.9, 5.5, "Medium", 0.0);
+                        125, 40, 1.2, 5, "Medium", 0.0, 2);
             case 13:
                 return new UnitCard(13, "Minions",
                         "Spawns 3 flying units.",
                         3, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.AIR,
-                        90, 40, 1.2, 2.5, "Very Fast", 0.0);
+                        90, 40, 1.2, 2.5, "Fast", 0.0, 3);
             case 14:
                 return new UnitCard(14, "Minion Horde",
                         "Spawns 6 flying units.",
                         5, CardCategory.SWARM, CardTarget.AIR_GROUND, CardType.AIR,
-                        90, 40, 1.2, 2.5, "Very Fast", 0.0);
+                        90, 40, 1, 2, "Fast", 0.0, 6);
             case 15:
                 return new UnitCard(15, "Barbarians",
                         "Spawns 4 tough melee fighters.",
                         5, CardCategory.SWARM, CardTarget.GROUND, CardType.GROUND,
-                        300, 75, 1.3, 0, "Fast", 0.0);
+                        300, 75, 1.5, 0, "Fast", 0.0, 4);
             case 16:
                 return new BuildingCard(16, "Cannon",
                         "Basic defensive tower.",
                         3, CardCategory.DEFENSIVE_BUILDING, CardTarget.GROUND,
-                        400, 60, 1, 5.5, 0.0, 30);
+                        450, 60, 0.8, 5.5, 0.0, 30, null);
             case 17:
                 return new BuildingCard(17, "Tesla",
                         "Defensive tower that can hit both air and ground.",
                         4, CardCategory.DEFENSIVE_BUILDING, CardTarget.AIR_GROUND,
-                        400, 64, 1.1, 5.5, 0.0, 40);
+                        400, 64, 1.1, 5.5, 0.0, 40, null);
             case 18:
                 return new BuildingCard(18, "Mortar",
                         "Long-range artillery.",
                         4, CardCategory.DEFENSIVE_BUILDING, CardTarget.GROUND,
-                        600, 108, 5, 11, 1.0, 30);
+                        600, 120, 5, 11, 1.0, 30, null);
             case 19:
                 return new BuildingCard(19, "Bomb Tower",
                         "Defensive tower with explosive shells.",
                         5, CardCategory.DEFENSIVE_BUILDING, CardTarget.GROUND,
-                        900, 100, 1.9, 6, 1.5, 40);
+                        900, 100, 1.6, 6, 1.5, 40, null);
             case 20:
                 return new BuildingCard(20, "Inferno Tower",
                         "Shoots a laser that grows stronger over time.",
                         5, CardCategory.DEFENSIVE_BUILDING, CardTarget.AIR_GROUND,
-                        800, 20, 0.4, 6, 0.0, 40);
+                        800, 20, 0.4, 6, 0.0, 40, null);
             case 21:
                 return new BuildingCard(21, "Tombstone",
                         "Spawns 1 Skeleton every 2.9s.",
-                        3, CardCategory.SPAWNER_BUILDING, CardTarget.GROUND,
-                        200, 0, 2.9, 0, 0.0, 40);
+                        3, CardCategory.SPAWNER_BUILDING, CardTarget.NONE,
+                        200, 0, 2.9, 0, 0.0, 40, (UnitCard) createCard(9));
             case 22:
                 return new BuildingCard(22, "Goblin Hut",
                         "Spawns 1 Spear Goblin every 4.9s.",
-                        5, CardCategory.SPAWNER_BUILDING, CardTarget.GROUND,
-                        700, 0, 4.9, 0, 0.0, 60);
+                        5, CardCategory.SPAWNER_BUILDING, CardTarget.NONE,
+                        700, 0, 4.9, 0, 0.0, 60, (UnitCard) createCard(11));
             case 23:
                 return new BuildingCard(23, "Barbarian Hut",
-                        "Spawns 2 Barbarians every 14s.",
-                        7, CardCategory.SPAWNER_BUILDING, CardTarget.GROUND,
-                        640, 0, 14, 0, 0.0, 60);
+                        "Spawns 1 Barbarians every 7s.",
+                        7, CardCategory.SPAWNER_BUILDING, CardTarget.NONE,
+                        640, 0, 7, 0, 0.0, 60, (UnitCard) createCard(15));
             case 24:
                 return new BuildingCard(24, "Elixir Collector",
                         "Generates elixir over time.",
                         5, CardCategory.SPECIAL_BUILDING, CardTarget.NONE,
-                        640, 0, 10, 0, 0.0, 70);
+                        640, 0, 10, 0, 0.0, 70, null);
             case 25:
                 return new SpellCard(25, "Zap",
                         "Small area damage + stuns enemies.",

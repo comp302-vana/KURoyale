@@ -863,8 +863,8 @@ public class GameEngine {
             endGame(true);
             return;
         }
-        double minPlayer=999999999;
-        double minEnemy=999999999;
+        double minPlayer=Double.MAX_VALUE;
+        double minEnemy=Double.MAX_VALUE;
         for (int r=0; r<rows;r++){
             for (int c=0;c<cols;c++){
                 AliveEntity entity=arenaMap.getEntity(r,c);
@@ -1340,10 +1340,7 @@ public class GameEngine {
         if (inRange) {
             double currentCooldown = attackCooldowns.getOrDefault(unit, 0.0);
             if (currentCooldown <= 0) {
-                double originalDamage = unit.getDamage();
-                double multipliedDamage = originalDamage * 5.0;
-                target.reduceHP(multipliedDamage);
-
+                unit.attack(target);
                 attackCooldowns.put(unit, attackCooldownTime);
 
                 entityDirty = true;
@@ -1493,9 +1490,7 @@ public class GameEngine {
         if (distance <= building.getRange() + 0.5 || canAttackTower) {
             double currentCooldown = attackCooldowns.getOrDefault(building, 0.0);
             if (currentCooldown <= 0) {
-                double originalDamage = building.getDamage();
-                double multipliedDamage = originalDamage * 5.0;
-                target.reduceHP(multipliedDamage);
+                building.attack(target);
 
                 attackCooldowns.put(building, attackCooldownTime);
 
@@ -1626,10 +1621,7 @@ public class GameEngine {
             double currentCooldown = attackCooldowns.getOrDefault(tower, 0.0);
             if (currentCooldown <= 0) {
                 // Can attack - perform attack
-                // TEMPORARY: Multiply damage by 5x to see damage clearly
-                double originalDamage = tower.getDamage();
-                double multipliedDamage = originalDamage * 5.0;
-                target.reduceHP(multipliedDamage);
+                tower.attack(target);
 
                 // Set cooldown for next attack
                 attackCooldowns.put(tower, attackCooldownTime);

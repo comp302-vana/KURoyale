@@ -8,11 +8,13 @@ public class TowerEntity extends BuildingEntity {
     private static BuildingCard towerCard(boolean isKing) {
         int id = isKing ? 29 : 30;
         String name = isKing ? "King Tower" : "Crown Tower";
-        double Hp = isKing ? 4750 : 3000;
+        double Hp = isKing ? 2400 : 1400;
+        double actSpeed = isKing ? 1.0 : 0.8;
+        double range = isKing ? 7.5 : 7.0;
 
         BuildingCard card = new BuildingCard(
             id, name, null, 0, CardCategory.DEFENSIVE_BUILDING, CardTarget.AIR_GROUND,
-            Hp, 10, 0.8, 7.5, 0.0, 0
+            Hp, 50, actSpeed, range, 0.0, 0, null
         );
 
         return card;
