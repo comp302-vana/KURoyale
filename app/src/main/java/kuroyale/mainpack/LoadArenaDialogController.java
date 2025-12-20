@@ -8,7 +8,8 @@ import java.io.File;
 
 public class LoadArenaDialogController {
 
-    @FXML private ListView<String> savedListView;
+    @FXML
+    private ListView<String> savedListView;
 
     private File savesDir;
 
@@ -24,7 +25,8 @@ public class LoadArenaDialogController {
         savedListView.getItems().clear();
 
         File[] files = savesDir.listFiles((d, name) -> name.endsWith(".csv"));
-        if (files == null) return;
+        if (files == null)
+            return;
 
         for (File f : files)
             savedListView.getItems().add(f.getName());
@@ -33,7 +35,8 @@ public class LoadArenaDialogController {
     @FXML
     private void onLoadClicked() {
         String selected = savedListView.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
+        if (selected == null)
+            return;
 
         // return value via window user data
         Stage stage = (Stage) savedListView.getScene().getWindow();
@@ -44,7 +47,8 @@ public class LoadArenaDialogController {
     @FXML
     private void onDeleteClicked() {
         String selected = savedListView.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
+        if (selected == null)
+            return;
 
         new File(savesDir, selected).delete();
         refreshList();
@@ -57,24 +61,24 @@ public class LoadArenaDialogController {
         stage.close();
     }
 
-
     @FXML
-private void onSetDefaultClicked() {
-    String selected = savedListView.getSelectionModel().getSelectedItem();
-    if (selected == null) return;
+    private void onSetDefaultClicked() {
+        String selected = savedListView.getSelectionModel().getSelectedItem();
+        if (selected == null)
+            return;
 
-    try {
-        File f = new File("saves/default.txt");
-        try (var pw = new java.io.PrintWriter(f)) {
-            pw.println(selected);
+        try {
+            File f = new File("saves/default.txt");
+            try (var pw = new java.io.PrintWriter(f)) {
+                pw.println(selected);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
 
-    Stage stage = (Stage) savedListView.getScene().getWindow();
-    stage.setUserData("DEFAULT_SET:" + selected);
-    stage.close();
-}
+        Stage stage = (Stage) savedListView.getScene().getWindow();
+        stage.setUserData("DEFAULT_SET:" + selected);
+        stage.close();
+    }
 
 }

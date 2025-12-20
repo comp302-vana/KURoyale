@@ -6,7 +6,14 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.geometry.Pos;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
+
 import java.util.EnumMap;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import java.io.File;
 
@@ -19,6 +26,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -31,6 +39,7 @@ import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
 import javafx.scene.input.MouseButton;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import kuroyale.arenapack.SpriteLoader;
 
 public class ArenaController {
@@ -393,6 +402,34 @@ public class ArenaController {
         showAlert("Saved!", "Arena saved as \"" + name + "\".");
     }
 
+    private void saveDefaultArenaPreviewPng() {
+        try {
+            // Ensure directory exists
+            Files.createDirectories(Path.of("saves"));
+
+            File out = new File("saves/default_preview.png");
+
+            // Make sure CSS/layout are applied before snapshot
+            arenaGrid.applyCss();
+            arenaGrid.layout();
+
+            SnapshotParameters params = new SnapshotParameters();
+            // If you want transparent background, use TRANSPARENT
+            // If you want a solid background, set a Color instead.
+            params.setFill(Color.TRANSPARENT);
+
+            WritableImage fxImage = arenaGrid.snapshot(params, null);
+            BufferedImage bufferedImage = SwingFXUtils.fromFXImage(fxImage, null);
+
+            ImageIO.write(bufferedImage, "png", out);
+
+            System.out.println("Saved default preview: " + out.getAbsolutePath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     @FXML
     private void onLoadClicked() {
         try {
@@ -411,6 +448,18 @@ public class ArenaController {
             // CASE 1 → User set a default
             if (result instanceof String s && s.startsWith("DEFAULT_SET:")) {
                 String fileName = s.substring("DEFAULT_SET:".length());
+
+                // load into builder so the preview matches new default
+                File file = new File("saves/" + fileName);
+                arenaMap.loadFromFile(file.getAbsolutePath());
+                redrawArena();
+                saveNameField.setText(fileName.replace(".csv", ""));
+
+                // snapshot it
+                Platform.runLater(() -> {
+                    Platform.runLater(this::saveDefaultArenaPreviewPng);
+                });     // safer than immediate
+
                 showAlert("Default Arena Set", "Default arena set to: " + fileName);
                 return;
             }

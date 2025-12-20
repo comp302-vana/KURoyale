@@ -1,6 +1,9 @@
 package kuroyale.mainpack;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -11,6 +14,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
@@ -19,6 +23,34 @@ public class UIManager extends Application {
     private Scene scene;
     private Parent root;
     private static String selectedDifficulty = null;
+
+    @FXML
+    private ImageView arenaPreviewImage;
+
+    @FXML
+    private void initialize() {
+        refreshArenaPreviewIfPresent();
+    }
+
+    private void refreshArenaPreviewIfPresent() {
+        // System.out.println("Root: " + (arenaPreviewImage != null ? arenaPreviewImage.getScene().getRoot() : "null"));
+
+        if (arenaPreviewImage == null) return;
+
+        File f = new File("saves/default_preview.png");
+        if (!f.exists() || f.length() == 0) {
+            arenaPreviewImage.setImage(null);
+            return;
+        }
+
+        try (FileInputStream fis = new FileInputStream(f)) {
+            Image img = new Image(fis);
+            arenaPreviewImage.setImage(img);
+        } catch (Exception e) {
+            e.printStackTrace();
+            arenaPreviewImage.setImage(null);
+        }
+    }
 
     @Override
     public void start(Stage stage) {
@@ -90,13 +122,22 @@ public class UIManager extends Application {
 
 
     private void switchToStartBattleScene(ActionEvent event) throws IOException {
-        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
+        root = loader.load();
+
+        // Controller exists now (will be UIManager if fx:controller points to it)
+        Object controller = loader.getController();
+        if (controller instanceof UIManager ui) {
+            ui.refreshArenaPreviewIfPresent();
+        }
+
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
     }
+
 
     private void switchToDeckBuilderScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/DeckBuilderScene.fxml"));
