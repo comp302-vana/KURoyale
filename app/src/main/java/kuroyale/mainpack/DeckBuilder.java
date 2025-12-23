@@ -17,6 +17,9 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.animation.RotateTransition;
+import javafx.scene.transform.Rotate;
+import javafx.util.Duration;
 
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.CardFactory;
@@ -36,16 +39,13 @@ public class DeckBuilder {
     @FXML
     private FlowPane deckSlots;
     @FXML
-    private Button btnSaveDeck;
-    @FXML
-    private TextField deckNameField;
-    @FXML
-    private ComboBox<String> deckSelector;
-    // @FXML
-    // private Label deckStatusLabel;
+    private HBox deckNumberSelector;
 
+    private Deck[] allDecks = new Deck[8]; // 8 deck slots
+    private int currentDeckIndex = 0; // Currently selected deck (0-7)
     private Deck currentDeck;
     private ObservableList<Card> deckCards;
+    private Button[] deckButtons = new Button[8];
 
     @FXML
     public void initialize() {
@@ -55,12 +55,24 @@ public class DeckBuilder {
         }
 
         deckCards = FXCollections.observableArrayList();
-        currentDeck = new Deck("New Deck");
 
+        // Initialize all 8 decks
+        loadAllDecks();
+
+        // Load saved deck index (persist selection across sessions)
+        currentDeckIndex = DeckManager.loadSelectedDeckIndex();
+        if (currentDeckIndex < 0 || currentDeckIndex > 7) {
+            currentDeckIndex = 0;
+        }
+
+        // Set current deck to saved slot
+        currentDeck = allDecks[currentDeckIndex];
+        DeckManager.setCurrentDeck(currentDeck);
+
+        setupDeckNumberButtons();
         setupCardDisplay();
         setupDeckSlots();
-        setupDeckSelector();
-        updateUI();
+        updateDeckDisplay();
     }
 
     private void setupCardDisplay() {
@@ -88,14 +100,15 @@ public class DeckBuilder {
         // --- BUTTON (the card) ---
         Button btn = new Button();
         btn.setStyle(
-                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
-                "-fx-background-size: cover;" +
-                "-fx-background-color: #5D3F7F;" +
-                "-fx-background-radius: 5;" +
-                "-fx-padding: 0;" +
-                "-fx-border-color: #333; " +
-                "-fx-border-width: 3; " +
-                "-fx-border-radius: 5;");
+                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "")
+                        + ".png\");" +
+                        "-fx-background-size: cover;" +
+                        "-fx-background-color: #5D3F7F;" +
+                        "-fx-background-radius: 5;" +
+                        "-fx-padding: 0;" +
+                        "-fx-border-color: #333; " +
+                        "-fx-border-width: 3; " +
+                        "-fx-border-radius: 5;");
         btn.setOnAction(e -> addCardToDeck(card));
 
         VBox hoverButtons = new VBox(5);
@@ -172,8 +185,8 @@ public class DeckBuilder {
         AnchorPane.setLeftAnchor(costLabel, 11.5);
 
         // button fills rest, offset by radius
-        AnchorPane.setTopAnchor(btn, radius/3);
-        AnchorPane.setLeftAnchor(btn, radius/3);
+        AnchorPane.setTopAnchor(btn, radius / 3);
+        AnchorPane.setLeftAnchor(btn, radius / 3);
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
@@ -356,6 +369,10 @@ public class DeckBuilder {
 
         Parent sceneRoot = cardScrollPane.getScene().getRoot();
 
+        // Başlangıçta panel 90 derece dönük (görünmez)
+        detailPanel.setRotationAxis(Rotate.Y_AXIS);
+        detailPanel.setRotate(-90);
+
         if (sceneRoot instanceof StackPane) {
             ((StackPane) sceneRoot).getChildren().add(modalOverlay);
         } else if (sceneRoot instanceof AnchorPane) {
@@ -369,6 +386,13 @@ public class DeckBuilder {
         } else if (sceneRoot instanceof Pane) {
             ((Pane) sceneRoot).getChildren().add(modalOverlay);
         }
+
+        // Flip animasyonu - dönerek gelme efekti
+        RotateTransition flipIn = new RotateTransition(Duration.millis(400), detailPanel);
+        flipIn.setAxis(Rotate.Y_AXIS);
+        flipIn.setFromAngle(-90);
+        flipIn.setToAngle(0);
+        flipIn.play();
     }
 
     private void setupDeckSlots() {
@@ -423,7 +447,7 @@ public class DeckBuilder {
         try {
             currentDeck.addCard(card);
             updateDeckDisplay();
-            updateUI();
+            saveCurrentDeck();
         } catch (IllegalArgumentException e) {
             // Trying to select a card that is already in the deck
             showAlert("Duplicate Card", "This card is already in your deck!");
@@ -436,7 +460,7 @@ public class DeckBuilder {
     private void removeCardFromDeck(int index) {
         if (currentDeck.removeCard(index)) {
             updateDeckDisplay();
-            updateUI();
+            saveCurrentDeck();
         }
     }
 
@@ -461,14 +485,15 @@ public class DeckBuilder {
         // --- BUTTON (the card) ---
         Button btn = new Button();
         btn.setStyle(
-                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
-                "-fx-background-size: cover;" +
-                "-fx-background-color: #5D3F7F;" +
-                "-fx-background-radius: 5;" +
-                "-fx-padding: 0;" +
-                "-fx-border-color: #333; " +
-                "-fx-border-width: 3; " +
-                "-fx-border-radius: 5;");
+                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "")
+                        + ".png\");" +
+                        "-fx-background-size: cover;" +
+                        "-fx-background-color: #5D3F7F;" +
+                        "-fx-background-radius: 5;" +
+                        "-fx-padding: 0;" +
+                        "-fx-border-color: #333; " +
+                        "-fx-border-width: 3; " +
+                        "-fx-border-radius: 5;");
         btn.setOnAction(e -> removeCardFromDeck(index));
 
         VBox hoverButtons = new VBox(5);
@@ -545,8 +570,8 @@ public class DeckBuilder {
         AnchorPane.setLeftAnchor(costLabel, 11.5);
 
         // button fills rest, offset by radius
-        AnchorPane.setTopAnchor(btn, radius/3);
-        AnchorPane.setLeftAnchor(btn, radius/3);
+        AnchorPane.setTopAnchor(btn, radius / 3);
+        AnchorPane.setLeftAnchor(btn, radius / 3);
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
@@ -568,114 +593,106 @@ public class DeckBuilder {
         return ap;
     }
 
-    private void setupDeckSelector() {
-        deckSelector.getItems().clear();
-        DeckManager.loadAllDecks();
-        for (Deck deck : DeckManager.getAllDecks()) {
-            deckSelector.getItems().add(deck.getName());
-        }
-    }
-
-    @FXML
-    private void handleSaveDeck() {
-        String name = deckNameField.getText().trim();
-        if (name.isEmpty()) {
-            showAlert("Invalid Name", "Please enter a deck name.");
-            return;
-        }
-
-        if (currentDeck.getSize() != 8) {
-            showAlert("Incomplete Deck", "Your deck must have exactly 8 cards!");
-            return;
-        }
-
-        String finalName = name;
-        DeckManager.loadAllDecks();
-        int deckNumber = 1;
-        while (DeckManager.getDeckByName(finalName) != null) {
-            finalName = name + " " + deckNumber;
-            deckNumber++;
-        }
-
-        currentDeck.setName(finalName);
-        DeckManager.saveDeck(currentDeck);
-        DeckManager.setCurrentDeck(currentDeck);
-        setupDeckSelector();
-        deckNameField.setText(finalName);
-        // deckStatusLabel.setText("Deck saved: " + finalName);
-        showAlert("Success", "Deck saved successfully!");
-    }
-
-    @FXML
-    private void handleClearDeck() {
-        if (currentDeck.isEmpty()) {
-            showAlert("Deck Empty", "The deck is already empty.");
-            return;
-        }
-
-        currentDeck.clear();
-        updateDeckDisplay();
-        updateUI();
-    }
-
-    @FXML
-    private void handleDeleteDeck() {
-        String name = deckNameField.getText().trim();
-        if (name.isEmpty()) {
-            showAlert("Invalid Name", "Please enter a deck name to delete.");
-            return;
-        }
-
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete Deck");
-        confirm.setHeaderText("Are you sure you want to delete '" + name + "'?");
-        confirm.setContentText("This action cannot be undone.");
-
-        if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
-            DeckManager.deleteDeck(name);
-            setupDeckSelector();
-            // deckStatusLabel.setText("Deck deleted: " + name);
-
-            // clear the currect deck if deleted
-            if (currentDeck != null && currentDeck.getName().equals(name)) {
-                currentDeck = new Deck("New Deck");
-                deckNameField.clear();
-                updateDeckDisplay();
-                updateUI();
+    // Load all 8 decks from storage
+    private void loadAllDecks() {
+        for (int i = 0; i < 8; i++) {
+            Deck loaded = DeckManager.loadDeck("Deck_" + (i + 1));
+            if (loaded != null) {
+                allDecks[i] = loaded;
+            } else {
+                allDecks[i] = new Deck("Deck_" + (i + 1));
             }
         }
     }
 
-    @FXML
-    private void handleLoadDeck() {
-        String selected = deckSelector.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert("No Selection", "Please select a deck to load.");
-            return;
-        }
-
-        Deck loaded = DeckManager.loadDeck(selected);
-        if (loaded != null) {
-            currentDeck = loaded;
-            deckNameField.setText(loaded.getName());
-            DeckManager.setCurrentDeck(loaded);
-            updateDeckDisplay();
-            updateUI();
-            // deckStatusLabel.setText("Deck loaded: " + selected);
+    // Save current deck to storage
+    private void saveCurrentDeck() {
+        if (currentDeck != null) {
+            currentDeck.setName("Deck_" + (currentDeckIndex + 1));
+            DeckManager.saveDeck(currentDeck);
         }
     }
 
-    private void updateUI() {
-        int size = currentDeck.getSize();
-        // deckStatusLabel.setText("Deck: " + size + "/8 cards");
+    // Setup the 1-8 deck number buttons
+    private void setupDeckNumberButtons() {
+        if (deckNumberSelector == null)
+            return;
 
-        btnSaveDeck.setDisable(size != 8);
+        deckNumberSelector.getChildren().clear();
 
-        // if (size == 8) {
-        // deckStatusLabel.setStyle("-fx-text-fill: green;");
-        // } else {
-        // deckStatusLabel.setStyle("-fx-text-fill: orange;");
-        // }
+        for (int i = 0; i < 8; i++) {
+            final int deckIndex = i;
+            Button btn = new Button(String.valueOf(i + 1));
+            btn.setPrefSize(40, 40);
+            btn.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 16));
+
+            // Style based on whether this is the selected deck
+            if (i == currentDeckIndex) {
+                btn.setStyle(
+                        "-fx-background-color: #8A00B8; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-background-radius: 20; " +
+                                "-fx-cursor: hand;");
+            } else {
+                btn.setStyle(
+                        "-fx-background-color: #00000041; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-background-radius: 20; " +
+                                "-fx-cursor: hand;");
+            }
+
+            btn.setOnAction(e -> switchDeck(deckIndex));
+
+            // Hover effects
+            final int idx = i;
+            btn.setOnMouseEntered(e -> {
+                if (idx != currentDeckIndex) {
+                    btn.setStyle(
+                            "-fx-background-color: #6A008A; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-background-radius: 20; " +
+                                    "-fx-cursor: hand;");
+                }
+            });
+            btn.setOnMouseExited(e -> {
+                if (idx != currentDeckIndex) {
+                    btn.setStyle(
+                            "-fx-background-color: #00000041; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-background-radius: 20; " +
+                                    "-fx-cursor: hand;");
+                }
+            });
+
+            deckButtons[i] = btn;
+            deckNumberSelector.getChildren().add(btn);
+        }
+    }
+
+    // Switch to a different deck
+    private void switchDeck(int newIndex) {
+        if (newIndex == currentDeckIndex)
+            return;
+
+        // Save current deck before switching
+        saveCurrentDeck();
+        allDecks[currentDeckIndex] = currentDeck;
+
+        // Switch to new deck
+        currentDeckIndex = newIndex;
+        currentDeck = allDecks[newIndex];
+
+        // Save selected deck index for persistence
+        DeckManager.saveSelectedDeckIndex(currentDeckIndex);
+
+        // Update button styles
+        setupDeckNumberButtons();
+
+        // Update display
+        updateDeckDisplay();
+
+        // Set as current deck for battle
+        DeckManager.setCurrentDeck(currentDeck);
     }
 
     private void showAlert(String title, String message) {
@@ -688,11 +705,15 @@ public class DeckBuilder {
 
     @FXML
     void btnSelectBattleClicked(ActionEvent event) throws IOException {
+        // Save current deck before leaving
+        saveCurrentDeck();
         switchToStartBattleScene(event);
     }
 
     @FXML
     void btnSelectBuildClicked(ActionEvent event) throws IOException {
+        // Save current deck before leaving
+        saveCurrentDeck();
         switchToArenaBuilderScene(event);
     }
 

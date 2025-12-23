@@ -117,4 +117,34 @@ public class DeckManager {
     public static void setCurrentDeck(Deck deck) {
         currentDeck = deck;
     }
+
+    // Save the selected deck index to file
+    public static void saveSelectedDeckIndex(int index) {
+        File decksDir = new File(DECKS_DIR);
+        if (!decksDir.exists()) {
+            decksDir.mkdirs();
+        }
+        try (PrintWriter writer = new PrintWriter(new FileWriter(new File(decksDir, "selected_deck.txt")))) {
+            writer.println(index);
+        } catch (IOException e) {
+            System.err.println("Error saving deck index: " + e.getMessage());
+        }
+    }
+
+    // Load the selected deck index from file
+    public static int loadSelectedDeckIndex() {
+        File indexFile = new File(DECKS_DIR, "selected_deck.txt");
+        if (!indexFile.exists()) {
+            return 0; // Default to first deck
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(indexFile))) {
+            String line = reader.readLine();
+            if (line != null) {
+                return Integer.parseInt(line.trim());
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading deck index: " + e.getMessage());
+        }
+        return 0;
+    }
 }

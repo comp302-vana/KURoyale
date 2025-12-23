@@ -14,7 +14,6 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.ArenaController">
    <children>
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#00000041" height="132.0" layoutX="59.0" layoutY="564.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
       <GridPane fx:id="arenaGrid" gridLinesVisible="true" layoutX="44.0" layoutY="101.0" prefHeight="432.0" prefWidth="768.0" AnchorPane.leftAnchor="256.0" AnchorPane.rightAnchor="256.0" AnchorPane.topAnchor="123.0">
         <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="10.0" prefWidth="10.0" />
@@ -112,6 +111,20 @@
             </Button>
          </children>
       </Pane>
+      
+      <!-- Bottom Bar with Gradient - En üstte görünmesi için sonda -->
+      <Rectangle arcHeight="5.0" arcWidth="5.0" height="132.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" mouseTransparent="true">
+         <fill>
+            <javafx.scene.paint.LinearGradient startX="0.0" startY="0.0" endX="0.0" endY="1.0">
+               <stops>
+                  <javafx.scene.paint.Stop offset="0.0" color="#00000000" />
+                  <javafx.scene.paint.Stop offset="0.5" color="#00000040" />
+                  <javafx.scene.paint.Stop offset="1.0" color="#00000080" />
+               </stops>
+            </javafx.scene.paint.LinearGradient>
+         </fill>
+      </Rectangle>
+      
       <Button layoutX="270.0" layoutY="336.0" mnemonicParsing="false" onAction="#btnSelectBattleClicked" prefHeight="45.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="-1.0" AnchorPane.leftAnchor="560.0" AnchorPane.rightAnchor="600.0">
          <graphic>
             <ImageView pickOnBounds="true" preserveRatio="true">

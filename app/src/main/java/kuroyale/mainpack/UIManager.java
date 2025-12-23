@@ -32,9 +32,11 @@ public class UIManager extends Application {
     }
 
     private void refreshArenaPreviewIfPresent() {
-        // System.out.println("Root: " + (arenaPreviewImage != null ? arenaPreviewImage.getScene().getRoot() : "null"));
+        // System.out.println("Root: " + (arenaPreviewImage != null ?
+        // arenaPreviewImage.getScene().getRoot() : "null"));
 
-        if (arenaPreviewImage == null) return;
+        if (arenaPreviewImage == null)
+            return;
 
         File f = new File("saves/default_preview.png");
         if (!f.exists() || f.length() == 0) {
@@ -54,6 +56,9 @@ public class UIManager extends Application {
     @Override
     public void start(Stage stage) {
         try {
+            // Load saved deck on startup
+            loadSavedDeck();
+
             Parent root = FXMLLoader.load(UIManager.class.getResource("/kuroyale/scenes/StartScene.fxml"));
             Scene scene = new Scene(root, 1280, 720);
             root.setStyle("-fx-background-color: BD7FFF;");
@@ -62,7 +67,17 @@ public class UIManager extends Application {
             stage.getIcons().add(new Image("/kuroyale/images/icon.png"));
             stage.setScene(scene);
             stage.show();
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
+    }
+
+    private void loadSavedDeck() {
+        int savedIndex = kuroyale.deckpack.DeckManager.loadSelectedDeckIndex();
+        String deckName = "Deck_" + (savedIndex + 1);
+        kuroyale.deckpack.Deck deck = kuroyale.deckpack.DeckManager.loadDeck(deckName);
+        if (deck != null) {
+            kuroyale.deckpack.DeckManager.setCurrentDeck(deck);
+        }
     }
 
     @FXML
@@ -72,7 +87,8 @@ public class UIManager extends Application {
 
     @FXML
     void btnStartClicked(ActionEvent event) throws IOException {
-        switchToStartBattleScene(event);;
+        switchToStartBattleScene(event);
+        ;
     }
 
     @FXML
@@ -92,6 +108,19 @@ public class UIManager extends Application {
 
     @FXML
     void btnStartBattleClicked(ActionEvent event) throws IOException {
+        // Check if current deck has 8 cards
+        kuroyale.deckpack.Deck currentDeck = kuroyale.deckpack.DeckManager.getCurrentDeck();
+        if (currentDeck == null || currentDeck.getSize() != 8) {
+            // Show warning alert
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.WARNING);
+            alert.setTitle("Incomplete Deck");
+            alert.setHeaderText("Your deck is not complete!");
+            alert.setContentText(
+                    "You need exactly 8 cards in your deck to start a battle. Please go to the Deck Builder to complete your deck.");
+            alert.showAndWait();
+            return;
+        }
         switchToDifficultySelectionScene(event);
     }
 
@@ -119,7 +148,6 @@ public class UIManager extends Application {
         switchToBattleScene(event);
     }
 
-
     private void switchToStartBattleScene(ActionEvent event) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));
         root = loader.load();
@@ -136,7 +164,6 @@ public class UIManager extends Application {
         stage.setScene(scene);
         stage.show();
     }
-
 
     private void switchToDeckBuilderScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/DeckBuilderScene.fxml"));
@@ -155,7 +182,7 @@ public class UIManager extends Application {
         stage.setScene(scene);
         stage.show();
     }
-    
+
     private void switchToBattleScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/BattleScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");

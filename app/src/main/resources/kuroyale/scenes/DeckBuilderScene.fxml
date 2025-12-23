@@ -3,14 +3,13 @@
 <?import java.net.URL?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
@@ -20,88 +19,43 @@
    </stylesheets>
 
    <children>
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#00000041" height="132.0" layoutX="173.0" layoutY="452.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#00000041" height="360.0" layoutX="1162.0" layoutY="17.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" style="-fx-background-radius: 10;" width="100.0" AnchorPane.bottomAnchor="345.0" AnchorPane.rightAnchor="-10.0" AnchorPane.topAnchor="15.0" />
-      
-            <ScrollPane fx:id="cardScrollPane" fitToWidth="true" layoutX="31.0" layoutY="287.0" prefHeight="288.0" prefWidth="1120.0" style="-fx-background: transparent; -fx-background-color: transparent;" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="120.0">
+      <!-- ScrollPane for available cards - centered -->
+      <ScrollPane fx:id="cardScrollPane" fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent;" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="310.0" AnchorPane.bottomAnchor="0.0">
          <content>
-            <FlowPane fx:id="cardContainer" hgap="8.0" prefWidth="1118.0" prefWrapLength="760.0" style="-fx-background: transparent; -fx-background-color: transparent;" vgap="10.0">
+            <FlowPane fx:id="cardContainer" hgap="12.0" prefWrapLength="1200.0" style="-fx-background: transparent; -fx-background-color: transparent;" vgap="12.0" alignment="CENTER">
                <padding>
-                  <Insets bottom="10.0" left="8.0" right="8.0" top="10.0" />
+                  <Insets bottom="140.0" left="20.0" right="20.0" top="10.0" />
                </padding></FlowPane>
          </content>
       </ScrollPane>
       
-      <!-- Deck Slots Section -->
-      <Label layoutX="39.0" layoutY="270.0" prefWidth="106.0" text="Available Cards" textFill="#333333">
+      <!-- Available Cards Title - centered and impressive -->
+      <Label text="✦ Available Cards ✦" textFill="white" alignment="CENTER" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="268.0" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 4, 0, 0, 2);">
          <font>
-            <Font name="Arial Bold" size="18.0" />
+            <Font name="Trebuchet MS Bold" size="22.0" />
          </font>
       </Label>
       
-      <FlowPane fx:id="deckSlots" hgap="10.0" layoutX="14.0" layoutY="74.0" prefHeight="168.0" prefWidth="1120.0" prefWrapLength="580.0" vgap="10.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="120.0" />
+      <!-- Deck Number Selector - 1 to 8 - centered -->
+      <HBox fx:id="deckNumberSelector" alignment="CENTER" layoutX="40.0" layoutY="35.0" spacing="8.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0">
+      </HBox>
       
-      <!-- Deck Management Section -->
-      <Label alignment="CENTER_RIGHT" layoutX="471.0" layoutY="41.0" prefHeight="15.0" prefWidth="38.0" text="Name:" textFill="#333333" AnchorPane.leftAnchor="471.0">
-         <font>
-            <Font name="Trebuchet MS" size="12.0" />
-         </font>
-      </Label>
+      <!-- Deck Slots - centered -->
+      <FlowPane fx:id="deckSlots" hgap="10.0" layoutX="14.0" layoutY="74.0" prefHeight="168.0" prefWrapLength="1200.0" vgap="10.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0" alignment="CENTER" />
       
-      <TextField fx:id="deckNameField" layoutX="515.0" layoutY="36.0" prefHeight="26.0" prefWidth="240.0" />
+      <!-- Bottom Bar with Gradient -->
+      <Rectangle arcHeight="5.0" arcWidth="5.0" height="132.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" mouseTransparent="true">
+         <fill>
+            <javafx.scene.paint.LinearGradient startX="0.0" startY="0.0" endX="0.0" endY="1.0">
+               <stops>
+                  <javafx.scene.paint.Stop offset="0.0" color="#00000000" />
+                  <javafx.scene.paint.Stop offset="0.5" color="#00000040" />
+                  <javafx.scene.paint.Stop offset="1.0" color="#00000080" />
+               </stops>
+            </javafx.scene.paint.LinearGradient>
+         </fill>
+      </Rectangle>
       
-      <Label layoutX="769.0" layoutY="41.0" text="Load Deck:" textFill="#333333">
-         <font>
-            <Font name="Trebuchet MS" size="12.0" />
-         </font>
-      </Label>
-      
-      <ComboBox fx:id="deckSelector" layoutX="839.0" layoutY="36.0" prefHeight="25.0" prefWidth="150.0" />
-      <Button fx:id="btnLoadDeck" layoutX="914.0" layoutY="493.0" mnemonicParsing="false" onAction="#handleLoadDeck" prefHeight="60.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="300.0">
-         <graphic>
-            <ImageView pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/load.png" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
-      <Button fx:id="btnClearDeck" layoutX="916.0" layoutY="393.0" mnemonicParsing="false" onAction="#handleClearDeck" prefHeight="60.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="210.0">
-         <graphic>
-            <ImageView pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/clear.png" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
-      <Button fx:id="btnDeleteDeck" layoutX="917.0" layoutY="311.0" mnemonicParsing="false" onAction="#handleDeleteDeck" prefHeight="60.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="120.0">
-         <graphic>
-            <ImageView pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/delete.png" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
-      
-      <!-- Status Label -->
-      <!--
-      <Label fx:id="deckStatusLabel" layoutX="39.0" layoutY="41.0" text="Deck: 0/8 cards" textFill="orange" AnchorPane.leftAnchor="39.0">
-         <font>
-            <Font name="Trebuchet MS" size="14.0" />
-         </font>
-      </Label>
-      -->
-      <Button fx:id="btnSaveDeck" layoutX="920.0" layoutY="219.0" mnemonicParsing="false" onAction="#handleSaveDeck" prefHeight="60.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="30.0">
-         <graphic>
-            <ImageView pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/save.png" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
       <Button layoutX="280.0" layoutY="346.0" mnemonicParsing="false" onAction="#btnSelectBattleClicked" prefHeight="45.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="-1.0" AnchorPane.leftAnchor="600.0" AnchorPane.rightAnchor="560.0">
          <graphic>
             <ImageView pickOnBounds="true" preserveRatio="true">
@@ -131,3 +85,4 @@
       </Button>
    </children>
 </AnchorPane>
+

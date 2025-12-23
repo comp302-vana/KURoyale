@@ -9,7 +9,37 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.UIManager">
    <children>
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#00000041" height="132.0" layoutX="163.0" layoutY="442.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
+      <ImageView fx:id="arenaPreviewImage" fitHeight="266.0" layoutX="526.0" layoutY="79.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="375.0" AnchorPane.leftAnchor="404.0" AnchorPane.topAnchor="75.0">
+         <viewport>
+            <Rectangle2D />
+         </viewport>
+         <image>
+            <Image url="@../images/arena.png" />
+         </image>
+      </ImageView>
+      <Button layoutX="240.0" layoutY="225.0" mnemonicParsing="false" onAction="#btnStartBattleClicked" prefHeight="120.0" prefWidth="240.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="230.0" AnchorPane.leftAnchor="520.0" AnchorPane.rightAnchor="520.0" AnchorPane.topAnchor="370.0">
+         <graphic>
+            <ImageView pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@../images/battle_btn.png" />
+               </image>
+            </ImageView>
+         </graphic>
+      </Button>
+      
+      <!-- Bottom Bar with Gradient - En üstte görünmesi için sonda -->
+      <Rectangle arcHeight="5.0" arcWidth="5.0" height="132.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" mouseTransparent="true">
+         <fill>
+            <javafx.scene.paint.LinearGradient startX="0.0" startY="0.0" endX="0.0" endY="1.0">
+               <stops>
+                  <javafx.scene.paint.Stop offset="0.0" color="#00000000" />
+                  <javafx.scene.paint.Stop offset="0.5" color="#00000040" />
+                  <javafx.scene.paint.Stop offset="1.0" color="#00000080" />
+               </stops>
+            </javafx.scene.paint.LinearGradient>
+         </fill>
+      </Rectangle>
+      
       <Button layoutX="260.0" layoutY="326.0" mnemonicParsing="false" prefHeight="120.0" prefWidth="160.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="560.0" AnchorPane.rightAnchor="560.0">
          <graphic>
             <ImageView pickOnBounds="true" preserveRatio="true">
@@ -37,22 +67,5 @@
             </ImageView>
          </graphic>
       </Button>
-      <Button layoutX="240.0" layoutY="225.0" mnemonicParsing="false" onAction="#btnStartBattleClicked" prefHeight="120.0" prefWidth="240.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="230.0" AnchorPane.leftAnchor="520.0" AnchorPane.rightAnchor="520.0" AnchorPane.topAnchor="370.0">
-         <graphic>
-            <ImageView pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/battle_btn.png" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
-      <ImageView fx:id="arenaPreviewImage" fitHeight="266.0" layoutX="526.0" layoutY="79.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="375.0" AnchorPane.leftAnchor="404.0" AnchorPane.topAnchor="75.0">
-         <viewport>
-            <Rectangle2D />
-         </viewport>
-         <image>
-            <Image url="@../images/arena.png" />
-         </image>
-      </ImageView>
    </children>
 </AnchorPane>
