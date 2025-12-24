@@ -57,6 +57,11 @@
       </Label>
       
       <ComboBox fx:id="deckSelector" layoutX="839.0" layoutY="36.0" prefHeight="25.0" prefWidth="150.0" />
+      <Label fx:id="goldLabel" layoutX="1020.0" layoutY="36.0" text="Gold: 0" textFill="#333333">
+         <font>
+            <Font name="Trebuchet MS Bold" size="14.0" />
+         </font>
+      </Label>
       <Button fx:id="btnLoadDeck" layoutX="914.0" layoutY="493.0" mnemonicParsing="false" onAction="#handleLoadDeck" prefHeight="60.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="300.0">
          <graphic>
             <ImageView pickOnBounds="true" preserveRatio="true">

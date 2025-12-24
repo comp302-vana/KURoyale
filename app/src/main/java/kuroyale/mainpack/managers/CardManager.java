@@ -54,6 +54,21 @@ public class CardManager {
             System.err.println("No active deck.");
         }
     }
+    
+    /**
+     * Load a specific deck for PvP mode (backward compatible with loadDeck()).
+     * @param deck The deck to load for this player
+     */
+    public void loadDeckForPlayer(Deck deck) {
+        if (deck != null) {
+            currentDeckCards = new ArrayList<>(deck.getCards());
+            nextCardIndex = 0;
+            currentHand.clear();
+            loadDeckToSlots();
+        } else {
+            System.err.println("No deck provided for player.");
+        }
+    }
 
     public void loadDeckToSlots() {
         currentHand.clear();

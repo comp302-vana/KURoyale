@@ -11,6 +11,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
+import kuroyale.mainpack.models.GameMode;
 
 /**
  * Handles scene navigation and UI button handlers.
@@ -34,7 +35,7 @@ public class SceneNavigationManager {
         stage.show();
     }
 
-    public void showGameEndScreen(boolean playerWon, boolean isDraw, javafx.animation.Timeline gameLoop) {
+    public void showGameEndScreen(boolean playerWon, boolean isDraw, javafx.animation.Timeline gameLoop, GameMode gameMode) {
         // Stop the game loop
         if (gameLoop != null) {
             gameLoop.stop();
@@ -47,9 +48,23 @@ public class SceneNavigationManager {
                         isDraw ? Alert.AlertType.INFORMATION
                                 : (playerWon ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING));
                 alert.setTitle("Game Over");
-                alert.setHeaderText(isDraw ? "Draw" : (playerWon ? "Victory!" : "Defeat!"));
-                alert.setContentText(isDraw ? "Time is up and tower health is same."
-                        : (playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!"));
+                
+                // Different messages for PvP vs single-player
+                if (gameMode == GameMode.LOCAL_PVP) {
+                    if (isDraw) {
+                        alert.setHeaderText("Draw!");
+                        alert.setContentText("Both players survived!");
+                    } else {
+                        int winnerId = playerWon ? 1 : 2;
+                        alert.setHeaderText("Player " + winnerId + " Wins!");
+                        alert.setContentText("Player " + winnerId + " destroyed the enemy king!");
+                    }
+                } else {
+                    // Single-player mode (existing messages)
+                    alert.setHeaderText(isDraw ? "Draw" : (playerWon ? "Victory!" : "Defeat!"));
+                    alert.setContentText(isDraw ? "Time is up and tower health is same."
+                            : (playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!"));
+                }
 
                 // Show and wait
                 alert.showAndWait();

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.PvPDeckSelectionController">
+   <children>
+      <Label alignment="CENTER" layoutX="440.0" layoutY="50.0" prefHeight="60.0" prefWidth="400.0" text="Select Decks for Local PvP">
+         <font>
+            <Font name="Trebuchet MS Bold" size="36.0" />
+         </font>
+      </Label>
+      
+      <!-- Player 1 Selection -->
+      <VBox alignment="CENTER" layoutX="120.0" layoutY="150.0" prefHeight="420.0" prefWidth="450.0" spacing="20.0">
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+         <children>
+            <Label text="Player 1 Deck" textFill="#333333">
+               <font>
+                  <Font name="Trebuchet MS Bold" size="24.0" />
+               </font>
+            </Label>
+            <ComboBox fx:id="player1DeckCombo" prefHeight="35.0" prefWidth="350.0" promptText="Select Deck" />
+            <Label fx:id="player1DeckNameLabel" text="" textFill="#666666">
+               <font>
+                  <Font name="Trebuchet MS" size="16.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+      
+      <!-- Player 2 Selection -->
+      <VBox alignment="CENTER" layoutX="710.0" layoutY="150.0" prefHeight="420.0" prefWidth="450.0" spacing="20.0">
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+         <children>
+            <Label text="Player 2 Deck" textFill="#333333">
+               <font>
+                  <Font name="Trebuchet MS Bold" size="24.0" />
+               </font>
+            </Label>
+            <ComboBox fx:id="player2DeckCombo" prefHeight="35.0" prefWidth="350.0" promptText="Select Deck" />
+            <Label fx:id="player2DeckNameLabel" text="" textFill="#666666">
+               <font>
+                  <Font name="Trebuchet MS" size="16.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+      
+      <!-- Buttons -->
+      <HBox alignment="CENTER" layoutX="440.0" layoutY="600.0" prefHeight="50.0" prefWidth="400.0" spacing="30.0">
+         <children>
+            <Button fx:id="startBattleButton" mnemonicParsing="false" onAction="#handleStartBattle" prefHeight="50.0" prefWidth="180.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 18px;" text="Start Battle" />
+            <Button mnemonicParsing="false" onAction="#handleBack" prefHeight="50.0" prefWidth="180.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 18px;" text="Back" />
+         </children>
+      </HBox>
+   </children>
+</AnchorPane>

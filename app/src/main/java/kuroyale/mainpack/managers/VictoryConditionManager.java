@@ -5,6 +5,7 @@ import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.mainpack.PointsCounter;
 import kuroyale.mainpack.managers.SceneNavigationManager;
+import kuroyale.mainpack.models.GameMode;
 
 /**
  * Handles victory conditions, tie-breaker logic, and game end determination.
@@ -16,6 +17,8 @@ public class VictoryConditionManager {
     private final int rows;
     private final int cols;
     private final SceneNavigationManager sceneNavigationManager;
+    private EconomyManager economyManager;
+    private GameMode gameMode = GameMode.SINGLE_PLAYER_AI;
 
     public VictoryConditionManager(ArenaMap arenaMap, PointsCounter pointsCounter, int rows, int cols,
                                   SceneNavigationManager sceneNavigationManager) {
@@ -24,6 +27,14 @@ public class VictoryConditionManager {
         this.rows = rows;
         this.cols = cols;
         this.sceneNavigationManager = sceneNavigationManager;
+    }
+    
+    public void setEconomyManager(EconomyManager economyManager) {
+        this.economyManager = economyManager;
+    }
+    
+    public void setGameMode(GameMode gameMode) {
+        this.gameMode = gameMode;
     }
 
     public void tieBreaker(javafx.animation.Timeline gameLoop, javafx.scene.control.Label gameTimerLabel) {
@@ -72,6 +83,17 @@ public class VictoryConditionManager {
     }
 
     public void endGame(boolean playerWon, boolean isDraw, javafx.animation.Timeline gameLoop) {
-        sceneNavigationManager.showGameEndScreen(playerWon, isDraw, gameLoop);
+        // Award gold based on match result (only in single-player mode, not PvP)
+        if (economyManager != null && gameMode == GameMode.SINGLE_PLAYER_AI) {
+            if (isDraw) {
+                economyManager.awardGold("DRAW");
+            } else if (playerWon) {
+                economyManager.awardGold("VICTORY");
+            } else {
+                economyManager.awardGold("DEFEAT");
+            }
+        }
+        
+        sceneNavigationManager.showGameEndScreen(playerWon, isDraw, gameLoop, gameMode);
     }
 }

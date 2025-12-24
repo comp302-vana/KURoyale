@@ -31,6 +31,10 @@ import kuroyale.mainpack.managers.EntityLifecycleManager;
 import kuroyale.mainpack.managers.EntityPlacementManager;
 import kuroyale.mainpack.managers.ArenaSetupManager;
 import kuroyale.mainpack.managers.GameLoopManager;
+import kuroyale.mainpack.managers.DualPlayerStateManager;
+import kuroyale.mainpack.models.GameMode;
+import kuroyale.deckpack.Deck;
+import javafx.scene.layout.VBox;
 
 public class GameEngine {
     @FXML
@@ -63,8 +67,47 @@ public class GameEngine {
     private ProgressBar elixirProgressBar;
     @FXML
     private PointsCounter pointsCounter;
+    
+    // PvP mode UI elements (Player 2)
+    @FXML
+    private VBox player2CardContainer;
+    @FXML
+    private AnchorPane cardSlotP2_0;
+    @FXML
+    private AnchorPane cardSlotP2_1;
+    @FXML
+    private AnchorPane cardSlotP2_2;
+    @FXML
+    private AnchorPane cardSlotP2_3;
+    @FXML
+    private Label card1CostLabelP2;
+    @FXML
+    private Label card2CostLabelP2;
+    @FXML
+    private Label card3CostLabelP2;
+    @FXML
+    private Label card4CostLabelP2;
+    @FXML
+    private AnchorPane player2ElixirContainer;
+    @FXML
+    private ProgressBar elixirProgressBarP2;
+    @FXML
+    private Label elixirCountLabelP2;
+    @FXML
+    private Label player1Label;
+    @FXML
+    private Label player2Label;
 
     private ArenaMap arenaMap = new ArenaMap();
+    
+    // Game mode tracking
+    private static GameMode currentGameMode = GameMode.SINGLE_PLAYER_AI;
+    private static Deck player1Deck;
+    private static Deck player2Deck;
+    
+    // PvP managers (null in single-player mode)
+    private DualPlayerStateManager dualPlayerStateManager;
+    private CardManager cardManagerP2;
 
     private final int rows = ArenaMap.getRows();
     private final int cols = ArenaMap.getCols();
@@ -94,6 +137,23 @@ public class GameEngine {
     public static void main(String[] args) {
         UIManager.launch(UIManager.class, args);
     }
+    
+    // Static methods for setting game mode and decks (called from PvPDeckSelectionController)
+    public static void setGameMode(GameMode mode) {
+        currentGameMode = mode;
+    }
+    
+    public static GameMode getGameMode() {
+        return currentGameMode;
+    }
+    
+    public static void setPlayer1Deck(Deck deck) {
+        player1Deck = deck;
+    }
+    
+    public static void setPlayer2Deck(Deck deck) {
+        player2Deck = deck;
+    }
 
     @FXML
     private void initialize() {
@@ -104,49 +164,145 @@ public class GameEngine {
         pointsCounter.setLayoutX(((cols*tileSize)/2)-55);
         pointsCounter.setLayoutY(5);
 
+        // Clip images for Player 1 cards
         clipImage(getImageFromPane(cardSlot0), 6);
         clipImage(getImageFromPane(cardSlot1), 6);
         clipImage(getImageFromPane(cardSlot2), 6);
         clipImage(getImageFromPane(cardSlot3), 6);
 
+        // Determine game mode
+        boolean isPvPMode = (currentGameMode == GameMode.LOCAL_PVP);
+        
+        // Setup UI visibility based on mode
+        setupUIForGameMode(isPvPMode);
+        
+        // Clip images for Player 2 cards if PvP mode
+        if (isPvPMode && cardSlotP2_0 != null) {
+            clipImage(getImageFromPane(cardSlotP2_0), 6);
+            clipImage(getImageFromPane(cardSlotP2_1), 6);
+            clipImage(getImageFromPane(cardSlotP2_2), 6);
+            clipImage(getImageFromPane(cardSlotP2_3), 6);
+        }
+
         // Initialize core manager classes first
         entityRenderer = new EntityRenderer(arenaMap, entityLayer, staticLayer, pointsCounter, rows, cols, tileSize);
         combatManager = new CombatManager(ENTITY_UPDATE_INTERVAL);
-        gameStateManager = new GameStateManager(gameTimerLabel, elixirCountLabel, elixirProgressBar);
-        cardManager = new CardManager(cardSlot0, cardSlot1, cardSlot2, cardSlot3,
-                                     card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel);
         spellSystem = new SpellSystem(arenaMap, combatManager, rows, cols);
         entityUpdater = new EntityUpdater(arenaMap, combatManager, entityRenderer, rows, cols, ENTITY_UPDATE_INTERVAL);
+        
+        // Initialize state and card managers based on mode
+        if (isPvPMode) {
+            // PvP mode: use DualPlayerStateManager
+            dualPlayerStateManager = new DualPlayerStateManager(
+                elixirCountLabel, elixirProgressBar,
+                elixirCountLabelP2, elixirProgressBarP2
+            );
+            // Create dummy GameStateManager for compatibility (not used in PvP)
+            gameStateManager = new GameStateManager(gameTimerLabel, elixirCountLabel, elixirProgressBar);
+            
+            // Initialize both card managers
+            cardManager = new CardManager(cardSlot0, cardSlot1, cardSlot2, cardSlot3,
+                                         card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel);
+            cardManagerP2 = new CardManager(cardSlotP2_0, cardSlotP2_1, cardSlotP2_2, cardSlotP2_3,
+                                           card1CostLabelP2, card2CostLabelP2, card3CostLabelP2, card4CostLabelP2);
+            
+            // Load decks for both players
+            if (player1Deck != null) {
+                cardManager.loadDeckForPlayer(player1Deck);
+            } else {
+                cardManager.loadDeck(); // Fallback to current deck
+            }
+            if (player2Deck != null) {
+                cardManagerP2.loadDeckForPlayer(player2Deck);
+            } else {
+                System.err.println("Warning: Player 2 deck not set in PvP mode!");
+            }
+        } else {
+            // Single-player mode: use GameStateManager (existing code)
+            gameStateManager = new GameStateManager(gameTimerLabel, elixirCountLabel, elixirProgressBar);
+            cardManager = new CardManager(cardSlot0, cardSlot1, cardSlot2, cardSlot3,
+                                         card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel);
+            cardManager.loadDeck();
+        }
 
+        // Initialize persistence and economy for victory rewards
+        kuroyale.mainpack.managers.PersistenceManager persistenceManager = new kuroyale.mainpack.managers.PersistenceManager();
+        kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+        kuroyale.mainpack.managers.EconomyManager economyManager = new kuroyale.mainpack.managers.EconomyManager(profile.getTotalGold(), persistenceManager);
+        
         // Initialize new managers (careful with dependencies)
         sceneNavigationManager = new SceneNavigationManager(arenaGrid, gameStateManager);
         towerManager = new TowerManager(arenaMap, pointsCounter, rows, cols);
         victoryConditionManager = new VictoryConditionManager(arenaMap, pointsCounter, rows, cols, sceneNavigationManager);
+        victoryConditionManager.setEconomyManager(economyManager);
+        victoryConditionManager.setGameMode(currentGameMode); // Set game mode for victory messages
         entityLifecycleManager = new EntityLifecycleManager(arenaMap, combatManager, entityRenderer, entityUpdater, towerManager, rows, cols);
-        entityPlacementManager = new EntityPlacementManager(arenaMap, gameStateManager, cardManager, entityRenderer, spellSystem, rows, cols);
+        
+        // EntityPlacementManager needs to know about dual player state if PvP
+        if (isPvPMode) {
+            entityPlacementManager = new EntityPlacementManager(arenaMap, dualPlayerStateManager, cardManager, cardManagerP2, entityRenderer, spellSystem, rows, cols);
+        } else {
+            entityPlacementManager = new EntityPlacementManager(arenaMap, gameStateManager, cardManager, entityRenderer, spellSystem, rows, cols);
+        }
+        
         arenaSetupManager = new ArenaSetupManager(arenaMap, arenaGrid, rows, cols, tileSize, entityRenderer);
-        gameLoopManager = new GameLoopManager(gameStateManager, entityLifecycleManager, entityRenderer, victoryConditionManager, gameTimerLabel, ENTITY_UPDATE_INTERVAL);
+        
+        // GameLoopManager needs to use appropriate state manager
+        if (isPvPMode) {
+            gameLoopManager = new GameLoopManager(dualPlayerStateManager, entityLifecycleManager, entityRenderer, victoryConditionManager, gameTimerLabel, ENTITY_UPDATE_INTERVAL);
+        } else {
+            gameLoopManager = new GameLoopManager(gameStateManager, entityLifecycleManager, entityRenderer, victoryConditionManager, gameTimerLabel, ENTITY_UPDATE_INTERVAL);
+        }
         
         // Set callback for handling tower destroy results
         entityLifecycleManager.setTowerDestroyCallback(this::handleTowerDestroyResult);
-
-        cardManager.loadDeck();
 
         arenaSetupManager.fillArenaGrid(entityPlacementManager);
         arenaSetupManager.loadDefaultArenaIfExists();
         entityRenderer.renderStaticObjects();
 
-        // Initialize the AI opponent before starting game loop
-        String difficulty = UIManager.getSelectedDifficulty();
-        if ("Simple".equals(difficulty)) {
-            aiOpponent = new SimpleAI(arenaMap, this);
-            gameLoopManager.setAIOpponent(aiOpponent);
+        // Initialize the AI opponent before starting game loop (only in single-player mode)
+        if (!isPvPMode) {
+            String difficulty = UIManager.getSelectedDifficulty();
+            if ("Simple".equals(difficulty)) {
+                aiOpponent = new SimpleAI(arenaMap, this);
+                gameLoopManager.setAIOpponent(aiOpponent);
+            }
         }
         
         gameLoopManager.startGameLoop();
 
         // Verify all cards are draggable after initialization
         verifyAllCardsDraggable();
+    }
+    
+    private void setupUIForGameMode(boolean isPvPMode) {
+        if (isPvPMode) {
+            // Show PvP elements
+            if (player2CardContainer != null) {
+                player2CardContainer.setVisible(true);
+                player2CardContainer.setManaged(true);
+            }
+            if (player2ElixirContainer != null) {
+                player2ElixirContainer.setVisible(true);
+                player2ElixirContainer.setManaged(true);
+            }
+            // Optional: show player labels
+            if (player1Label != null) player1Label.setVisible(true);
+            if (player2Label != null) player2Label.setVisible(true);
+        } else {
+            // Hide PvP elements (already hidden by default, but ensure)
+            if (player2CardContainer != null) {
+                player2CardContainer.setVisible(false);
+                player2CardContainer.setManaged(false);
+            }
+            if (player2ElixirContainer != null) {
+                player2ElixirContainer.setVisible(false);
+                player2ElixirContainer.setManaged(false);
+            }
+            if (player1Label != null) player1Label.setVisible(false);
+            if (player2Label != null) player2Label.setVisible(false);
+        }
     }
 
     private void verifyAllCardsDraggable() {

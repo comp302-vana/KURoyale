@@ -11,7 +11,8 @@ import kuroyale.mainpack.SimpleAI;
  * High cohesion: All game loop timing and coordination logic in one place.
  */
 public class GameLoopManager {
-    private final GameStateManager gameStateManager;
+    private final GameStateManager gameStateManager;  // Single-player mode
+    private final DualPlayerStateManager dualPlayerStateManager;  // PvP mode
     private final EntityLifecycleManager entityLifecycleManager;
     private final EntityRenderer entityRenderer;
     private final VictoryConditionManager victoryConditionManager;
@@ -20,16 +21,34 @@ public class GameLoopManager {
     private Timeline gameLoop;
     private double timePassedSinceLastEntityUpdate = 0;
     private SimpleAI aiOpponent;
+    private final boolean isPvPMode;
 
+    // Constructor for single-player mode
     public GameLoopManager(GameStateManager gameStateManager, EntityLifecycleManager entityLifecycleManager,
                           EntityRenderer entityRenderer, VictoryConditionManager victoryConditionManager,
                           Label gameTimerLabel, double entityUpdateInterval) {
         this.gameStateManager = gameStateManager;
+        this.dualPlayerStateManager = null;
         this.entityLifecycleManager = entityLifecycleManager;
         this.entityRenderer = entityRenderer;
         this.victoryConditionManager = victoryConditionManager;
         this.gameTimerLabel = gameTimerLabel;
         this.ENTITY_UPDATE_INTERVAL = entityUpdateInterval;
+        this.isPvPMode = false;
+    }
+    
+    // Constructor for PvP mode
+    public GameLoopManager(DualPlayerStateManager dualPlayerStateManager, EntityLifecycleManager entityLifecycleManager,
+                          EntityRenderer entityRenderer, VictoryConditionManager victoryConditionManager,
+                          Label gameTimerLabel, double entityUpdateInterval) {
+        this.gameStateManager = null;
+        this.dualPlayerStateManager = dualPlayerStateManager;
+        this.entityLifecycleManager = entityLifecycleManager;
+        this.entityRenderer = entityRenderer;
+        this.victoryConditionManager = victoryConditionManager;
+        this.gameTimerLabel = gameTimerLabel;
+        this.ENTITY_UPDATE_INTERVAL = entityUpdateInterval;
+        this.isPvPMode = true;
     }
 
     public void setAIOpponent(SimpleAI aiOpponent) {
@@ -44,9 +63,30 @@ public class GameLoopManager {
         final double TICK_DURATION = 0.1;
 
         gameLoop = new Timeline(new KeyFrame(Duration.seconds(TICK_DURATION), e -> {
-            gameStateManager.updateElixir(TICK_DURATION);
+            // Update elixir based on mode
+            if (isPvPMode) {
+                dualPlayerStateManager.updateBothPlayersElixir(TICK_DURATION);
+            } else {
+                gameStateManager.updateElixir(TICK_DURATION);
+            }
 
-            if (gameStateManager.updateTimer(TICK_DURATION)) {
+            // Update timer (same interface for both)
+            boolean timeUp;
+            if (isPvPMode) {
+                timeUp = dualPlayerStateManager.updateTimer(TICK_DURATION);
+                // Update timer label manually (DualPlayerStateManager doesn't have updateTimerLabel)
+                int totalSeconds = dualPlayerStateManager.getTotalSeconds();
+                int minutes = totalSeconds / 60;
+                int seconds = totalSeconds % 60;
+                String timeText = String.format("%02d:%02d", minutes, seconds);
+                if (gameTimerLabel != null) {
+                    gameTimerLabel.setText(timeText);
+                }
+            } else {
+                timeUp = gameStateManager.updateTimer(TICK_DURATION);
+            }
+            
+            if (timeUp) {
                 victoryConditionManager.tieBreaker(gameLoop, gameTimerLabel);
                 gameLoop.stop();
                 if (gameTimerLabel != null) {
@@ -67,8 +107,8 @@ public class GameLoopManager {
                 if (entityRenderer.isStaticDirty()) {
                     entityRenderer.renderStaticObjects();
                 }
-                // Update AI opponent
-                if (aiOpponent != null) {
+                // Update AI opponent (only in single-player mode)
+                if (!isPvPMode && aiOpponent != null) {
                     aiOpponent.update(TICK_DURATION, gameStateManager.getTotalSeconds());
                 }
                 timePassedSinceLastEntityUpdate = 0;
