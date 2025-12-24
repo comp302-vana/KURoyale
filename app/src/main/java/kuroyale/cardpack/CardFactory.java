@@ -6,10 +6,51 @@ import java.util.List;
 import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.cardpack.subclasses.BuildingCard;
 import kuroyale.cardpack.subclasses.SpellCard;
+import kuroyale.mainpack.util.LevelCalculator;
 
 public class CardFactory {
 
+    /**
+     * Creates a card at Level 1 (base stats).
+     * @param id Card ID (1-28)
+     * @return The card with base stats
+     */
     public static Card createCard(int id) {
+        return createCard(id, 1); // Default to Level 1
+    }
+    
+    /**
+     * Creates a card at the specified level with adjusted stats.
+     * Level 2: +10% HP and Damage
+     * Level 3: +20% HP and Damage
+     * @param id Card ID (1-28)
+     * @param level Card level (1-3)
+     * @return The card with stats adjusted for the level
+     */
+    public static Card createCard(int id, int level) {
+        if (level < 1 || level > 3) {
+            level = 1; // Default to Level 1 if invalid
+        }
+        
+        // Get base card and apply level multipliers
+        Card baseCard = createCardBase(id);
+        if (baseCard == null) {
+            return null;
+        }
+        
+        // If Level 1, return base card directly
+        if (level == 1) {
+            return baseCard;
+        }
+        
+        // Apply level multipliers to stats
+        return createCardWithLevel(baseCard, level);
+    }
+    
+    /**
+     * Creates a card with base stats (internal method).
+     */
+    private static Card createCardBase(int id) {
         switch (id) {
 
             case 1:
@@ -116,17 +157,17 @@ public class CardFactory {
                 return new BuildingCard(21, "Tombstone",
                         "Spawns 1 Skeleton every 2.9s.",
                         3, CardCategory.SPAWNER_BUILDING, CardTarget.NONE,
-                        200, 0, 2.9, 0, 0.0, 40, (UnitCard) createCard(9));
+                        200, 0, 2.9, 0, 0.0, 40, (UnitCard) createCardBase(9));
             case 22:
                 return new BuildingCard(22, "Goblin Hut",
                         "Spawns 1 Spear Goblin every 4.9s.",
                         5, CardCategory.SPAWNER_BUILDING, CardTarget.NONE,
-                        700, 0, 4.9, 0, 0.0, 60, (UnitCard) createCard(11));
+                        700, 0, 4.9, 0, 0.0, 60, (UnitCard) createCardBase(11));
             case 23:
                 return new BuildingCard(23, "Barbarian Hut",
                         "Spawns 1 Barbarians every 7s.",
                         7, CardCategory.SPAWNER_BUILDING, CardTarget.NONE,
-                        640, 0, 7, 0, 0.0, 60, (UnitCard) createCard(15));
+                        640, 0, 7, 0, 0.0, 60, (UnitCard) createCardBase(15));
             case 24:
                 return new BuildingCard(24, "Elixir Collector",
                         "Generates elixir over time.",
@@ -151,6 +192,80 @@ public class CardFactory {
             default:
                 return null;
         }
+    }
+    
+    /**
+     * Creates a card with level-adjusted stats from a base card.
+     */
+    private static Card createCardWithLevel(Card baseCard, int level) {
+        if (baseCard instanceof UnitCard) {
+            UnitCard unit = (UnitCard) baseCard;
+            double baseHP = unit.getHp();
+            double baseDamage = unit.getDamage();
+            
+            // Apply level multipliers
+            double adjustedHP = LevelCalculator.calculateStat(baseHP, level);
+            int adjustedDamage = LevelCalculator.calculateDamage(baseDamage, level);
+            
+            return new UnitCard(
+                unit.getId(),
+                unit.getName(),
+                unit.getDescription(),
+                unit.getCost(),
+                unit.getCategory(),
+                unit.getTarget(),
+                unit.getType(),
+                adjustedHP,
+                adjustedDamage,
+                unit.getActSpeed(),
+                unit.getRange(),
+                unit.getSpeed(),
+                unit.getRadius(),
+                unit.getCount()
+            );
+        } else if (baseCard instanceof BuildingCard) {
+            BuildingCard building = (BuildingCard) baseCard;
+            double baseHP = building.getHp();
+            double baseDamage = building.getDamage();
+            
+            // Apply level multipliers
+            double adjustedHP = LevelCalculator.calculateStat(baseHP, level);
+            int adjustedDamage = LevelCalculator.calculateDamage(baseDamage, level);
+            
+            return new BuildingCard(
+                building.getId(),
+                building.getName(),
+                building.getDescription(),
+                building.getCost(),
+                building.getCategory(),
+                building.getTarget(),
+                adjustedHP,
+                adjustedDamage,
+                building.getActSpeed(),
+                building.getRange(),
+                building.getRadius(),
+                building.getLifetime(),
+                building.getSpawnedUnit()
+            );
+        } else if (baseCard instanceof SpellCard) {
+            SpellCard spell = (SpellCard) baseCard;
+            double baseDamage = spell.getDamage();
+            
+            // Apply level multipliers to spell damage
+            int adjustedDamage = LevelCalculator.calculateDamage(baseDamage, level);
+            
+            return new SpellCard(
+                spell.getId(),
+                spell.getName(),
+                spell.getDescription(),
+                spell.getCost(),
+                adjustedDamage,
+                spell.getRadius()
+            );
+        }
+        
+        // Fallback: return base card if unknown type
+        return baseCard;
     }
 
     public static List<Card> getAllCards() {

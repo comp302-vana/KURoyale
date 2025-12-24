@@ -16,6 +16,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import kuroyale.mainpack.models.GameMode;
 
 public class UIManager extends Application {
     private Stage stage;
@@ -98,25 +99,34 @@ public class UIManager extends Application {
     @FXML
     void btnNoAIClicked(ActionEvent event) throws IOException {
         selectedDifficulty = "NoAI";
+        GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
     }
 
     @FXML
     void btnSimpleClicked(ActionEvent event) throws IOException {
         selectedDifficulty = "Simple";
+        GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
     }
 
     @FXML
     void btnMediumClicked(ActionEvent event) throws IOException {
         selectedDifficulty = "Medium";
+        GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
     }
 
     @FXML
     void btnAdvancedClicked(ActionEvent event) throws IOException {
         selectedDifficulty = "Advanced";
+        GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
+    }
+
+    @FXML
+    void btnLocalPvPClicked(ActionEvent event) throws IOException {
+        switchToPvPDeckSelectionScene(event);
     }
 
 
@@ -167,6 +177,15 @@ public class UIManager extends Application {
 
     private void switchToDifficultySelectionScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/DifficultySelectionScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void switchToPvPDeckSelectionScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/PvPDeckSelectionScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));

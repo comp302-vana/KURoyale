@@ -188,6 +188,120 @@
          <font>
             <Font name="System Bold" size="12.0" />
          </font></Label>
+      
+      <!-- Player 2 Card Slots (PvP mode, initially hidden) -->
+      <VBox fx:id="player2CardContainer" layoutX="1136.0" layoutY="124.0" prefHeight="540.0" prefWidth="114.0" spacing="12.0" style="-fx-background-color: #00000041;" visible="false" managed="false" AnchorPane.bottomAnchor="90.0" AnchorPane.rightAnchor="50.0" AnchorPane.topAnchor="90.0">
+         <padding>
+            <Insets bottom="12.0" left="12.0" right="12.0" top="12.0" />
+         </padding>
+         <children>
+            <AnchorPane fx:id="cardSlotP2_0" prefHeight="120.0" prefWidth="90.0">
+               <children>
+                  <Pane prefHeight="200.0" prefWidth="200.0" style="-fx-border-width: 3; -fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #333;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="5.0">
+                     <children>
+                        <Rectangle arcHeight="12.0" arcWidth="5.0" fill="#5d3f7f" height="111.0" layoutX="2.0" layoutY="2.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="81.0" />
+                        <ImageView fitHeight="111.0" fitWidth="81.0" layoutX="2.0" layoutY="2.0" pickOnBounds="true">
+                           <image>
+                              <Image url="@../images/cards/knight.png" />
+                           </image>
+                        </ImageView>
+                        <Circle fill="#ff1fff" radius="15.0" stroke="#4d3d4d" strokeType="INSIDE" strokeWidth="3.0" />
+                        <Label fx:id="card1CostLabelP2" layoutX="-4.0" layoutY="-8.0" prefHeight="16.0" prefWidth="10.0" text="0" textFill="WHITE">
+                           <font>
+                              <Font name="Trebuchet MS Bold" size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </Pane>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="cardSlotP2_1" prefHeight="120.0" prefWidth="90.0">
+               <children>
+                  <Pane prefHeight="200.0" prefWidth="200.0" style="-fx-border-width: 3; -fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #333;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="5.0">
+                     <children>
+                        <Rectangle arcHeight="12.0" arcWidth="5.0" fill="#5d3f7f" height="111.0" layoutX="2.0" layoutY="2.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="81.0" />
+                        <ImageView fitHeight="111.0" fitWidth="81.0" layoutX="2.0" layoutY="2.0" pickOnBounds="true">
+                           <image>
+                              <Image url="@../images/cards/knight.png" />
+                           </image>
+                        </ImageView>
+                        <Circle fill="#ff1fff" radius="15.0" stroke="#4d3d4d" strokeType="INSIDE" strokeWidth="3.0" />
+                        <Label fx:id="card2CostLabelP2" layoutX="-4.0" layoutY="-8.0" prefHeight="16.0" prefWidth="10.0" text="0" textFill="WHITE">
+                           <font>
+                              <Font name="Trebuchet MS Bold" size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </Pane>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="cardSlotP2_2" prefHeight="120.0" prefWidth="90.0">
+               <children>
+                  <Pane prefHeight="200.0" prefWidth="200.0" style="-fx-border-width: 3; -fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #333;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="5.0">
+                     <children>
+                        <Rectangle arcHeight="12.0" arcWidth="5.0" fill="#5d3f7f" height="111.0" layoutX="2.0" layoutY="2.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="81.0" />
+                        <ImageView fitHeight="111.0" fitWidth="81.0" layoutX="2.0" layoutY="2.0" pickOnBounds="true">
+                           <image>
+                              <Image url="@../images/cards/knight.png" />
+                           </image>
+                        </ImageView>
+                        <Circle fill="#ff1fff" radius="15.0" stroke="#4d3d4d" strokeType="INSIDE" strokeWidth="3.0" />
+                        <Label fx:id="card3CostLabelP2" layoutX="-4.0" layoutY="-8.0" prefHeight="16.0" prefWidth="10.0" text="0" textFill="WHITE">
+                           <font>
+                              <Font name="Trebuchet MS Bold" size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </Pane>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="cardSlotP2_3" prefHeight="120.0" prefWidth="90.0">
+               <children>
+                  <Pane prefHeight="200.0" prefWidth="200.0" style="-fx-border-width: 3; -fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #333;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="5.0">
+                     <children>
+                        <Rectangle arcHeight="12.0" arcWidth="5.0" fill="#5d3f7f" height="111.0" layoutX="2.0" layoutY="2.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" width="81.0" />
+                        <ImageView fitHeight="111.0" fitWidth="81.0" layoutX="2.0" layoutY="2.0" pickOnBounds="true">
+                           <image>
+                              <Image url="@../images/cards/knight.png" />
+                           </image>
+                        </ImageView>
+                        <Circle fill="#ff1fff" radius="15.0" stroke="#4d3d4d" strokeType="INSIDE" strokeWidth="3.0" />
+                        <Label fx:id="card4CostLabelP2" layoutX="-4.0" layoutY="-8.0" prefHeight="16.0" prefWidth="10.0" text="0" textFill="WHITE">
+                           <font>
+                              <Font name="Trebuchet MS Bold" size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </Pane>
+               </children>
+            </AnchorPane>
+         </children>
+      </VBox>
+      
+      <!-- Player 2 Elixir Display (PvP mode, initially hidden) -->
+      <AnchorPane fx:id="player2ElixirContainer" layoutY="91.2" maxWidth="30.0" minWidth="30.0" prefHeight="540.0" prefWidth="30.0" visible="false" managed="false" AnchorPane.bottomAnchor="90.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="90.0">
+         <children>
+            <ProgressBar fx:id="elixirProgressBarP2" prefHeight="30.0" prefWidth="540.0" progress="0.51" rotate="-90.0" style="-fx-background-radius: 10px;" styleClass="elixir-bar" stylesheets="@../styles/styles.css" AnchorPane.leftAnchor="-255.0" AnchorPane.topAnchor="255.0" />
+            <Circle fill="#ff1fff" radius="15.0" stroke="#4d3d4d" strokeType="INSIDE" strokeWidth="3.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="-10.0" />
+            <Label fx:id="elixirCountLabelP2" alignment="CENTER" layoutX="4.8" layoutY="-3.2" maxWidth="30.0" minWidth="30.0" prefHeight="30.0" prefWidth="30.0" text="0" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="-10.0">
+               <font>
+                  <Font name="Trebuchet MS Bold" size="12.0" />
+               </font>
+            </Label>
+         </children>
+      </AnchorPane>
+      
+      <!-- Optional Player Labels (PvP mode, initially hidden) -->
+      <Label fx:id="player1Label" layoutX="60.0" layoutY="30.0" text="Player 1" textFill="#333333" visible="false" managed="false">
+         <font>
+            <Font name="Trebuchet MS Bold" size="14.0" />
+         </font>
+      </Label>
+      <Label fx:id="player2Label" layoutX="1180.0" layoutY="30.0" text="Player 2" textFill="#333333" visible="false" managed="false">
+         <font>
+            <Font name="Trebuchet MS Bold" size="14.0" />
+         </font>
+      </Label>
    </children>
    <stylesheets>
       <URL value="@../styles/styles.css" />
