@@ -29,6 +29,10 @@ import kuroyale.mainpack.managers.*;
 import kuroyale.mainpack.models.PlayerProfile;
 import kuroyale.mainpack.util.CardDataRepository;
 import kuroyale.mainpack.util.CardStats;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import javafx.scene.effect.DropShadow;
 
 public class DeckBuilder {
     private Stage stage;
@@ -42,24 +46,23 @@ public class DeckBuilder {
     @FXML
     private FlowPane deckSlots;
     @FXML
-    private Button btnSaveDeck;
+    private HBox deckNumberSelector;
     @FXML
-    private TextField deckNameField;
+    private Label goldLabel;
     @FXML
-    private ComboBox<String> deckSelector;
-    @FXML
-    private Label goldLabel; // Gold display
-    // @FXML
-    // private Label deckStatusLabel;
+    private Button chestButton;
 
     private Deck currentDeck;
     private ObservableList<Card> deckCards;
-    
+    private int selectedDeckNumber = 1;
+    private Button[] deckNumberButtons = new Button[8];
+
     // Managers for economy and upgrades
     private PersistenceManager persistenceManager;
     private EconomyManager economyManager;
     private CardDataRepository cardDataRepository;
     private CardUpgradeManager cardUpgradeManager;
+    private PlayerProfile playerProfile;
 
     @FXML
     public void initialize() {
@@ -69,27 +72,33 @@ public class DeckBuilder {
         }
 
         deckCards = FXCollections.observableArrayList();
-        currentDeck = new Deck("New Deck");
 
         // Initialize persistence and economy managers
         initializeManagers();
 
+        // Setup deck number selector (1-8 buttons)
+        setupDeckNumberSelector();
+
         setupCardDisplay();
         setupDeckSlots();
-        setupDeckSelector();
+
+        // Load the selected deck (default: 1)
+        selectedDeckNumber = DeckManager.getSelectedDeckNumber();
+        loadDeck(selectedDeckNumber);
+
         updateUI();
     }
-    
+
     private void initializeManagers() {
         // Load player profile
         persistenceManager = new PersistenceManager();
-        PlayerProfile profile = persistenceManager.loadPlayerProfile();
-        
+        playerProfile = persistenceManager.loadPlayerProfile();
+
         // Initialize managers
-        economyManager = new EconomyManager(profile.getTotalGold(), persistenceManager);
-        cardDataRepository = new CardDataRepository(profile.getCardLevels());
+        economyManager = new EconomyManager(playerProfile.getTotalGold(), persistenceManager);
+        cardDataRepository = new CardDataRepository(playerProfile.getCardLevels());
         cardUpgradeManager = new CardUpgradeManager(economyManager, cardDataRepository, persistenceManager);
-        
+
         // Setup gold display
         if (goldLabel != null) {
             goldLabel.setText("Gold: " + economyManager.getCurrentGold());
@@ -98,6 +107,132 @@ public class DeckBuilder {
                 goldLabel.setText("Gold: " + newVal.intValue());
             });
         }
+    }
+
+    private void setupDeckNumberSelector() {
+        if (deckNumberSelector == null) {
+            return;
+        }
+
+        for (int i = 1; i <= 8; i++) {
+            final int deckNum = i;
+            Button btn = new Button(String.valueOf(i));
+            btn.setPrefSize(40, 40);
+            btn.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 16));
+
+            // Check if deck has cards
+            btn.setOnAction(e -> selectDeck(deckNum));
+
+            deckNumberButtons[i - 1] = btn;
+            deckNumberSelector.getChildren().add(btn);
+        }
+
+        // Highlight the selected deck
+        updateDeckNumberButtonStyles();
+    }
+
+    private void updateDeckNumberButtonStyles() {
+        for (int i = 0; i < 8; i++) {
+            Button btn = deckNumberButtons[i];
+            if (btn == null)
+                continue;
+
+            int deckNum = i + 1;
+            int cardCount = DeckManager.getDeckCardCount(deckNum);
+            boolean isSelected = (deckNum == selectedDeckNumber);
+            boolean isComplete = cardCount == 8;
+            boolean isIncomplete = cardCount > 0 && cardCount < 8;
+
+            if (isSelected) {
+                // Selected deck - use appropriate color based on state with highlighted border
+                if (isComplete) {
+                    btn.setStyle(
+                            "-fx-background-color: #4CAF50; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-background-radius: 20; " +
+                                    "-fx-border-color: #2E7D32; " +
+                                    "-fx-border-width: 3; " +
+                                    "-fx-border-radius: 20; " +
+                                    "-fx-cursor: hand;");
+                } else if (isIncomplete) {
+                    btn.setStyle(
+                            "-fx-background-color: #F44336; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-background-radius: 20; " +
+                                    "-fx-border-color: #C62828; " +
+                                    "-fx-border-width: 3; " +
+                                    "-fx-border-radius: 20; " +
+                                    "-fx-cursor: hand;");
+                } else {
+                    btn.setStyle(
+                            "-fx-background-color: #9E9E9E; " +
+                                    "-fx-text-fill: white; " +
+                                    "-fx-background-radius: 20; " +
+                                    "-fx-border-color: #616161; " +
+                                    "-fx-border-width: 3; " +
+                                    "-fx-border-radius: 20; " +
+                                    "-fx-cursor: hand;");
+                }
+            } else if (isComplete) {
+                // Complete deck (8 cards) - green
+                btn.setStyle(
+                        "-fx-background-color: #66BB6A; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-background-radius: 20; " +
+                                "-fx-border-color: #43A047; " +
+                                "-fx-border-width: 2; " +
+                                "-fx-border-radius: 20; " +
+                                "-fx-cursor: hand;");
+            } else if (isIncomplete) {
+                // Incomplete deck (1-7 cards) - red
+                btn.setStyle(
+                        "-fx-background-color: #EF5350; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-background-radius: 20; " +
+                                "-fx-border-color: #E53935; " +
+                                "-fx-border-width: 2; " +
+                                "-fx-border-radius: 20; " +
+                                "-fx-cursor: hand;");
+            } else {
+                // Empty slot (0 cards) - gray
+                btn.setStyle(
+                        "-fx-background-color: #BDBDBD; " +
+                                "-fx-text-fill: #616161; " +
+                                "-fx-background-radius: 20; " +
+                                "-fx-border-color: #9E9E9E; " +
+                                "-fx-border-width: 2; " +
+                                "-fx-border-radius: 20; " +
+                                "-fx-cursor: hand;");
+            }
+        }
+    }
+
+    private void selectDeck(int deckNumber) {
+        if (deckNumber == selectedDeckNumber) {
+            return; // Already on this deck
+        }
+
+        // Auto-save current deck before switching (even if empty)
+        if (currentDeck != null) {
+            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+        }
+
+        // Switch to the new deck
+        selectedDeckNumber = deckNumber;
+        DeckManager.setSelectedDeckNumber(deckNumber);
+
+        // Load the new deck
+        loadDeck(deckNumber);
+
+        // Update button styles
+        updateDeckNumberButtonStyles();
+    }
+
+    private void loadDeck(int deckNumber) {
+        currentDeck = DeckManager.loadDeckByNumber(deckNumber);
+        DeckManager.setCurrentDeck(currentDeck);
+        updateDeckDisplay();
+        updateUI();
     }
 
     private void setupCardDisplay() {
@@ -109,7 +244,8 @@ public class DeckBuilder {
         cardContainer.setVgap(10);
         cardContainer.setPrefWrapLength(760);
 
-        // create buttons for all cards (using level 1 for display, actual level from repository)
+        // create buttons for all cards (using level 1 for display, actual level from
+        // repository)
         for (Card card : CardFactory.getAllCards()) {
             AnchorPane cardButton = createCardNode(card);
             // Store card ID in userData for later reference
@@ -127,20 +263,26 @@ public class DeckBuilder {
         // Get card level and rarity for visual enhancements
         int cardLevel = cardDataRepository != null ? cardDataRepository.getCardLevel(card.getId()) : 1;
         CardRarity rarity = CardRarityMapper.getRarity(card.getId());
-        
+
+        // Check if card is unlocked
+        boolean isUnlocked = playerProfile != null && playerProfile.isCardUnlocked(card.getId());
+
         // --- BUTTON (the card) ---
         Button btn = new Button();
         String borderColor = CardVisualManager.getRarityBorderColor(rarity);
         btn.setStyle(
-                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
-                "-fx-background-size: cover;" +
-                "-fx-background-color: #5D3F7F;" +
-                "-fx-background-radius: 5;" +
-                "-fx-padding: 0;" +
-                "-fx-border-color: " + borderColor + "; " +
-                "-fx-border-width: 3; " +
-                "-fx-border-radius: 5;");
-        btn.setOnAction(e -> addCardToDeck(card));
+                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "")
+                        + ".png\");" +
+                        "-fx-background-size: cover;" +
+                        "-fx-background-color: #5D3F7F;" +
+                        "-fx-background-radius: 5;" +
+                        "-fx-padding: 0;" +
+                        "-fx-border-color: " + borderColor + "; " +
+                        "-fx-border-width: 3; " +
+                        "-fx-border-radius: 5;");
+        if (isUnlocked) {
+            btn.setOnAction(e -> addCardToDeck(card));
+        }
 
         VBox hoverButtons = new VBox(5);
         hoverButtons.setAlignment(Pos.CENTER);
@@ -157,16 +299,25 @@ public class DeckBuilder {
         lblName.setFont(new Font("Trebuchet MS", 12));
         lblName.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
 
-        Button btnAdd = new Button("Add");
-        btnAdd.setStyle(
-                "-fx-background-color: #4CAF50; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-font-size: 10px; " +
-                        "-fx-cursor: hand;");
-        btnAdd.setOnAction(e -> {
-            addCardToDeck(card);
-            e.consume();
-        });
+        Button btnAdd = new Button(isUnlocked ? "Add" : "🔒 Locked");
+        if (isUnlocked) {
+            btnAdd.setStyle(
+                    "-fx-background-color: #4CAF50; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 10px; " +
+                            "-fx-cursor: hand;");
+            btnAdd.setOnAction(e -> {
+                addCardToDeck(card);
+                e.consume();
+            });
+        } else {
+            btnAdd.setStyle(
+                    "-fx-background-color: #666666; " +
+                            "-fx-text-fill: #999999; " +
+                            "-fx-font-size: 10px; " +
+                            "-fx-cursor: default;");
+            btnAdd.setDisable(true);
+        }
 
         Button btnView = new Button("View");
         btnView.setStyle(
@@ -216,8 +367,8 @@ public class DeckBuilder {
         AnchorPane.setLeftAnchor(costLabel, 11.5);
 
         // button fills rest, offset by radius
-        AnchorPane.setTopAnchor(btn, radius/3);
-        AnchorPane.setLeftAnchor(btn, radius/3);
+        AnchorPane.setTopAnchor(btn, radius / 3);
+        AnchorPane.setLeftAnchor(btn, radius / 3);
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
@@ -227,8 +378,23 @@ public class DeckBuilder {
 
         // optional: set a fixed card size if you want
         ap.setPrefSize(126, 168);
-        
-        // Add level indicator
+
+        // --- LOCKED OVERLAY ---
+        if (!isUnlocked) {
+            // Dark overlay - added after btn but before circle so elixir badge stays on top
+            javafx.scene.shape.Rectangle lockOverlay = new javafx.scene.shape.Rectangle(121, 163);
+            lockOverlay.setFill(Color.rgb(0, 0, 0, 0.6));
+            lockOverlay.setArcWidth(10);
+            lockOverlay.setArcHeight(10);
+            lockOverlay.setMouseTransparent(true);
+
+            // Insert overlay at index 1 (after btn at 0, before circle)
+            ap.getChildren().add(1, lockOverlay);
+            AnchorPane.setTopAnchor(lockOverlay, radius / 3);
+            AnchorPane.setLeftAnchor(lockOverlay, radius / 3);
+        }
+
+        // Add level indicator (after overlay so stars appear on top)
         if (cardDataRepository != null) {
             CardVisualManager.applyLevelIndicator(ap, cardLevel);
         }
@@ -243,20 +409,20 @@ public class DeckBuilder {
 
         return ap;
     }
-    
+
     private void handleUpgrade(Card card) {
         if (cardUpgradeManager == null || economyManager == null) {
             System.err.println("Managers not initialized");
             return;
         }
-        
+
         CardUpgradeManager.UpgradeResult result = cardUpgradeManager.upgradeCard(card.getId());
-        
+
         if (result.success) {
             // Update UI: refresh card display, gold display
             // Refresh the card node to show new level
             refreshCardDisplay(card.getId());
-            
+
             // Show success message
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Upgrade Success");
@@ -272,7 +438,7 @@ public class DeckBuilder {
             alert.showAndWait();
         }
     }
-    
+
     private void refreshCardDisplay(int cardId) {
         // Find the card node in cardContainer and update its level indicator
         for (Node node : cardContainer.getChildren()) {
@@ -290,16 +456,18 @@ public class DeckBuilder {
     }
 
     private void viewCardDetails(Card card) {
-        // Get card level and rarity (refresh from repository to ensure we have latest level)
+        // Get card level and rarity (refresh from repository to ensure we have latest
+        // level)
         int cardLevel = cardDataRepository != null ? cardDataRepository.getCardLevel(card.getId()) : 1;
         CardRarity rarity = CardRarityMapper.getRarity(card.getId());
-        
+
         // Check if card can be upgraded (not at max level and has enough gold)
         boolean isMaxLevel = (cardLevel >= 3);
         boolean canUpgrade = !isMaxLevel && cardUpgradeManager != null && cardUpgradeManager.canUpgrade(card.getId());
-        int upgradeCost = (!isMaxLevel && cardUpgradeManager != null) ? cardUpgradeManager.getUpgradeCost(card.getId()) : -1;
+        int upgradeCost = (!isMaxLevel && cardUpgradeManager != null) ? cardUpgradeManager.getUpgradeCost(card.getId())
+                : -1;
         int currentGold = economyManager != null ? economyManager.getCurrentGold() : 0;
-        
+
         StackPane modalOverlay = new StackPane();
         modalOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
 
@@ -307,7 +475,7 @@ public class DeckBuilder {
         scrollPane.setFitToWidth(true);
         scrollPane.setMaxHeight(600);
         scrollPane.setMaxWidth(450);
-        
+
         VBox detailPanel = new VBox(15);
         detailPanel.setAlignment(Pos.CENTER);
         detailPanel.setMaxWidth(400);
@@ -318,7 +486,7 @@ public class DeckBuilder {
                         "-fx-border-color: #333; " +
                         "-fx-border-width: 3; " +
                         "-fx-border-radius: 10;");
-        
+
         scrollPane.setContent(detailPanel);
 
         // Title with rarity badge
@@ -327,16 +495,17 @@ public class DeckBuilder {
         Label titleLabel = new Label(card.getName());
         titleLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 24));
         titleLabel.setStyle("-fx-text-fill: #333;");
-        
+
         Label rarityLabel = new Label(rarity.name());
         rarityLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 12));
         String rarityColor = CardVisualManager.getRarityBorderColor(rarity);
-        rarityLabel.setStyle("-fx-text-fill: " + rarityColor + "; -fx-background-color: " + rarityColor + "22; -fx-background-radius: 3; -fx-padding: 3 8;");
+        rarityLabel.setStyle("-fx-text-fill: " + rarityColor + "; -fx-background-color: " + rarityColor
+                + "22; -fx-background-radius: 3; -fx-padding: 3 8;");
         titleBox.getChildren().addAll(titleLabel, rarityLabel);
 
         javafx.scene.shape.Line separator = new javafx.scene.shape.Line(0, 0, 340, 0);
         separator.setStroke(Color.GRAY);
-        
+
         // Level display
         StringBuilder stars = new StringBuilder();
         for (int i = 0; i < cardLevel; i++) {
@@ -348,7 +517,7 @@ public class DeckBuilder {
 
         VBox statsBox = new VBox(10);
         statsBox.setAlignment(Pos.CENTER_LEFT);
-        
+
         // Store upgrade button reference if it exists (will be set later)
         Button upgradeButtonRef = null;
 
@@ -404,41 +573,43 @@ public class DeckBuilder {
 
             statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, hitSpeedStat, rangeStat, speedStat,
                     descStat, descText);
-            
-            // Add upgrade preview if not at max level (show even if can't afford, button will be disabled)
+
+            // Add upgrade preview if not at max level (show even if can't afford, button
+            // will be disabled)
             if (!isMaxLevel) {
                 int nextLevel = cardLevel + 1;
                 int nextHP = CardStats.getHPRounded(card.getId(), nextLevel);
                 int nextDamage = CardStats.getDamageRounded(card.getId(), nextLevel);
-                
+
                 javafx.scene.shape.Line upgradeSeparator = new javafx.scene.shape.Line(0, 0, 340, 0);
                 upgradeSeparator.setStroke(Color.GRAY);
-                
+
                 Label upgradeTitle = new Label("Upgrade to Level " + nextLevel);
                 upgradeTitle.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 16));
                 upgradeTitle.setStyle("-fx-text-fill: #4CAF50;");
-                
+
                 Label nextHPStat = new Label("HP: " + nextHP + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
                 nextHPStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextHPStat.setStyle("-fx-text-fill: #4CAF50;");
-                
-                Label nextDamageStat = new Label("Damage: " + nextDamage + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
+
+                Label nextDamageStat = new Label(
+                        "Damage: " + nextDamage + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
                 nextDamageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextDamageStat.setStyle("-fx-text-fill: #4CAF50;");
-                
+
                 Label costLabel = new Label("Upgrade Cost: " + upgradeCost + " Gold");
                 costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
-                
-                Label goldLabel = new Label("Your Gold: " + currentGold);
-                goldLabel.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
-                
+
+                Label goldLabelModal = new Label("Your Gold: " + currentGold);
+                goldLabelModal.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+
                 Button upgradeButton = new Button("Upgrade");
                 boolean canAfford = economyManager != null && economyManager.canAfford(upgradeCost);
                 upgradeButton.setDisable(!canAfford || !canUpgrade);
                 upgradeButton.setStyle(
-                    canAfford && canUpgrade ?
-                        "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 30; -fx-cursor: hand; -fx-background-radius: 5;" :
-                        "-fx-background-color: #CCCCCC; -fx-text-fill: #666; -fx-font-size: 14px; -fx-padding: 10 30; -fx-background-radius: 5;");
+                        canAfford && canUpgrade
+                                ? "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 30; -fx-cursor: hand; -fx-background-radius: 5;"
+                                : "-fx-background-color: #CCCCCC; -fx-text-fill: #666; -fx-font-size: 14px; -fx-padding: 10 30; -fx-background-radius: 5;");
                 upgradeButton.setOnAction(e -> {
                     handleUpgrade(card);
                     // Close modal after upgrade
@@ -447,9 +618,9 @@ public class DeckBuilder {
                         ((Pane) sceneRoot).getChildren().remove(modalOverlay);
                     }
                 });
-                
-                statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextHPStat, nextDamageStat, 
-                                             costLabel, goldLabel);
+
+                statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextHPStat, nextDamageStat,
+                        costLabel, goldLabelModal);
                 // Store reference to upgrade button for later alignment with close button
                 upgradeButtonRef = upgradeButton;
             }
@@ -477,41 +648,43 @@ public class DeckBuilder {
 
             statsBox.getChildren().addAll(costStat, typeStat, hpStat, damageStat, rangeStat, lifetimeStat, descStat,
                     descText);
-            
-            // Add upgrade preview if not at max level (show even if can't afford, button will be disabled)
+
+            // Add upgrade preview if not at max level (show even if can't afford, button
+            // will be disabled)
             if (!isMaxLevel) {
                 int nextLevel = cardLevel + 1;
                 int nextHP = CardStats.getHPRounded(card.getId(), nextLevel);
                 int nextDamage = CardStats.getDamageRounded(card.getId(), nextLevel);
-                
+
                 javafx.scene.shape.Line upgradeSeparator = new javafx.scene.shape.Line(0, 0, 340, 0);
                 upgradeSeparator.setStroke(Color.GRAY);
-                
+
                 Label upgradeTitle = new Label("Upgrade to Level " + nextLevel);
                 upgradeTitle.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 16));
                 upgradeTitle.setStyle("-fx-text-fill: #4CAF50;");
-                
+
                 Label nextHPStat = new Label("HP: " + nextHP + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
                 nextHPStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextHPStat.setStyle("-fx-text-fill: #4CAF50;");
-                
-                Label nextDamageStat = new Label("Damage: " + nextDamage + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
+
+                Label nextDamageStat = new Label(
+                        "Damage: " + nextDamage + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
                 nextDamageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextDamageStat.setStyle("-fx-text-fill: #4CAF50;");
-                
+
                 Label costLabel = new Label("Upgrade Cost: " + upgradeCost + " Gold");
                 costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
-                
-                Label goldLabel = new Label("Your Gold: " + currentGold);
-                goldLabel.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
-                
+
+                Label goldLabelModal = new Label("Your Gold: " + currentGold);
+                goldLabelModal.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+
                 Button upgradeButton = new Button("Upgrade");
                 boolean canAfford = economyManager != null && economyManager.canAfford(upgradeCost);
                 upgradeButton.setDisable(!canAfford || !canUpgrade);
                 upgradeButton.setStyle(
-                    canAfford && canUpgrade ?
-                        "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 30; -fx-cursor: hand; -fx-background-radius: 5;" :
-                        "-fx-background-color: #CCCCCC; -fx-text-fill: #666; -fx-font-size: 14px; -fx-padding: 10 30; -fx-background-radius: 5;");
+                        canAfford && canUpgrade
+                                ? "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 30; -fx-cursor: hand; -fx-background-radius: 5;"
+                                : "-fx-background-color: #CCCCCC; -fx-text-fill: #666; -fx-font-size: 14px; -fx-padding: 10 30; -fx-background-radius: 5;");
                 upgradeButton.setOnAction(e -> {
                     handleUpgrade(card);
                     // Close modal after upgrade
@@ -520,9 +693,9 @@ public class DeckBuilder {
                         ((Pane) sceneRoot).getChildren().remove(modalOverlay);
                     }
                 });
-                
-                statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextHPStat, nextDamageStat, 
-                                             costLabel, goldLabel);
+
+                statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextHPStat, nextDamageStat,
+                        costLabel, goldLabelModal);
                 // Store reference to upgrade button for later alignment with close button
                 upgradeButtonRef = upgradeButton;
             }
@@ -541,36 +714,38 @@ public class DeckBuilder {
             radiusStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 16));
 
             statsBox.getChildren().addAll(costStat, typeStat, areaDamageStat, radiusStat, descStat, descText);
-            
-            // Add upgrade preview if not at max level (show even if can't afford, button will be disabled)
+
+            // Add upgrade preview if not at max level (show even if can't afford, button
+            // will be disabled)
             if (!isMaxLevel) {
                 int nextLevel = cardLevel + 1;
                 int nextDamage = CardStats.getDamageRounded(card.getId(), nextLevel);
-                
+
                 javafx.scene.shape.Line upgradeSeparator = new javafx.scene.shape.Line(0, 0, 340, 0);
                 upgradeSeparator.setStroke(Color.GRAY);
-                
+
                 Label upgradeTitle = new Label("Upgrade to Level " + nextLevel);
                 upgradeTitle.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 16));
                 upgradeTitle.setStyle("-fx-text-fill: #4CAF50;");
-                
-                Label nextDamageStat = new Label("Area Damage: " + nextDamage + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
+
+                Label nextDamageStat = new Label(
+                        "Area Damage: " + nextDamage + " (+" + ((nextLevel == 2) ? "10%" : "20%") + ")");
                 nextDamageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextDamageStat.setStyle("-fx-text-fill: #4CAF50;");
-                
+
                 Label costLabel = new Label("Upgrade Cost: " + upgradeCost + " Gold");
                 costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
-                
-                Label goldLabel = new Label("Your Gold: " + currentGold);
-                goldLabel.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
-                
+
+                Label goldLabelModal = new Label("Your Gold: " + currentGold);
+                goldLabelModal.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+
                 Button upgradeButton = new Button("Upgrade");
                 boolean canAfford = economyManager != null && economyManager.canAfford(upgradeCost);
                 upgradeButton.setDisable(!canAfford || !canUpgrade);
                 upgradeButton.setStyle(
-                    canAfford && canUpgrade ?
-                        "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 30; -fx-cursor: hand; -fx-background-radius: 5;" :
-                        "-fx-background-color: #CCCCCC; -fx-text-fill: #666; -fx-font-size: 14px; -fx-padding: 10 30; -fx-background-radius: 5;");
+                        canAfford && canUpgrade
+                                ? "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 30; -fx-cursor: hand; -fx-background-radius: 5;"
+                                : "-fx-background-color: #CCCCCC; -fx-text-fill: #666; -fx-font-size: 14px; -fx-padding: 10 30; -fx-background-radius: 5;");
                 upgradeButton.setOnAction(e -> {
                     handleUpgrade(card);
                     // Close modal after upgrade
@@ -579,9 +754,9 @@ public class DeckBuilder {
                         ((Pane) sceneRoot).getChildren().remove(modalOverlay);
                     }
                 });
-                
-                statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextDamageStat, 
-                                             costLabel, goldLabel);
+
+                statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextDamageStat,
+                        costLabel, goldLabelModal);
                 // Store reference to upgrade button for later alignment with close button
                 upgradeButtonRef = upgradeButton;
             }
@@ -626,7 +801,7 @@ public class DeckBuilder {
         } else {
             buttonContainer.getChildren().add(closeButton);
         }
-        
+
         detailPanel.getChildren().addAll(titleBox, separator, levelLabel, statsBox, buttonContainer);
         modalOverlay.getChildren().add(scrollPane);
 
@@ -704,11 +879,19 @@ public class DeckBuilder {
     }
 
     private void addCardToDeck(Card card) {
+        // Create a new deck if none exists
+        if (currentDeck == null) {
+            currentDeck = new Deck("Deck" + selectedDeckNumber, new java.util.ArrayList<>());
+            DeckManager.setCurrentDeck(currentDeck);
+        }
 
         try {
             currentDeck.addCard(card);
             updateDeckDisplay();
             updateUI();
+            // Auto-save after adding card
+            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+            updateDeckNumberButtonStyles();
         } catch (IllegalArgumentException e) {
             // Trying to select a card that is already in the deck
             showAlert("Duplicate Card", "This card is already in your deck!");
@@ -727,7 +910,9 @@ public class DeckBuilder {
 
     private void updateDeckDisplay() {
         deckCards.clear();
-        deckCards.addAll(currentDeck.getCards());
+        if (currentDeck != null) {
+            deckCards.addAll(currentDeck.getCards());
+        }
 
         deckSlots.getChildren().clear();
         for (int i = 0; i < 8; i++) {
@@ -746,14 +931,15 @@ public class DeckBuilder {
         // --- BUTTON (the card) ---
         Button btn = new Button();
         btn.setStyle(
-                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "") + ".png\");" +
-                "-fx-background-size: cover;" +
-                "-fx-background-color: #5D3F7F;" +
-                "-fx-background-radius: 5;" +
-                "-fx-padding: 0;" +
-                "-fx-border-color: #333; " +
-                "-fx-border-width: 3; " +
-                "-fx-border-radius: 5;");
+                "-fx-background-image: url(\"/kuroyale/images/cards/" + card.getName().toLowerCase().replaceAll(" ", "")
+                        + ".png\");" +
+                        "-fx-background-size: cover;" +
+                        "-fx-background-color: #5D3F7F;" +
+                        "-fx-background-radius: 5;" +
+                        "-fx-padding: 0;" +
+                        "-fx-border-color: #333; " +
+                        "-fx-border-width: 3; " +
+                        "-fx-border-radius: 5;");
         btn.setOnAction(e -> removeCardFromDeck(index));
 
         VBox hoverButtons = new VBox(5);
@@ -830,8 +1016,8 @@ public class DeckBuilder {
         AnchorPane.setLeftAnchor(costLabel, 11.5);
 
         // button fills rest, offset by radius
-        AnchorPane.setTopAnchor(btn, radius/3);
-        AnchorPane.setLeftAnchor(btn, radius/3);
+        AnchorPane.setTopAnchor(btn, radius / 3);
+        AnchorPane.setLeftAnchor(btn, radius / 3);
         AnchorPane.setRightAnchor(btn, 0.0);
         AnchorPane.setBottomAnchor(btn, 0.0);
 
@@ -853,114 +1039,75 @@ public class DeckBuilder {
         return ap;
     }
 
-    private void setupDeckSelector() {
-        deckSelector.getItems().clear();
-        DeckManager.loadAllDecks();
-        for (Deck deck : DeckManager.getAllDecks()) {
-            deckSelector.getItems().add(deck.getName());
-        }
-    }
-
-    @FXML
-    private void handleSaveDeck() {
-        String name = deckNameField.getText().trim();
-        if (name.isEmpty()) {
-            showAlert("Invalid Name", "Please enter a deck name.");
-            return;
-        }
-
-        if (currentDeck.getSize() != 8) {
-            showAlert("Incomplete Deck", "Your deck must have exactly 8 cards!");
-            return;
-        }
-
-        String finalName = name;
-        DeckManager.loadAllDecks();
-        int deckNumber = 1;
-        while (DeckManager.getDeckByName(finalName) != null) {
-            finalName = name + " " + deckNumber;
-            deckNumber++;
-        }
-
-        currentDeck.setName(finalName);
-        DeckManager.saveDeck(currentDeck);
-        DeckManager.setCurrentDeck(currentDeck);
-        setupDeckSelector();
-        deckNameField.setText(finalName);
-        // deckStatusLabel.setText("Deck saved: " + finalName);
-        showAlert("Success", "Deck saved successfully!");
-    }
-
-    @FXML
-    private void handleClearDeck() {
-        if (currentDeck.isEmpty()) {
-            showAlert("Deck Empty", "The deck is already empty.");
-            return;
-        }
-
-        currentDeck.clear();
-        updateDeckDisplay();
-        updateUI();
-    }
-
-    @FXML
-    private void handleDeleteDeck() {
-        String name = deckNameField.getText().trim();
-        if (name.isEmpty()) {
-            showAlert("Invalid Name", "Please enter a deck name to delete.");
-            return;
-        }
-
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete Deck");
-        confirm.setHeaderText("Are you sure you want to delete '" + name + "'?");
-        confirm.setContentText("This action cannot be undone.");
-
-        if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
-            DeckManager.deleteDeck(name);
-            setupDeckSelector();
-            // deckStatusLabel.setText("Deck deleted: " + name);
-
-            // clear the currect deck if deleted
-            if (currentDeck != null && currentDeck.getName().equals(name)) {
-                currentDeck = new Deck("New Deck");
-                deckNameField.clear();
-                updateDeckDisplay();
-                updateUI();
-            }
-        }
-    }
-
-    @FXML
-    private void handleLoadDeck() {
-        String selected = deckSelector.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert("No Selection", "Please select a deck to load.");
-            return;
-        }
-
-        Deck loaded = DeckManager.loadDeck(selected);
-        if (loaded != null) {
-            currentDeck = loaded;
-            deckNameField.setText(loaded.getName());
-            DeckManager.setCurrentDeck(loaded);
-            updateDeckDisplay();
-            updateUI();
-            // deckStatusLabel.setText("Deck loaded: " + selected);
-        }
-    }
-
     private void updateUI() {
-        int size = currentDeck.getSize();
-        // deckStatusLabel.setText("Deck: " + size + "/8 cards");
+        // Update deck number button styles to reflect current state
+        updateDeckNumberButtonStyles();
+    }
 
-        btnSaveDeck.setDisable(size != 8);
+    /**
+     * Triggers a flashing animation on the deck slots to alert user that deck is
+     * incomplete
+     */
+    public void triggerDeckSlotsFlash() {
+        if (deckSlots == null)
+            return;
 
-        // if (size == 8) {
-        // deckStatusLabel.setStyle("-fx-text-fill: green;");
-        // } else {
-        // deckStatusLabel.setStyle("-fx-text-fill: orange;");
-        // }
+        DropShadow redGlow = new DropShadow();
+        redGlow.setColor(Color.RED);
+        redGlow.setRadius(25);
+        redGlow.setSpread(0.6);
+
+        // Create flashing animation
+        Timeline flashTimeline = new Timeline();
+        flashTimeline.setCycleCount(8); // Flash 4 times (on/off = 2 keyframes per flash)
+
+        KeyFrame glowOn = new KeyFrame(Duration.millis(0), e -> {
+            deckSlots.setEffect(redGlow);
+            deckSlots.setStyle(
+                    "-fx-border-color: #FF0000; -fx-border-width: 3; -fx-border-radius: 10; -fx-background-color: rgba(255,0,0,0.1); -fx-background-radius: 10;");
+        });
+
+        KeyFrame glowOff = new KeyFrame(Duration.millis(250), e -> {
+            deckSlots.setEffect(null);
+            deckSlots.setStyle("");
+        });
+
+        KeyFrame glowOn2 = new KeyFrame(Duration.millis(500), e -> {
+            deckSlots.setEffect(redGlow);
+            deckSlots.setStyle(
+                    "-fx-border-color: #FF0000; -fx-border-width: 3; -fx-border-radius: 10; -fx-background-color: rgba(255,0,0,0.1); -fx-background-radius: 10;");
+        });
+
+        KeyFrame glowOff2 = new KeyFrame(Duration.millis(750), e -> {
+            deckSlots.setEffect(null);
+            deckSlots.setStyle("");
+        });
+
+        KeyFrame glowOn3 = new KeyFrame(Duration.millis(1000), e -> {
+            deckSlots.setEffect(redGlow);
+            deckSlots.setStyle(
+                    "-fx-border-color: #FF0000; -fx-border-width: 3; -fx-border-radius: 10; -fx-background-color: rgba(255,0,0,0.1); -fx-background-radius: 10;");
+        });
+
+        KeyFrame glowOff3 = new KeyFrame(Duration.millis(1250), e -> {
+            deckSlots.setEffect(null);
+            deckSlots.setStyle("");
+        });
+
+        KeyFrame glowOn4 = new KeyFrame(Duration.millis(1500), e -> {
+            deckSlots.setEffect(redGlow);
+            deckSlots.setStyle(
+                    "-fx-border-color: #FF0000; -fx-border-width: 3; -fx-border-radius: 10; -fx-background-color: rgba(255,0,0,0.1); -fx-background-radius: 10;");
+        });
+
+        KeyFrame glowOff4 = new KeyFrame(Duration.millis(1750), e -> {
+            deckSlots.setEffect(null);
+            deckSlots.setStyle("");
+        });
+
+        flashTimeline.getKeyFrames().addAll(glowOn, glowOff, glowOn2, glowOff2, glowOn3, glowOff3, glowOn4, glowOff4);
+        flashTimeline.setCycleCount(1);
+        flashTimeline.play();
     }
 
     private void showAlert(String title, String message) {
@@ -973,11 +1120,19 @@ public class DeckBuilder {
 
     @FXML
     void btnSelectBattleClicked(ActionEvent event) throws IOException {
+        // Auto-save current deck before leaving (even if empty)
+        if (currentDeck != null) {
+            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+        }
         switchToStartBattleScene(event);
     }
 
     @FXML
     void btnSelectBuildClicked(ActionEvent event) throws IOException {
+        // Auto-save current deck before leaving (even if empty)
+        if (currentDeck != null) {
+            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+        }
         switchToArenaBuilderScene(event);
     }
 
@@ -997,5 +1152,160 @@ public class DeckBuilder {
         scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
         stage.setScene(scene);
         stage.show();
+    }
+
+    @FXML
+    void btnOpenChestClicked(ActionEvent event) {
+        // Open chest and get rewards
+        kuroyale.mainpack.models.ChestReward reward = kuroyale.mainpack.managers.ChestManager
+                .openBasicChest(playerProfile);
+
+        // Save profile after chest opening
+        persistenceManager.savePlayerProfile(playerProfile);
+
+        // Update gold display (ChestManager already added gold to profile, just refresh
+        // UI)
+        economyManager.addGold(reward.getGoldAmount());
+
+        // Show reward popup
+        showChestRewardPopup(reward);
+
+        // Refresh card display if a new card was unlocked
+        if (reward.isNewCard()) {
+            refreshAllCardDisplay();
+        }
+    }
+
+    private void showChestRewardPopup(kuroyale.mainpack.models.ChestReward reward) {
+        StackPane modalOverlay = new StackPane();
+        modalOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.8);");
+
+        VBox rewardPanel = new VBox(20);
+        rewardPanel.setAlignment(javafx.geometry.Pos.CENTER);
+        rewardPanel.setMaxWidth(400);
+        rewardPanel.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #9C27B0, #673AB7); " +
+                        "-fx-background-radius: 20; " +
+                        "-fx-padding: 40; " +
+                        "-fx-border-color: #FFD700; " +
+                        "-fx-border-width: 4; " +
+                        "-fx-border-radius: 20;");
+
+        // Title
+        Label titleLabel = new Label("*** Chest Opened! ***");
+        titleLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 28));
+        titleLabel.setTextFill(Color.WHITE);
+
+        // Gold reward
+        Label goldRewardLabel = new Label("+" + reward.getGoldAmount() + " Gold");
+        goldRewardLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 24));
+        goldRewardLabel.setTextFill(Color.GOLD);
+
+        rewardPanel.getChildren().addAll(titleLabel, goldRewardLabel);
+
+        // Button for first stage
+        Button actionButton = new Button();
+        actionButton.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 16));
+        actionButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-padding: 15 50; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-cursor: hand;");
+
+        if (reward.hasCard()) {
+            // Stage 1: Show gold, then continue to card
+            actionButton.setText("Continue");
+            actionButton.setOnAction(e -> {
+                // Clear panel and show card stage
+                rewardPanel.getChildren().clear();
+
+                Label cardTitleLabel = new Label("Card Reward!");
+                cardTitleLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 28));
+                cardTitleLabel.setTextFill(Color.WHITE);
+
+                Label cardLabel;
+                if (reward.isNewCard()) {
+                    cardLabel = new Label("*** NEW CARD UNLOCKED! ***");
+                    cardLabel.setTextFill(Color.LIME);
+                } else {
+                    cardLabel = new Label("Card Found:");
+                    cardLabel.setTextFill(Color.WHITE);
+                }
+                cardLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 18));
+
+                // Card name with rarity color
+                kuroyale.cardpack.Card card = reward.getUnlockedCard();
+                kuroyale.cardpack.CardRarity rarity = kuroyale.cardpack.CardRarityMapper.getRarity(card.getId());
+                String rarityColor = CardVisualManager.getRarityBorderColor(rarity);
+
+                Label cardNameLabel = new Label(card.getName());
+                cardNameLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 22));
+                cardNameLabel.setStyle("-fx-text-fill: " + rarityColor + ";");
+
+                Label rarityLabel = new Label(rarity.name());
+                rarityLabel.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+                rarityLabel.setStyle("-fx-text-fill: " + rarityColor
+                        + "; -fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 5; -fx-padding: 5 15;");
+
+                // Collect button for final stage
+                Button collectButton = new Button("Collect!");
+                collectButton.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 16));
+                collectButton.setStyle(
+                        "-fx-background-color: #4CAF50; " +
+                                "-fx-text-fill: white; " +
+                                "-fx-padding: 15 50; " +
+                                "-fx-background-radius: 10; " +
+                                "-fx-cursor: hand;");
+                collectButton.setOnAction(ev -> {
+                    Parent sceneRoot = cardScrollPane.getScene().getRoot();
+                    if (sceneRoot instanceof javafx.scene.layout.Pane) {
+                        ((javafx.scene.layout.Pane) sceneRoot).getChildren().remove(modalOverlay);
+                    }
+                });
+
+                rewardPanel.getChildren().addAll(cardTitleLabel, cardLabel, cardNameLabel, rarityLabel, collectButton);
+            });
+        } else {
+            // No card, just gold - go straight to collect
+            actionButton.setText("Collect!");
+            actionButton.setOnAction(e -> {
+                Parent sceneRoot = cardScrollPane.getScene().getRoot();
+                if (sceneRoot instanceof javafx.scene.layout.Pane) {
+                    ((javafx.scene.layout.Pane) sceneRoot).getChildren().remove(modalOverlay);
+                }
+            });
+        }
+
+        rewardPanel.getChildren().add(actionButton);
+        modalOverlay.getChildren().add(rewardPanel);
+
+        // Add to scene
+        Parent sceneRoot = cardScrollPane.getScene().getRoot();
+        if (sceneRoot instanceof StackPane) {
+            ((StackPane) sceneRoot).getChildren().add(modalOverlay);
+        } else if (sceneRoot instanceof AnchorPane) {
+            AnchorPane anchorRoot = (AnchorPane) sceneRoot;
+            anchorRoot.getChildren().add(modalOverlay);
+            AnchorPane.setTopAnchor(modalOverlay, 0.0);
+            AnchorPane.setBottomAnchor(modalOverlay, 0.0);
+            AnchorPane.setLeftAnchor(modalOverlay, 0.0);
+            AnchorPane.setRightAnchor(modalOverlay, 0.0);
+        } else if (sceneRoot instanceof javafx.scene.layout.Pane) {
+            ((javafx.scene.layout.Pane) sceneRoot).getChildren().add(modalOverlay);
+        }
+    }
+
+    private void refreshAllCardDisplay() {
+        // Reload player profile to get updated unlock status
+        playerProfile = persistenceManager.loadPlayerProfile();
+
+        // Clear and rebuild card display
+        cardContainer.getChildren().clear();
+        for (kuroyale.cardpack.Card card : kuroyale.cardpack.CardFactory.getAllCards()) {
+            AnchorPane cardButton = createCardNode(card);
+            cardButton.setUserData(card.getId());
+            cardContainer.getChildren().add(cardButton);
+        }
     }
 }

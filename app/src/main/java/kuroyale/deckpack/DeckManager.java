@@ -10,6 +10,7 @@ public class DeckManager {
     private static final String DECKS_DIR = "decks";
     private static Deck currentDeck;
     private static List<Deck> savedDecks;
+    private static int selectedDeckNumber = 1;
 
     static {
         savedDecks = new ArrayList<>();
@@ -116,5 +117,37 @@ public class DeckManager {
 
     public static void setCurrentDeck(Deck deck) {
         currentDeck = deck;
+    }
+
+    // ===== Numbered Deck System Methods =====
+
+    public static int getSelectedDeckNumber() {
+        return selectedDeckNumber;
+    }
+
+    public static void setSelectedDeckNumber(int deckNumber) {
+        if (deckNumber >= 1 && deckNumber <= 8) {
+            selectedDeckNumber = deckNumber;
+        }
+    }
+
+    public static int getDeckCardCount(int deckNumber) {
+        Deck deck = loadDeckByNumber(deckNumber);
+        return deck != null ? deck.getCards().size() : 0;
+    }
+
+    public static Deck loadDeckByNumber(int deckNumber) {
+        return loadDeck("Deck" + deckNumber);
+    }
+
+    public static void saveDeckByNumber(int deckNumber, Deck deck) {
+        if (deck == null) {
+            // Delete the deck file if deck is null or empty
+            deleteDeck("Deck" + deckNumber);
+            return;
+        }
+        // Create a new deck with the numbered name
+        Deck numberedDeck = new Deck("Deck" + deckNumber, deck.getCards());
+        saveDeck(numberedDeck);
     }
 }

@@ -29,11 +29,12 @@ public class Deck {
 
     public boolean addCard(Card card) {
         if (isFull()) {
-            throw new IllegalStateException("Deck is already full"); //ensures the deck does not have more than 8 cards
+            throw new IllegalStateException("Deck is already full"); // ensures the deck does not have more than 8 cards
         }
         for (Card selectedCard : cards) {
-            if (selectedCard == card) {
-                throw new IllegalArgumentException("Card is already in the deck"); //ensures the card is not already added to the deck
+            if (selectedCard.getId() == card.getId()) {
+                throw new IllegalArgumentException("Card is already in the deck"); // ensures the card is not already
+                                                                                   // added to the deck
             }
         }
         cards.add(card);

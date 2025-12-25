@@ -1,0 +1,15 @@
+# Chest Loot Configuration
+# Lines starting with # are comments
+
+# Gold range
+MIN_GOLD=20
+MAX_GOLD=50
+
+# Rarity drop rates (percentages)
+# NO_CARD_CHANCE = chance for no card to drop at all
+# Remaining chances must sum to 100 or less
+NO_CARD_CHANCE=25
+COMMON_CHANCE=40
+RARE_CHANCE=25
+EPIC_CHANCE=8
+LEGENDARY_CHANCE=2

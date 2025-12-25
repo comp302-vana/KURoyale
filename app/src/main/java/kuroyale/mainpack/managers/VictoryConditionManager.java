@@ -21,18 +21,18 @@ public class VictoryConditionManager {
     private GameMode gameMode = GameMode.SINGLE_PLAYER_AI;
 
     public VictoryConditionManager(ArenaMap arenaMap, PointsCounter pointsCounter, int rows, int cols,
-                                  SceneNavigationManager sceneNavigationManager) {
+            SceneNavigationManager sceneNavigationManager) {
         this.arenaMap = arenaMap;
         this.pointsCounter = pointsCounter;
         this.rows = rows;
         this.cols = cols;
         this.sceneNavigationManager = sceneNavigationManager;
     }
-    
+
     public void setEconomyManager(EconomyManager economyManager) {
         this.economyManager = economyManager;
     }
-    
+
     public void setGameMode(GameMode gameMode) {
         this.gameMode = gameMode;
     }
@@ -89,11 +89,22 @@ public class VictoryConditionManager {
                 economyManager.awardGold("DRAW");
             } else if (playerWon) {
                 economyManager.awardGold("VICTORY");
+                // Award a chest on victory!
+                awardChest();
             } else {
                 economyManager.awardGold("DEFEAT");
             }
         }
-        
+
         sceneNavigationManager.showGameEndScreen(playerWon, isDraw, gameLoop, gameMode);
+    }
+
+    private void awardChest() {
+        // Load profile, add chest, save
+        PersistenceManager pm = new PersistenceManager();
+        kuroyale.mainpack.models.PlayerProfile profile = pm.loadPlayerProfile();
+        profile.addChest();
+        pm.savePlayerProfile(profile);
+        System.out.println("Chest awarded! Total chests: " + profile.getChestCount());
     }
 }
