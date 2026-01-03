@@ -18,6 +18,9 @@ import kuroyale.entitiypack.subclasses.UnitEntity;
 
 
 public class SimpleAI {
+    //OVERVIEW: IMPLEMENTS AI LOGIC USING METHODS.
+    //CREATES A DECK RANDOMLY AND CONSIDERING ITS HAND
+    //AND ELIXIR PLACES CARDS ON THE ARENA.
     private double currentElixir =5.0;
     private final double MAX_ELIXIR = 10;
     private final double ELIXIR_REGEN_RATE = 1.0 / 2.8;
