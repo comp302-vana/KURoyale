@@ -20,6 +20,12 @@ public class PlayerProfile {
     private Set<Integer> unlockedCards; // cardIds that are unlocked
     private int chestCount; // number of accumulated chests
 
+    //necessary variables for quest,achievement and stats tracking
+    private List<Quest> dailyQuests = new ArrayList<>();
+    private List<Achievement> achievements = new ArrayList<>();
+    private PlayerStatistics statistics = new PlayerStatistics();
+    private long lastQuestResetTimestamp = 0;
+
     public PlayerProfile() {
         this.totalGold = 0;
         this.cardLevels = new HashMap<>();
@@ -137,5 +143,71 @@ public class PlayerProfile {
             return true;
         }
         return false;
+    }
+
+    //quest and achievement methods
+    
+    /**
+     * Getter for the list of daily quests.
+     * returns a copy of the daily quests list
+     */
+    public List<Quest> getDailyQuests() {
+        return new ArrayList<>(dailyQuests);
+    }
+    
+    /**
+     * Setter for the daily quests list.
+     * "quests": the quests to set
+     */
+    public void setDailyQuests(List<Quest> quests) {
+        this.dailyQuests = quests != null ? new ArrayList<>(quests) : new ArrayList<>();
+    }
+    
+    /**
+     * Getter for the list of achievements.
+     * returns a copy of the achievements list
+     */
+    public List<Achievement> getAchievements() {
+        return new ArrayList<>(achievements);
+    }
+    
+    /**
+     * Setter for the achievements list.
+     * "achievements": the achievements to set
+     */
+    public void setAchievements(List<Achievement> achievements) {
+        this.achievements = achievements != null ? new ArrayList<>(achievements) : new ArrayList<>();
+    }
+    
+    /**
+     * Gets the player statistics.
+     * returns the player statistics
+     */
+    public PlayerStatistics getStatistics() {
+        return statistics;
+    }
+    
+    /**
+     * Sets the player statistics.
+     * "statistics": the statistics to set
+     */
+    public void setStatistics(PlayerStatistics statistics) {
+        this.statistics = statistics != null ? statistics : new PlayerStatistics();
+    }
+    
+    /**
+     * Getter for the last quest reset timestamp.
+     * returns the timestamp in milliseconds
+     */
+    public long getLastQuestResetTimestamp() {
+        return lastQuestResetTimestamp;
+    }
+    
+    /**
+     * Setter for the last quest reset timestamp.
+     * "timestamp": the timestamp in milliseconds
+     */
+    public void setLastQuestResetTimestamp(long timestamp) {
+        this.lastQuestResetTimestamp = timestamp;
     }
 }

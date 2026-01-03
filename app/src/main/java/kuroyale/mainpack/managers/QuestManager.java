@@ -57,28 +57,28 @@ public class QuestManager {
         }
     }
     
-    /*
+    /**
      * Getter for the list of current daily quests.
      */
     public List<Quest> getDailyQuests() {
         return new ArrayList<>(dailyQuests);
     }
     
-    /*
+    /**
      * Getter for the timestamp of the last quest reset.
      */
     public long getLastResetTimestamp() {
         return lastResetTimestamp;
     }
     
-    /*
+    /**
      * Setter for the last reset timestamp.
      */
     public void setLastResetTimestamp(long timestamp) {
         this.lastResetTimestamp = timestamp;
     }
     
-    /*
+    /**
      * Setter for the daily quests.
      */
     public void setDailyQuests(List<Quest> quests) {
@@ -103,9 +103,9 @@ public class QuestManager {
     /**
      * Called when a match ends. Updates quest progress based on match result.
      * Uses MatchState for tracking.
-     * paramater "won": true if player won, false if lost/draw
-     * parameter "gameMode": the game mode that was played
-     * parameter "stats": player statistics for lifetime tracking
+     * "won": true if player won, false if lost/draw
+     * "gameMode": the game mode that was played
+     * "stats": player statistics for lifetime tracking
      */
     public void onMatchEnded(boolean won, GameMode gameMode, PlayerStatistics stats) {
         for (Quest quest : dailyQuests) {
