@@ -8,7 +8,7 @@ public class Quest {
     private boolean claimed;
 
 
-    Quest(QuestType type, int currentProgress, boolean completed, boolean claimed) {
+    public Quest(QuestType type, int currentProgress, boolean completed, boolean claimed) {
         this.type = type;
         this.currentProgress = currentProgress;
         this.completed = completed;
@@ -61,7 +61,7 @@ public class Quest {
         }
     }
     
-    
+    //getters
     
     public QuestType getQuestType() {
         return type;
@@ -79,6 +79,8 @@ public class Quest {
         return claimed;
     }
 
+    //setters
+    
     public void setQuestType(QuestType type) {
         this.type = type;
     }
