@@ -26,6 +26,7 @@ public class EntityPlacementManager {
     private final int rows;
     private final int cols;
     private final boolean isPvPMode;
+    private QuestManager questManager;
 
     // Constructor for single-player mode
     public EntityPlacementManager(ArenaMap arenaMap, GameStateManager gameStateManager,
@@ -60,6 +61,10 @@ public class EntityPlacementManager {
         this.isPvPMode = true;
     }
     
+    //setter method for quest manager
+    public void setQuestManager(QuestManager questManager) {
+        this.questManager = questManager;
+    }
     /**
      * Determine which player (1 or 2) based on drop location.
      * Player 1 controls left side (col < cols/2 - 1), Player 2 controls right side (col >= cols/2).
@@ -188,9 +193,19 @@ public class EntityPlacementManager {
                 System.out.println("yey");
                 System.out.printf("(%d, %d)\n", targetRow, cc);
                 success = true;
+                // Notify quest manager about card played
+                if (questManager != null) {
+                    boolean isBuilding = (cardID >= 16 && cardID <= 24);
+                    boolean isTroop = (cardID >= 1 && cardID <= 15);
+                    boolean isCommonCard = (kuroyale.cardpack.CardRarityMapper.getRarity(cardID) == kuroyale.cardpack.CardRarity.COMMON);
+        
+                    questManager.onCardPlayed(cardID, isSpell, isBuilding, isTroop, cost, isCommonCard);
+                }
             } else {
                 System.out.println("no");
             }
+
+            
         }
 
         event.setDropCompleted(success);

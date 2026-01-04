@@ -17,12 +17,17 @@ public class SpellSystem {
     private final CombatManager combatManager;
     private final int rows;
     private final int cols;
+    private QuestManager questManager;
 
     public SpellSystem(ArenaMap arenaMap, CombatManager combatManager, int rows, int cols) {
         this.arenaMap = arenaMap;
         this.combatManager = combatManager;
         this.rows = rows;
         this.cols = cols;
+    }
+
+    public void setQuestManager(QuestManager questManager) {
+        this.questManager = questManager;
     }
 
     public void executeSpell(int spellCardID, int targetRow, int targetCol, boolean isPlayerSpell,
@@ -53,7 +58,8 @@ public class SpellSystem {
                 }
             }
         }
-        
+
+        int totalDamageDealt = 0;
         for (AliveEntity entity : affectedEntities) {
             double actualDamage = damage;
             if (entity instanceof TowerEntity) {
@@ -62,15 +68,20 @@ public class SpellSystem {
             
             entity.reduceHP(actualDamage);
 
+            if (isPlayerSpell) {
+                totalDamageDealt += (int)actualDamage;
+            }
+
             if (isZap) {
                 combatManager.setStunDuration(entity, 0.5);
             }
             
-            if (entity.getHP() <= 0) {
-                // Entity removal handled by caller
-            }
+            // Entity removal handled by caller
         }
-        
+
+        if (questManager != null && isPlayerSpell) {
+            questManager.onSpellDamageDealt(totalDamageDealt);
+        }
         System.out.println("Spell " + spellCard.getName() + " cast at (" + targetRow + ", " + targetCol + ")");
     }
 }

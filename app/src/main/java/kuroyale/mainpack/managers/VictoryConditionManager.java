@@ -19,6 +19,9 @@ public class VictoryConditionManager {
     private final SceneNavigationManager sceneNavigationManager;
     private EconomyManager economyManager;
     private GameMode gameMode = GameMode.SINGLE_PLAYER_AI;
+    private QuestManager questManager;
+    private AchievementManager achievementManager;
+    private PersistenceManager persistenceManager;
 
     public VictoryConditionManager(ArenaMap arenaMap, PointsCounter pointsCounter, int rows, int cols,
             SceneNavigationManager sceneNavigationManager) {
@@ -35,6 +38,18 @@ public class VictoryConditionManager {
 
     public void setGameMode(GameMode gameMode) {
         this.gameMode = gameMode;
+    }
+
+    public void setQuestManager(QuestManager questManager) {
+        this.questManager = questManager;
+    }
+    
+    public void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
+    }
+    
+    public void setPersistenceManager(PersistenceManager persistenceManager) {
+        this.persistenceManager = persistenceManager;
     }
 
     public void tieBreaker(javafx.animation.Timeline gameLoop, javafx.scene.control.Label gameTimerLabel) {
@@ -93,6 +108,35 @@ public class VictoryConditionManager {
                 awardChest();
             } else {
                 economyManager.awardGold("DEFEAT");
+            }
+        }
+
+        // Update quest and achievement system
+        if (questManager != null || achievementManager != null) {
+            // Load player profile to get statistics
+            if (persistenceManager != null) {
+                kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+                kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+            
+                // Record match result in statistics
+                if (stats != null) {
+                    stats.recordMatchResult(playerWon, gameMode);
+                }
+            
+                // Update quest manager
+                if (questManager != null && stats != null) {
+                    questManager.onMatchEnded(playerWon, gameMode, stats);
+                    questManager.updateFromStatistics(stats);
+                }
+            
+                // Update achievement manager
+                if (achievementManager != null && stats != null) {
+                    achievementManager.onMatchEnded(playerWon, gameMode, stats);
+                    achievementManager.updateFromStatistics(stats);
+                }
+            
+                // Save updated profile
+                persistenceManager.savePlayerProfile(profile);
             }
         }
 
