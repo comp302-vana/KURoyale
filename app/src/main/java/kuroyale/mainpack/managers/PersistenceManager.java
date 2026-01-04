@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import kuroyale.mainpack.models.GoldTransaction;
 import kuroyale.mainpack.models.PlayerProfile;
+import kuroyale.mainpack.models.Quest;
+import kuroyale.mainpack.models.Achievement;
+import kuroyale.mainpack.models.PlayerStatistics;
 
 /**
  * Handles persistence of player profile data (gold, card levels, gold history).
@@ -24,6 +27,10 @@ public class PersistenceManager {
     private static final String HISTORY_SECTION = "HISTORY";
     private static final String UNLOCKED_SECTION = "UNLOCKED";
     private static final String CHESTS_SECTION = "CHESTS";
+    private static final String QUESTS_SECTION = "QUESTS";
+    private static final String ACHIEVEMENTS_SECTION = "ACHIEVEMENTS";
+    private static final String STATISTICS_SECTION = "STATISTICS";
+    private static final String QUEST_RESET_SECTION = "QUEST_RESET";
 
     /**
      * Saves the player profile to file.
@@ -71,7 +78,62 @@ public class PersistenceManager {
                 // Chests section
                 pw.println(CHESTS_SECTION);
                 pw.println(profile.getChestCount());
-            }
+                pw.println();
+
+                //Quests section
+                pw.println(QUESTS_SECTION);
+                List<Quest> quests = profile.getDailyQuests();
+                for (Quest quest : quests) {
+                    pw.println(quest.getQuestType().getId() + "," +
+                            quest.getCurrentProgress() + "," +
+                            quest.getCompleted() + "," +
+                            quest.getClaimed());
+                }
+                pw.println();
+
+                // Achievements section
+                pw.println(ACHIEVEMENTS_SECTION);
+                List<Achievement> achievements = profile.getAchievements();
+                for (Achievement achievement : achievements) {
+                    pw.println(achievement.getAchievementType().getId() + "," +
+                            achievement.getCurrentProgress() + "," +
+                            achievement.getCompleted() + "," +
+                            achievement.getClaimed());
+                }
+                pw.println();
+
+                // Statistics section
+                pw.println(STATISTICS_SECTION);
+                PlayerStatistics stats = profile.getStatistics();
+                if (stats != null) {
+                    pw.println(stats.getTotalMatchesPlayed() + "," +
+                            stats.getTotalMatchesWon() + "," +
+                            stats.getTotalCrownTowersDestroyed() + "," +
+                            stats.getTotalKingTowersDestroyed() + "," +
+                            stats.getTotalSpellCardsPlayed() + "," +
+                            stats.getTotalTroopCardsDeployed() + "," +
+                            stats.getTotalBuildingCardsPlayed() + "," +
+                            stats.getTotalElixirSpent() + "," +
+                            stats.getTotalSpellDamageDealt() + "," +
+                            stats.getTotalSwarmTroopsDeployed() + "," +
+                            stats.getTotalGoldEarned() + "," +
+                            stats.getTotalCardCombos() + "," +
+                            stats.getCurrentWinStreak() + "," +
+                            stats.getMaxWinStreak() + "," +
+                            stats.getChallengesCompleted() + "," +
+                            stats.getChallengesWithThreeStars() + "," +
+                            stats.getNetworkMultiplayerWins() + "," +
+                            stats.getPvPMatchWins());
+                } else {
+                    // Write zeros if statistics is null
+                    pw.println("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0");
+                }
+                pw.println();
+
+                // Quest reset timestamp section
+                pw.println(QUEST_RESET_SECTION);
+                pw.println(profile.getLastQuestResetTimestamp());
+                }
 
             System.out.println("Player profile saved to: " + PROFILE_FILE);
 
@@ -101,6 +163,10 @@ public class PersistenceManager {
             List<GoldTransaction> goldHistory = new ArrayList<>();
             java.util.Set<Integer> unlockedCards = new java.util.HashSet<>();
             int chestCount = 0;
+            List<Quest> dailyQuests = new ArrayList<>();
+            List<Achievement> achievements = new ArrayList<>();
+            PlayerStatistics statistics = new PlayerStatistics();
+            long lastQuestResetTimestamp = 0;
 
             while ((line = br.readLine()) != null) {
                 line = line.trim();
@@ -124,6 +190,18 @@ public class PersistenceManager {
                     continue;
                 } else if (line.equals(CHESTS_SECTION)) {
                     currentSection = CHESTS_SECTION;
+                    continue;
+                } else if (line.equals(QUESTS_SECTION)) {
+                    currentSection = QUESTS_SECTION;
+                    continue;
+                } else if (line.equals(ACHIEVEMENTS_SECTION)) {
+                    currentSection = ACHIEVEMENTS_SECTION;
+                    continue;
+                } else if (line.equals(STATISTICS_SECTION)) {
+                    currentSection = STATISTICS_SECTION;
+                    continue;
+                } else if (line.equals(QUEST_RESET_SECTION)) {
+                    currentSection = QUEST_RESET_SECTION;
                     continue;
                 }
 
@@ -150,6 +228,58 @@ public class PersistenceManager {
                     unlockedCards.add(cardId);
                 } else if (CHESTS_SECTION.equals(currentSection)) {
                     chestCount = Integer.parseInt(line.trim());
+                } else if (QUESTS_SECTION.equals(currentSection)) {
+                    String[] parts = line.split(",");
+                    if (parts.length == 4) {
+                        int questTypeId = Integer.parseInt(parts[0].trim());
+                        int currentProgress = Integer.parseInt(parts[1].trim());
+                        boolean completed = Boolean.parseBoolean(parts[2].trim());
+                        boolean claimed = Boolean.parseBoolean(parts[3].trim());
+                        
+                        // Find quest type by ID
+                        Quest.QuestType questType = findQuestTypeById(questTypeId);
+                        if (questType != null) {
+                            dailyQuests.add(new Quest(questType, currentProgress, completed, claimed));
+                        }
+                    }
+                } else if (ACHIEVEMENTS_SECTION.equals(currentSection)) {
+                    String[] parts = line.split(",");
+                    if (parts.length == 4) {
+                        int achievementTypeId = Integer.parseInt(parts[0].trim());
+                        int currentProgress = Integer.parseInt(parts[1].trim());
+                        boolean completed = Boolean.parseBoolean(parts[2].trim());
+                        boolean claimed = Boolean.parseBoolean(parts[3].trim());
+                        
+                        // Find achievement type by ID
+                        Achievement.AchievementType achievementType = findAchievementTypeById(achievementTypeId);
+                        if (achievementType != null) {
+                            achievements.add(new Achievement(achievementType, currentProgress, completed, claimed));
+                        }
+                    }
+                } else if (STATISTICS_SECTION.equals(currentSection)) {
+                    String[] parts = line.split(",");
+                    if (parts.length == 18) {
+                        statistics.setTotalMatchesPlayed(Integer.parseInt(parts[0].trim()));
+                        statistics.setTotalMatchesWon(Integer.parseInt(parts[1].trim()));
+                        statistics.setTotalCrownTowersDestroyed(Integer.parseInt(parts[2].trim()));
+                        statistics.setTotalKingTowersDestroyed(Integer.parseInt(parts[3].trim()));
+                        statistics.setTotalSpellCardsPlayed(Integer.parseInt(parts[4].trim()));
+                        statistics.setTotalTroopCardsDeployed(Integer.parseInt(parts[5].trim()));
+                        statistics.setTotalBuildingCardsPlayed(Integer.parseInt(parts[6].trim()));
+                        statistics.setTotalElixirSpent(Integer.parseInt(parts[7].trim()));
+                        statistics.setTotalSpellDamageDealt(Integer.parseInt(parts[8].trim()));
+                        statistics.setTotalSwarmTroopsDeployed(Integer.parseInt(parts[9].trim()));
+                        statistics.setTotalGoldEarned(Integer.parseInt(parts[10].trim()));
+                        statistics.setTotalCardCombos(Integer.parseInt(parts[11].trim()));
+                        statistics.setCurrentWinStreak(Integer.parseInt(parts[12].trim()));
+                        statistics.setMaxWinStreak(Integer.parseInt(parts[13].trim()));
+                        statistics.setChallengesCompleted(Integer.parseInt(parts[14].trim()));
+                        statistics.setChallengesWithThreeStars(Integer.parseInt(parts[15].trim()));
+                        statistics.setNetworkMultiplayerWins(Integer.parseInt(parts[16].trim()));
+                        statistics.setPvPMatchWins(Integer.parseInt(parts[17].trim()));
+                    }
+                } else if (QUEST_RESET_SECTION.equals(currentSection)) {
+                    lastQuestResetTimestamp = Long.parseLong(line.trim());
                 }
             }
 
@@ -161,6 +291,10 @@ public class PersistenceManager {
             System.out.println("Player profile loaded from: " + PROFILE_FILE);
             PlayerProfile profile = new PlayerProfile(gold, cardLevels, goldHistory, unlockedCards);
             profile.setChestCount(chestCount);
+            profile.setDailyQuests(dailyQuests);
+            profile.setAchievements(achievements);
+            profile.setStatistics(statistics);
+            profile.setLastQuestResetTimestamp(lastQuestResetTimestamp);
             return profile;
 
         } catch (Exception e) {
@@ -169,5 +303,33 @@ public class PersistenceManager {
             // Return default profile on error
             return new PlayerProfile();
         }
+    }
+
+    /**
+     * Helper method to find QuestType by ID.
+     * "id": the quest type ID
+     * returns the QuestType, or null if not found
+     */
+    private Quest.QuestType findQuestTypeById(int id) {
+        for (Quest.QuestType type : Quest.QuestType.values()) {
+            if (type.getId() == id) {
+                return type;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Helper method to find AchievementType by ID.
+     * "id": the achievement type ID
+     * returns the AchievementType, or null if not found
+     */
+    private Achievement.AchievementType findAchievementTypeById(int id) {
+        for (Achievement.AchievementType type : Achievement.AchievementType.values()) {
+            if (type.getId() == id) {
+                return type;
+            }
+        }
+        return null;
     }
 }

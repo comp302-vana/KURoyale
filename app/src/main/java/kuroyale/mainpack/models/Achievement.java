@@ -7,7 +7,7 @@ public class Achievement {
     private boolean completed;
     private boolean claimed;
 
-    Achievement(AchievementType type, int currentProgress, boolean completed, boolean claimed) {
+    public Achievement(AchievementType type, int currentProgress, boolean completed, boolean claimed) {
         this.type = type;
         this.currentProgress = currentProgress;
         this.completed = completed;
