@@ -7,8 +7,8 @@ import javafx.scene.layout.VBox;
 import javafx.geometry.Pos;
 
 public class PointsCounter extends HBox {
-    private int ourPoints=0;
-    private int enemyPoints=0;
+    private double ourPoints=0;
+    private double enemyPoints=0;
     private final Label ourLabel;
     private final Label enemyLabel;
 
@@ -45,29 +45,27 @@ public class PointsCounter extends HBox {
     }
 
     public void addToUs(){
-        ourPoints++;
-        ourLabel.setText(String.valueOf(ourPoints));
+        ourPoints+=0.111111111111;
+        ourLabel.setText(String.valueOf((int) Math.round(ourPoints)));
     }
 
     public void addToEnemy(){
         enemyPoints++;
-        enemyLabel.setText(String.valueOf(enemyPoints));
+        enemyLabel.setText(String.valueOf((int) Math.round(enemyPoints)));
     }
     public void setOurPoints(int point){
         ourPoints=point;
-        ourLabel.setText(String.valueOf(ourPoints));
+        ourLabel.setText(String.valueOf((int) Math.round(ourPoints)));
     }
     public void setEnemyPoints(int point){
         enemyPoints=point;
-        enemyLabel.setText(String.valueOf(enemyPoints));
+        enemyLabel.setText(String.valueOf((int) Math.round(enemyPoints)));
     }
 
     public int getOurPoints(){
-        return ourPoints;
+        return (int) Math.round(ourPoints);
     }
-    public int getEnemyPoints(){
-        return enemyPoints;
-    }
+    public int getEnemyPoints() {return (int) Math.round(enemyPoints); }
 
 
 }
