@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/21.0.9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.QuestAchievementController">
+   <children>
+      <!-- Background -->
+      <Rectangle fill="#BD7FFF" height="720.0" width="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+      
+      <!-- Title -->
+      <Label layoutX="540.0" layoutY="20.0" text="Quests &amp; Achievements" textFill="WHITE">
+         <font>
+            <Font name="Trebuchet MS Bold" size="32.0" />
+         </font>
+      </Label>
+      
+      <!-- Reset Timer -->
+      <Label fx:id="resetTimerLabel" layoutX="20.0" layoutY="80.0" text="Reset in: 00:00:00" textFill="WHITE">
+         <font>
+            <Font name="Arial" size="14.0" />
+         </font>
+      </Label>
+      
+      <!-- Tab Pane -->
+      <TabPane fx:id="mainTabPane" layoutX="40.0" layoutY="110.0" prefHeight="550.0" prefWidth="1200.0" tabClosingPolicy="UNAVAILABLE">
+         <tabs>
+            <Tab fx:id="dailyQuestsTab" text="Daily Quests">
+               <content>
+                  <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+                     <content>
+                        <VBox fx:id="questsContainer" spacing="15.0" style="-fx-padding: 20px;">
+                           <padding>
+                              <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                           </padding>
+                        </VBox>
+                     </content>
+                  </ScrollPane>
+               </content>
+            </Tab>
+            <Tab fx:id="achievementsTab" text="Achievements">
+               <content>
+                  <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+                     <content>
+                        <VBox fx:id="achievementsContainer" spacing="15.0" style="-fx-padding: 20px;">
+                           <padding>
+                              <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                           </padding>
+                        </VBox>
+                     </content>
+                  </ScrollPane>
+               </content>
+            </Tab>
+         </tabs>
+      </TabPane>
+      
+      <!-- Back Button -->
+      <Button fx:id="backButton" layoutX="1140.0" layoutY="680.0" mnemonicParsing="false" onAction="#handleBackButton" prefHeight="30.0" prefWidth="100.0" text="Back" />
+   </children>
+</AnchorPane>
