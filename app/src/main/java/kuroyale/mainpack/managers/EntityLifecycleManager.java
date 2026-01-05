@@ -21,6 +21,8 @@ public class EntityLifecycleManager {
     private final int rows;
     private final int cols;
     private QuestManager questManager;
+    private PersistenceManager persistenceManager;
+    private AchievementManager achievementManager;
     private java.util.function.Consumer<TowerManager.TowerDestroyResult> towerDestroyCallback;
 
     public EntityLifecycleManager(ArenaMap arenaMap, CombatManager combatManager, EntityRenderer entityRenderer,
@@ -38,9 +40,19 @@ public class EntityLifecycleManager {
         this.towerDestroyCallback = callback;
     }
 
+    //setters for managers
     public void setQuestManager(QuestManager questManager) {
         this.questManager = questManager;
     }
+
+    public void setPersistenceManager(PersistenceManager persistenceManager) {
+        this.persistenceManager = persistenceManager;
+    }
+    
+    public void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
+    }
+    
 
     public void updateEntities() {
         List<AliveEntity> entitiesToUpdate = new ArrayList<>();
@@ -146,6 +158,31 @@ public class EntityLifecycleManager {
                 boolean isCrownTower = !tower.isKing();
                 boolean isPlayerTower = tower.isPlayer();
                 questManager.onTowerDestroyed(isCrownTower, isPlayerTower);
+            }
+            
+            if (persistenceManager != null && entity instanceof TowerEntity) {
+                TowerEntity tower = (TowerEntity) entity;
+                if (!tower.isPlayer()) { // Enemy tower destroyed
+                    kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+                    kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+                    
+                    if (stats != null) {
+                        if (tower.isKing()) {
+                            stats.incrementTotalKingTowersDestroyed();
+                        } else {
+                            stats.incrementTotalCrownTowersDestroyed();
+                        }
+                        
+                        // Save updated statistics
+                        profile.setStatistics(stats);
+                        persistenceManager.savePlayerProfile(profile);
+                        
+                        // Update achievements
+                        if (achievementManager != null) {
+                            achievementManager.updateFromStatistics(stats);
+                        }
+                    }
+                }
             }
             return result;
         }

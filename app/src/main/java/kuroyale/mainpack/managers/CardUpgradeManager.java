@@ -13,6 +13,7 @@ public class CardUpgradeManager {
     private final EconomyManager economyManager;
     private final CardDataRepository cardDataRepository;
     private final PersistenceManager persistenceManager;
+    private AchievementManager achievementManager;
     
     public CardUpgradeManager(EconomyManager economyManager, CardDataRepository cardDataRepository,
                              PersistenceManager persistenceManager) {
@@ -72,6 +73,13 @@ public class CardUpgradeManager {
     }
     
     /**
+     * setter for achievement manager
+     */
+    public void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
+    }
+
+    /**
      * Upgrades a card if possible.
      * @param cardId The card to upgrade
      * @return UpgradeResult indicating success or failure
@@ -107,6 +115,10 @@ public class CardUpgradeManager {
         profile.setCardLevel(cardId, newLevel);
         profile.setTotalGold(economyManager.getCurrentGold());
         persistenceManager.savePlayerProfile(profile);
+
+        if (achievementManager != null && newLevel == 3) {
+            achievementManager.onCardUpgraded(cardId, newLevel);
+        }
         
         return new UpgradeResult(true, newLevel, "Card upgraded to Level " + newLevel + "!");
     }

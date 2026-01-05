@@ -27,6 +27,8 @@ public class EntityPlacementManager {
     private final int cols;
     private final boolean isPvPMode;
     private QuestManager questManager;
+    private PersistenceManager persistenceManager;
+    private AchievementManager achievementManager;
 
     // Constructor for single-player mode
     public EntityPlacementManager(ArenaMap arenaMap, GameStateManager gameStateManager,
@@ -61,9 +63,17 @@ public class EntityPlacementManager {
         this.isPvPMode = true;
     }
     
-    //setter method for quest manager
+    //setter method for quest,persistance and achievement manager
     public void setQuestManager(QuestManager questManager) {
         this.questManager = questManager;
+    }
+
+    public void setPersistenceManager(PersistenceManager persistenceManager) {
+        this.persistenceManager = persistenceManager;
+    }
+    
+    public void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
     }
     /**
      * Determine which player (1 or 2) based on drop location.
@@ -105,6 +115,10 @@ public class EntityPlacementManager {
             }
 
             boolean isSpell = (cardID >= 25 && cardID <= 28);
+            boolean isBuilding = (cardID >= 16 && cardID <= 24);
+            boolean isTroop = (cardID >= 1 && cardID <= 15);
+            boolean isCommonCard = (kuroyale.cardpack.CardRarityMapper.getRarity(cardID) == kuroyale.cardpack.CardRarity.COMMON);
+        
 
             if (isSpell) {
                 // Spells can be cast anywhere, but consume elixir from the appropriate player
@@ -195,11 +209,37 @@ public class EntityPlacementManager {
                 success = true;
                 // Notify quest manager about card played
                 if (questManager != null) {
-                    boolean isBuilding = (cardID >= 16 && cardID <= 24);
-                    boolean isTroop = (cardID >= 1 && cardID <= 15);
-                    boolean isCommonCard = (kuroyale.cardpack.CardRarityMapper.getRarity(cardID) == kuroyale.cardpack.CardRarity.COMMON);
-        
                     questManager.onCardPlayed(cardID, isSpell, isBuilding, isTroop, cost, isCommonCard);
+                }
+
+                // Update PlayerStatistics for lifetime tracking (only for player 1)
+                if (persistenceManager != null && isPlayer) {
+                    kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+                    kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+    
+                    if (stats != null) {
+                        if (isSpell) {
+                            stats.incrementTotalSpellCardsPlayed();
+                        } else if (isTroop) {
+                            stats.incrementTotalTroopCardsDeployed();
+                            // Check if it's a swarm troop (cards 9-15 based on CardCategory.SWARM)
+                            if (cardID >= 9 && cardID <= 15) {
+                                stats.incrementTotalSwarmTroopsDeployed();
+                            }
+                        } else if (isBuilding) {
+                            stats.incrementTotalBuildingCardsPlayed();
+                        }
+                        stats.incrementTotalElixirSpent(cost);
+        
+                        // Save updated statistics
+                        profile.setStatistics(stats);
+                        persistenceManager.savePlayerProfile(profile);
+        
+                        // Update achievements
+                        if (achievementManager != null) {
+                            achievementManager.updateFromStatistics(stats);
+                        }
+                    }
                 }
             } else {
                 System.out.println("no");
