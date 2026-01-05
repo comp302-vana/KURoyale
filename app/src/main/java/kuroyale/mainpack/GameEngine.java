@@ -21,6 +21,7 @@ import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.mainpack.managers.EntityRenderer;
 import kuroyale.mainpack.managers.CombatManager;
 import kuroyale.mainpack.managers.GameStateManager;
+import kuroyale.mainpack.managers.QuestManager;
 import kuroyale.mainpack.managers.CardManager;
 import kuroyale.mainpack.managers.SpellSystem;
 import kuroyale.mainpack.managers.EntityUpdater;
@@ -29,6 +30,7 @@ import kuroyale.mainpack.managers.SceneNavigationManager;
 import kuroyale.mainpack.managers.VictoryConditionManager;
 import kuroyale.mainpack.managers.EntityLifecycleManager;
 import kuroyale.mainpack.managers.EntityPlacementManager;
+import kuroyale.mainpack.managers.AchievementManager;
 import kuroyale.mainpack.managers.ArenaSetupManager;
 import kuroyale.mainpack.managers.GameLoopManager;
 import kuroyale.mainpack.managers.DualPlayerStateManager;
@@ -131,6 +133,8 @@ public class GameEngine {
     private EntityPlacementManager entityPlacementManager;
     private ArenaSetupManager arenaSetupManager;
     private GameLoopManager gameLoopManager;
+    private QuestManager questManager;
+    private AchievementManager achievementManager;
 
     private SimpleAI aiOpponent;
 
@@ -189,7 +193,7 @@ public class GameEngine {
         combatManager = new CombatManager(ENTITY_UPDATE_INTERVAL);
         spellSystem = new SpellSystem(arenaMap, combatManager, rows, cols);
         entityUpdater = new EntityUpdater(arenaMap, combatManager, entityRenderer, rows, cols, ENTITY_UPDATE_INTERVAL);
-        
+
         // Initialize state and card managers based on mode
         if (isPvPMode) {
             // PvP mode: use DualPlayerStateManager
@@ -237,7 +241,9 @@ public class GameEngine {
         victoryConditionManager.setEconomyManager(economyManager);
         victoryConditionManager.setGameMode(currentGameMode); // Set game mode for victory messages
         entityLifecycleManager = new EntityLifecycleManager(arenaMap, combatManager, entityRenderer, entityUpdater, towerManager, rows, cols);
-        
+        questManager = new QuestManager();
+        achievementManager = new AchievementManager();
+
         // EntityPlacementManager needs to know about dual player state if PvP
         if (isPvPMode) {
             entityPlacementManager = new EntityPlacementManager(arenaMap, dualPlayerStateManager, cardManager, cardManagerP2, entityRenderer, spellSystem, rows, cols);
@@ -245,6 +251,11 @@ public class GameEngine {
             entityPlacementManager = new EntityPlacementManager(arenaMap, gameStateManager, cardManager, entityRenderer, spellSystem, rows, cols);
         }
         
+        // Load quest/achievement data from profile
+        questManager.setDailyQuests(profile.getDailyQuests());
+        questManager.setLastResetTimestamp(profile.getLastQuestResetTimestamp());
+        achievementManager.setAchievements(profile.getAchievements());
+        questManager.initializeDailyQuests();
         arenaSetupManager = new ArenaSetupManager(arenaMap, arenaGrid, rows, cols, tileSize, entityRenderer);
         
         // GameLoopManager needs to use appropriate state manager
@@ -270,6 +281,14 @@ public class GameEngine {
             }
         }
         
+        victoryConditionManager.setQuestManager(questManager);
+        victoryConditionManager.setAchievementManager(achievementManager);
+        victoryConditionManager.setPersistenceManager(persistenceManager);
+        entityPlacementManager.setQuestManager(questManager);
+        spellSystem.setQuestManager(questManager);
+
+        // Start new match tracking
+        questManager.startNewMatch();
         gameLoopManager.startGameLoop();
 
         // Verify all cards are draggable after initialization
