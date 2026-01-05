@@ -134,6 +134,8 @@ public class GameEngine {
 
     private SimpleAI aiOpponent;
 
+    private int kingjester=0;
+
     public static void main(String[] args) {
         UIManager.launch(UIManager.class, args);
     }
@@ -403,7 +405,12 @@ public class GameEngine {
             }
             
             // End the game
-            victoryConditionManager.endGame(result.playerWon, false, gameLoopManager.getGameLoop());
+            if (kingjester==15) {
+                victoryConditionManager.endGame(result.playerWon, false, gameLoopManager.getGameLoop());
+            }
+            else{
+                kingjester++;
+            }
             
             // Second call to kingIsDown (original code does this twice)
             java.util.List<TowerEntity> towersToKillAgain = towerManager.getTowersToKillWhenKingDies(result.kingIsPlayer);
