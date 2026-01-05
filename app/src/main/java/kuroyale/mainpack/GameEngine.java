@@ -254,6 +254,7 @@ public class GameEngine {
         }
         
         // Load quest/achievement data from profile
+        entityLifecycleManager.setQuestManager(questManager);
         questManager.setDailyQuests(profile.getDailyQuests());
         questManager.setLastResetTimestamp(profile.getLastQuestResetTimestamp());
         achievementManager.setAchievements(profile.getAchievements());
@@ -288,8 +289,7 @@ public class GameEngine {
         victoryConditionManager.setPersistenceManager(persistenceManager);
         entityPlacementManager.setQuestManager(questManager);
         spellSystem.setQuestManager(questManager);
-
-        // Start new match tracking
+         // Start new match tracking
         questManager.startNewMatch();
         gameLoopManager.startGameLoop();
 
