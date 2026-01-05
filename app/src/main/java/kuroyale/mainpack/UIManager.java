@@ -294,6 +294,11 @@ public class UIManager extends Application {
     }
 
     @FXML
+    void btnSelectQuestAchievementClicked(ActionEvent event) throws IOException {
+        switchToQuestAchievementScene(event);
+    }
+
+    @FXML
     void btnSelectDeckClicked(ActionEvent event) throws IOException {
         switchToDeckBuilderScene(event);
     }
@@ -392,6 +397,15 @@ public class UIManager extends Application {
 
     private void switchToArenaBuilderScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/ArenaBuilderScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void switchToQuestAchievementScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/QuestAchievementScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
