@@ -37,6 +37,7 @@ import javafx.scene.input.ClipboardContent;
 
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
+import kuroyale.arenapack.PlacedObject;
 import javafx.scene.input.MouseButton;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -72,6 +73,92 @@ public class ArenaController {
     private final int cols = ArenaMap.getCols();
 
     private final int tileSize = 24;
+    
+    /**
+     * Calculates the mirrored column position for symmetric arena design.
+     * The arena is symmetric along the vertical axis (river is at columns 15-16).
+     * @param col Original column (0-31)
+     * @return Mirrored column position
+     */
+    private int getMirroredCol(int col) {
+        return cols - 1 - col;
+    }
+    
+    /**
+     * Calculates the mirrored bottom-right corner position for a tower.
+     * Towers are stored at their bottom-right corner and span multiple cells.
+     * For perfect symmetry, we mirror the top-left corner, not the bottom-right.
+     * 
+     * @param row Original row (bottom-right corner) - kept the same (vertical symmetry only)
+     * @param colBR Original column (bottom-right corner)
+     * @param size Size of the tower (3 for regular, 4 for king)
+     * @return Array with [row, mirrorColBR] for the mirrored bottom-right corner
+     */
+    private int[] getMirroredTowerPosition(int row, int colBR, int size) {
+        // Original top-left column: colTL = colBR - (size - 1)
+        // Mirrored bottom-right column must be the mirror of original top-left:
+        // mirrorColBR = (cols - 1) - colTL
+        // This is equivalent to: mirrorColBR = (cols - 1 - colBR) + (size - 1)
+        int mirrorColBR = (cols - 1 - colBR) + (size - 1);
+        return new int[]{row, mirrorColBR};
+    }
+    
+    /**
+     * Gets the corresponding enemy tower type for a player tower type.
+     * @param playerType OUR_TOWER or OUR_KING
+     * @return ENEMY_TOWER or ENEMY_KING, or null if not a player tower
+     */
+    private ArenaObjectType getEnemyType(ArenaObjectType playerType) {
+        return switch (playerType) {
+            case OUR_TOWER -> ArenaObjectType.ENEMY_TOWER;
+            case OUR_KING -> ArenaObjectType.ENEMY_KING;
+            default -> null;
+        };
+    }
+    
+    /**
+     * Gets the corresponding player tower type for an enemy tower type.
+     * @param enemyType ENEMY_TOWER or ENEMY_KING
+     * @return OUR_TOWER or OUR_KING, or null if not an enemy tower
+     */
+    private ArenaObjectType getPlayerType(ArenaObjectType enemyType) {
+        return switch (enemyType) {
+            case ENEMY_TOWER -> ArenaObjectType.OUR_TOWER;
+            case ENEMY_KING -> ArenaObjectType.OUR_KING;
+            default -> null;
+        };
+    }
+    
+    /**
+     * Checks if a tower type should be mirrored (OUR_TOWER, OUR_KING, ENEMY_TOWER, ENEMY_KING).
+     */
+    private boolean isTowerType(ArenaObjectType type) {
+        return type == ArenaObjectType.OUR_TOWER || type == ArenaObjectType.OUR_KING ||
+               type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.ENEMY_KING;
+    }
+    
+    /**
+     * Determines which side of the arena a column is on.
+     * @param col Column index (0-31)
+     * @return true if player side (columns 0-14), false if enemy side (columns 17-31)
+     */
+    private boolean isPlayerSide(int col) {
+        return col < cols / 2 - 1; // Columns 0-14 are player side
+    }
+    
+    /**
+     * Determines the correct tower type for a given side.
+     * @param isPlayerSide true for player side, false for enemy side
+     * @param isKing true for king, false for regular tower
+     * @return The appropriate ArenaObjectType
+     */
+    private ArenaObjectType getTowerTypeForSide(boolean isPlayerSide, boolean isKing) {
+        if (isPlayerSide) {
+            return isKing ? ArenaObjectType.OUR_KING : ArenaObjectType.OUR_TOWER;
+        } else {
+            return isKing ? ArenaObjectType.ENEMY_KING : ArenaObjectType.ENEMY_TOWER;
+        }
+    }
 
 
     @FXML
@@ -214,20 +301,119 @@ public class ArenaController {
                                 placementOK = false;
                             }
                         }
-                        if (placementOK) {
-                            placementOK = arenaMap.placeObject(r, c, objType);
+                        
+                        // For towers, determine the correct type based on which side it's being placed on
+                        ArenaObjectType actualType = objType;
+                        if (placementOK && isTowerType(objType)) {
+                            boolean isKing = (objType == ArenaObjectType.OUR_KING || objType == ArenaObjectType.ENEMY_KING);
+                            boolean dropOnPlayerSide = isPlayerSide(c);
+                            
+                            // Determine the correct tower type for the drop location
+                            actualType = getTowerTypeForSide(dropOnPlayerSide, isKing);
+                            System.out.println("Tower placement: dragged " + objType + " to column " + c + 
+                                             " (player side: " + dropOnPlayerSide + "), using type: " + actualType);
                         }
+                        
                         if (placementOK) {
-                            decrement(objType);
-                            // Try to get sprite
+                            placementOK = arenaMap.placeObject(r, c, actualType);
+                        }
+                        
+                        // For towers, also place the mirrored tower on the opposite side
+                        if (placementOK && isTowerType(actualType)) {
+                            boolean isKing = (actualType == ArenaObjectType.OUR_KING || actualType == ArenaObjectType.ENEMY_KING);
+                            int towerSize = isKing ? 4 : 3;
+                            boolean dropOnPlayerSide = isPlayerSide(c);
+                            
+                            // Calculate mirrored position for the tower's bottom-right corner
+                            int[] mirroredPos = getMirroredTowerPosition(r, c, towerSize);
+                            int mirroredRow = mirroredPos[0];
+                            int mirroredCol = mirroredPos[1];
+                            
+                            // The mirrored tower should be on the opposite side
+                            ArenaObjectType mirroredType = getTowerTypeForSide(!dropOnPlayerSide, isKing);
+                            
+                            if (mirroredType != null) {
+                                boolean mirroredOK = arenaMap.placeObject(mirroredRow, mirroredCol, mirroredType);
+                                if (!mirroredOK) {
+                                    // If mirrored placement fails, remove the original placement
+                                    arenaMap.clearObject(r, c);
+                                    placementOK = false;
+                                    System.out.println("Failed to place mirrored tower at " + mirroredRow + "," + mirroredCol);
+                                } else {
+                                    System.out.println("Placed mirrored tower: " + mirroredType + " at " + mirroredRow + "," + mirroredCol);
+                                    
+                                    // Also render the mirrored tower sprite at the bottom-right corner
+                                    Pane mirroredTile = getTile(mirroredRow, mirroredCol);
+                                    if (mirroredTile != null) {
+                                        ImageView mirroredSprite = SpriteLoader.getSprite(mirroredType, tileSize);
+                                        if (mirroredSprite != null) {
+                                            mirroredTile.getChildren().add(mirroredSprite);
+                                            
+                                            javafx.application.Platform.runLater(() -> {
+                                                mirroredSprite.applyCss();
+                                                mirroredSprite.autosize();
+                                                
+                                                double tileW = mirroredTile.getWidth();
+                                                double spriteW = mirroredSprite.getBoundsInParent().getWidth();
+                                                mirroredSprite.setTranslateX(tileW - spriteW);
+                                                
+                                                double tileH = mirroredTile.getHeight();
+                                                double spriteH = mirroredSprite.getBoundsInParent().getHeight();
+                                                mirroredSprite.setTranslateY(tileH - spriteH);
+                                            });
+                                            
+                                            // Add right-click removal for mirrored tower
+                                            final int mirrorR = mirroredRow;
+                                            final int mirrorC = mirroredCol;
+                                            final ArenaObjectType finalMirroredType = mirroredType;
+                                            final ArenaObjectType finalActualType = actualType;
+                                            final int finalTowerSize = towerSize;
+                                            mirroredSprite.setOnMouseClicked(ev -> {
+                                                if (ev.getButton() == MouseButton.SECONDARY) {
+                                                    // Remove mirrored tower
+                                                    removeTowerAt(mirrorR, mirrorC);
+                                                    
+                                                    // Find and remove the original tower (using involution: mirror back)
+                                                    int[] originalPos = getMirroredTowerPosition(mirrorR, mirrorC, finalTowerSize);
+                                                    int originalRow = originalPos[0];
+                                                    int originalCol = originalPos[1];
+                                                    removeTowerAt(originalRow, originalCol);
+                                                    
+                                                    // Increment counts for both types
+                                                    increment(finalMirroredType);
+                                                    increment(finalActualType);
+                                                    ev.consume();
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (placementOK) {
+                            // For symmetric tower placement, decrement both player and enemy counts
+                            if (isTowerType(actualType)) {
+                                decrement(actualType);
+                                // Also decrement the mirrored type
+                                boolean isKing = (actualType == ArenaObjectType.OUR_KING || actualType == ArenaObjectType.ENEMY_KING);
+                                boolean dropOnPlayerSide = isPlayerSide(c);
+                                ArenaObjectType mirroredType = getTowerTypeForSide(!dropOnPlayerSide, isKing);
+                                if (mirroredType != null) {
+                                    decrement(mirroredType);
+                                }
+                            } else {
+                                decrement(actualType);
+                            }
+                            // Try to get sprite - use actualType (the correct type for the side)
                             ImageView sprite;
-                            if (objType == ArenaObjectType.BRIDGE) {
+                            if (actualType == ArenaObjectType.BRIDGE) {
                                 sprite = SpriteLoader.getBuilderBridgeSprite(tileSize);
                                 arenaMap.setObject(r, c + (2 * (c % 2) - 1), ArenaObjectType.BRIDGE);
                                 System.out.printf("placed first bridge on %d, %d\n", r, c);
                                 System.out.printf("placed second bridge on %d, %d\n", r, c + (2 * (c % 2) - 1));
                             } else {
-                                sprite = SpriteLoader.getSprite(objType, tileSize);
+                                sprite = SpriteLoader.getSprite(actualType, tileSize);
                             }
                             if (sprite != null) {
                                 tile.getChildren().add(sprite);
@@ -249,11 +435,31 @@ public class ArenaController {
                                     sprite.setTranslateY(tileH - spriteH);
                                 });
 
+                                // Store the actual type for removal
+                                final ArenaObjectType finalActualType = actualType;
                                 sprite.setOnMouseClicked(ev -> {
                                     if (ev.getButton() == MouseButton.SECONDARY) {
-                                        arenaMap.clearObject(r, c);
-                                        tile.getChildren().remove(sprite);
-                                        increment(objType);
+                                        // Remove the original tower
+                                        removeTowerAt(r, c);
+                                        increment(finalActualType);
+                                        
+                                        // Also remove the mirrored tower if it's a tower type
+                                        if (isTowerType(finalActualType)) {
+                                            boolean isKingType = (finalActualType == ArenaObjectType.OUR_KING || finalActualType == ArenaObjectType.ENEMY_KING);
+                                            int towerSize = isKingType ? 4 : 3;
+                                            int[] mirroredPos = getMirroredTowerPosition(r, c, towerSize);
+                                            int mirroredRow = mirroredPos[0];
+                                            int mirroredCol = mirroredPos[1];
+                                            removeTowerAt(mirroredRow, mirroredCol);
+                                            
+                                            // Increment the mirrored type count
+                                            boolean dropOnPlayerSide = isPlayerSide(c);
+                                            ArenaObjectType mirroredType = getTowerTypeForSide(!dropOnPlayerSide, isKingType);
+                                            if (mirroredType != null) {
+                                                increment(mirroredType);
+                                            }
+                                        }
+                                        
                                         ev.consume();
                                     }
                                 });
@@ -486,6 +692,10 @@ public class ArenaController {
         remaining.put(ArenaObjectType.ENEMY_KING, 1);
         remaining.put(ArenaObjectType.BRIDGE, 3);
 
+        // Track which bridge pairs we've already counted
+        // Bridges are placed in pairs at columns 15 and 16 (river columns)
+        boolean[][] bridgeCounted = new boolean[rows][cols];
+
         // scan the map and subtract
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
@@ -493,7 +703,20 @@ public class ArenaController {
                 if (obj == null)
                     continue;
 
-                if (remaining.containsKey(obj.getType())) {
+                if (obj.getType() == ArenaObjectType.BRIDGE) {
+                    // Bridges come in pairs - only count each pair once
+                    // Count the bridge at column 15, skip the one at column 16 (they're paired)
+                    if (c == cols / 2 - 1 && !bridgeCounted[r][c]) {
+                        // This is the first tile of a bridge pair (column 15)
+                        remaining.put(ArenaObjectType.BRIDGE, remaining.get(ArenaObjectType.BRIDGE) - 1);
+                        bridgeCounted[r][c] = true;
+                        // Mark the paired tile as counted too (column 16)
+                        if (c + 1 < cols) {
+                            bridgeCounted[r][c + 1] = true;
+                        }
+                    }
+                    // Skip counting bridges at column 16 (they're already counted with their pair at column 15)
+                } else if (remaining.containsKey(obj.getType())) {
                     remaining.put(obj.getType(), remaining.get(obj.getType()) - 1);
                 }
             }
@@ -546,13 +769,52 @@ public class ArenaController {
 
                 sprite.setOnMouseClicked(ev -> {
                     if (ev.getButton() == MouseButton.SECONDARY) {
-                        arenaMap.clearObject(rr, cc); // ✅ FIXED
-                        tile.getChildren().remove(sprite);
-
-                        if (remaining.containsKey(obj.getType())) {
-                            remaining.put(obj.getType(), remaining.get(obj.getType()) + 1);
-                            countLabels.get(obj.getType()).setText(" x" + remaining.get(obj.getType()));
+                        // Handle bridge removal (bridges come in pairs)
+                        if (obj.getType() == ArenaObjectType.BRIDGE) {
+                            // Bridges are placed in pairs at columns 15 and 16
+                            // Find the paired tile: if at column 15, pair is at 16; if at 16, pair is at 15
+                            int pairedCol = (cc == cols / 2 - 1) ? cols / 2 : cols / 2 - 1;
+                            
+                            // Remove both bridge tiles
+                            arenaMap.clearObject(rr, cc);
+                            removeSpriteAt(rr, cc);
+                            arenaMap.clearObject(rr, pairedCol);
+                            removeSpriteAt(rr, pairedCol);
+                            
+                            // Update remaining count
+                            if (remaining.containsKey(ArenaObjectType.BRIDGE)) {
+                                remaining.put(ArenaObjectType.BRIDGE, remaining.get(ArenaObjectType.BRIDGE) + 1);
+                                countLabels.get(ArenaObjectType.BRIDGE).setText(" x" + remaining.get(ArenaObjectType.BRIDGE));
+                            }
+                        } else {
+                            // Remove the original tower
+                            removeTowerAt(rr, cc);
+                            
+                            // Update remaining count for the original type
+                            if (remaining.containsKey(obj.getType())) {
+                                remaining.put(obj.getType(), remaining.get(obj.getType()) + 1);
+                                countLabels.get(obj.getType()).setText(" x" + remaining.get(obj.getType()));
+                            }
+                            
+                            // Also remove the mirrored tower if it's a tower type
+                            if (isTowerType(obj.getType())) {
+                                boolean isKingType = (obj.getType() == ArenaObjectType.OUR_KING || obj.getType() == ArenaObjectType.ENEMY_KING);
+                                int towerSize = isKingType ? 4 : 3;
+                                int[] mirroredPos = getMirroredTowerPosition(rr, cc, towerSize);
+                                int mirroredRow = mirroredPos[0];
+                                int mirroredCol = mirroredPos[1];
+                                removeTowerAt(mirroredRow, mirroredCol);
+                                
+                                // Update remaining count for the mirrored type
+                                boolean dropOnPlayerSide = isPlayerSide(cc);
+                                ArenaObjectType mirroredType = getTowerTypeForSide(!dropOnPlayerSide, isKingType);
+                                if (mirroredType != null && remaining.containsKey(mirroredType)) {
+                                    remaining.put(mirroredType, remaining.get(mirroredType) + 1);
+                                    countLabels.get(mirroredType).setText(" x" + remaining.get(mirroredType));
+                                }
+                            }
                         }
+                        
                         ev.consume();
                     }
                 });
@@ -575,6 +837,48 @@ public class ArenaController {
                 return (Pane) n;
         }
         return null;
+    }
+    
+    /**
+     * Safely removes all ImageView sprites from a tile at the given coordinates.
+     * Uses removeIf() which is safe for ObservableList iteration.
+     */
+    private void removeSpriteAt(int row, int col) {
+        Pane tile = getTile(row, col);
+        if (tile == null) {
+            System.out.println("WARNING: Could not find tile at (" + row + "," + col + ") for sprite removal");
+            return;
+        }
+        int beforeCount = (int) tile.getChildren().stream().filter(n -> n instanceof ImageView).count();
+        tile.getChildren().removeIf(n -> n instanceof ImageView);
+        int afterCount = (int) tile.getChildren().stream().filter(n -> n instanceof ImageView).count();
+        if (beforeCount > 0) {
+            System.out.println("Removed " + (beforeCount - afterCount) + " sprite(s) from tile (" + row + "," + col + ")");
+        }
+    }
+    
+    /**
+     * Removes a tower from the arena map and its sprite from the UI.
+     * Uses safe removal methods to avoid ConcurrentModificationException.
+     */
+    private void removeTowerAt(int row, int col) {
+        System.out.println("Removing tower at (" + row + "," + col + ")");
+        // First check if there's actually a tower at this position
+        PlacedObject obj = arenaMap.getObject(row, col);
+        if (obj != null && isTowerType(obj.getType())) {
+            System.out.println("Found tower type: " + obj.getType() + " at (" + row + "," + col + ")");
+        } else {
+            System.out.println("WARNING: No tower found at (" + row + "," + col + ") before removal");
+        }
+        arenaMap.clearObject(row, col);
+        removeSpriteAt(row, col);
+        // Verify removal
+        PlacedObject objAfter = arenaMap.getObject(row, col);
+        if (objAfter != null && isTowerType(objAfter.getType())) {
+            System.out.println("WARNING: Tower still exists at (" + row + "," + col + ") after removal!");
+        } else {
+            System.out.println("Successfully removed tower at (" + row + "," + col + ")");
+        }
     }
 
     private void showAlert(String title, String msg) {
