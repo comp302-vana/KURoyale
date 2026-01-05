@@ -136,6 +136,10 @@ public class VictoryConditionManager {
                 }
             
                 // Save updated profile
+                profile.setDailyQuests(questManager != null ? questManager.getDailyQuests() : profile.getDailyQuests());
+                profile.setLastQuestResetTimestamp(questManager != null ? questManager.getLastResetTimestamp() : profile.getLastQuestResetTimestamp());
+                profile.setAchievements(achievementManager != null ? achievementManager.getAchievements() : profile.getAchievements());
+                profile.setStatistics(stats);
                 persistenceManager.savePlayerProfile(profile);
             }
         }

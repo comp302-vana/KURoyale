@@ -20,6 +20,7 @@ public class EntityLifecycleManager {
     private final TowerManager towerManager;
     private final int rows;
     private final int cols;
+    private QuestManager questManager;
     private java.util.function.Consumer<TowerManager.TowerDestroyResult> towerDestroyCallback;
 
     public EntityLifecycleManager(ArenaMap arenaMap, CombatManager combatManager, EntityRenderer entityRenderer,
@@ -35,6 +36,10 @@ public class EntityLifecycleManager {
 
     public void setTowerDestroyCallback(java.util.function.Consumer<TowerManager.TowerDestroyResult> callback) {
         this.towerDestroyCallback = callback;
+    }
+
+    public void setQuestManager(QuestManager questManager) {
+        this.questManager = questManager;
     }
 
     public void updateEntities() {
@@ -133,9 +138,17 @@ public class EntityLifecycleManager {
         entityRenderer.removeEntitySprite(entity);
         
         // Handle tower destruction logic
+        TowerManager.TowerDestroyResult result = null;
         if (entity instanceof TowerEntity) {
-            return towerManager.handleTowerDestroyed(entity);
+            result = towerManager.handleTowerDestroyed(entity);
+            if (questManager != null) {
+                TowerEntity tower = (TowerEntity) entity;
+                boolean isCrownTower = !tower.isKing();
+                boolean isPlayerTower = tower.isPlayer();
+                questManager.onTowerDestroyed(isCrownTower, isPlayerTower);
+            }
+            return result;
         }
-        return new TowerManager.TowerDestroyResult(false, false, false, false);
+    return new TowerManager.TowerDestroyResult(false, false, false, false);
     }
 }
