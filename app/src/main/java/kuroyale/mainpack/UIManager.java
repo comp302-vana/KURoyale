@@ -465,8 +465,26 @@ public class UIManager extends Application {
         kuroyale.mainpack.models.ChestReward reward = kuroyale.mainpack.managers.ChestManager
                 .openBasicChest(playerProfile);
 
+        // Update PlayerStatistics for gold earned from chest
+        kuroyale.mainpack.models.PlayerStatistics stats = playerProfile.getStatistics();
+        if (stats != null) {
+            stats.incrementTotalGoldEarned(reward.getGoldAmount());
+            playerProfile.setStatistics(stats);
+        }
+
         // Save profile after chest opening
         persistenceManager.savePlayerProfile(playerProfile);
+
+        // Update achievements
+        kuroyale.mainpack.managers.AchievementManager achievementManager = 
+        new kuroyale.mainpack.managers.AchievementManager();
+        achievementManager.setAchievements(playerProfile.getAchievements());
+        if (stats != null) {
+            achievementManager.onGoldEarned(reward.getGoldAmount(), stats);
+            achievementManager.updateFromStatistics(stats);
+            playerProfile.setAchievements(achievementManager.getAchievements());
+            persistenceManager.savePlayerProfile(playerProfile);
+        }
 
         // Refresh chest count label
         Node source = (Node) event.getSource();

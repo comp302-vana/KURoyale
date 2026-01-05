@@ -12,6 +12,7 @@ import kuroyale.mainpack.util.UpgradeCostCalculator;
 public class EconomyManager {
     private IntegerProperty currentGold = new SimpleIntegerProperty(0);
     private final PersistenceManager persistenceManager;
+    private AchievementManager achievementManager;
     
     public EconomyManager(int initialGold, PersistenceManager persistenceManager) {
         this.currentGold.set(initialGold);
@@ -22,6 +23,10 @@ public class EconomyManager {
         return currentGold.get();
     }
     
+    public void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
+    }
+
     public IntegerProperty currentGoldProperty() {
         return currentGold;
     }
@@ -51,6 +56,19 @@ public class EconomyManager {
         
         // Save gold history via persistence manager
         kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+        kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+
+        if (stats != null) {
+            stats.incrementTotalGoldEarned(goldAmount);
+            profile.setStatistics(stats);
+            
+            // Update achievements
+            if (achievementManager != null) {
+                achievementManager.onGoldEarned(goldAmount, stats);
+                achievementManager.updateFromStatistics(stats);
+            }
+        }
+
         profile.setTotalGold(currentGold.get());
         profile.addGoldTransaction(goldAmount, result);
         persistenceManager.savePlayerProfile(profile);

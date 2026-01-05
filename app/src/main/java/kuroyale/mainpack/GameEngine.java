@@ -288,7 +288,15 @@ public class GameEngine {
         victoryConditionManager.setAchievementManager(achievementManager);
         victoryConditionManager.setPersistenceManager(persistenceManager);
         entityPlacementManager.setQuestManager(questManager);
+        entityPlacementManager.setPersistenceManager(persistenceManager);
+        entityPlacementManager.setAchievementManager(achievementManager);
         spellSystem.setQuestManager(questManager);
+        spellSystem.setPersistenceManager(persistenceManager);
+        spellSystem.setAchievementManager(achievementManager);
+        entityLifecycleManager.setQuestManager(questManager);
+        entityLifecycleManager.setPersistenceManager(persistenceManager);
+        entityLifecycleManager.setAchievementManager(achievementManager);
+        economyManager.setAchievementManager(achievementManager);
          // Start new match tracking
         questManager.startNewMatch();
         gameLoopManager.startGameLoop();

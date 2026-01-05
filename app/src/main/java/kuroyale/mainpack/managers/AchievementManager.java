@@ -108,7 +108,8 @@ public class AchievementManager {
                     if (stats.getMaxWinStreak() >= 5) {
                         updateAchievementProgress(achievement, 1);
                     } else {
-                        updateAchievementProgress(achievement, 0);
+                        int progress = Math.min(stats.getMaxWinStreak(), 5);
+                        updateAchievementProgress(achievement, progress);
                     }
                     break;
                     
@@ -148,6 +149,9 @@ public class AchievementManager {
                 case UNDEFEATED:
                     if (won && stats.getCurrentWinStreak() >= 5) {
                         updateAchievementProgress(achievement, 1);
+                    } else {
+                        int progress = Math.min(stats.getCurrentWinStreak(), 5);
+                        updateAchievementProgress(achievement, progress);
                     }
                     break;
                     
