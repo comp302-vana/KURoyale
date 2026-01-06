@@ -37,8 +37,10 @@ public class NetworkClient {
         socket.setSoTimeout(0);
         System.out.println("Client: Connected to host at " + hostIP + ":" + port);
         
-        out = new ObjectOutputStream(socket.getOutputStream());
+        // CRITICAL: Client must create ObjectInputStream FIRST, then ObjectOutputStream
+        // This is because ObjectOutputStream writes a header that ObjectInputStream needs to read
         in = new ObjectInputStream(socket.getInputStream());
+        out = new ObjectOutputStream(socket.getOutputStream());
         
         // Send connection message
         sendMessage(new NetworkMessage(
