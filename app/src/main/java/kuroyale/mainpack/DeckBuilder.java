@@ -1159,6 +1159,13 @@ public class DeckBuilder {
         // Open chest and get rewards
         kuroyale.mainpack.models.ChestReward reward = kuroyale.mainpack.managers.ChestManager
                 .openBasicChest(playerProfile);
+        
+        // Update PlayerStatistics for gold earned from chest
+        kuroyale.mainpack.models.PlayerStatistics stats = playerProfile.getStatistics();
+        if (stats != null) {
+            stats.incrementTotalGoldEarned(reward.getGoldAmount());
+            playerProfile.setStatistics(stats);
+        }
 
         // Save profile after chest opening
         persistenceManager.savePlayerProfile(playerProfile);
@@ -1166,6 +1173,17 @@ public class DeckBuilder {
         // Update gold display (ChestManager already added gold to profile, just refresh
         // UI)
         economyManager.addGold(reward.getGoldAmount());
+
+        // Update achievements
+        kuroyale.mainpack.managers.AchievementManager achievementManager = 
+        new kuroyale.mainpack.managers.AchievementManager();
+        achievementManager.setAchievements(playerProfile.getAchievements());
+        if (stats != null) {
+            achievementManager.onGoldEarned(reward.getGoldAmount(), stats);
+            achievementManager.updateFromStatistics(stats);
+            playerProfile.setAchievements(achievementManager.getAchievements());
+            persistenceManager.savePlayerProfile(playerProfile);
+        }
 
         // Show reward popup
         showChestRewardPopup(reward);

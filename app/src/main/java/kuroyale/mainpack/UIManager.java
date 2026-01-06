@@ -294,6 +294,11 @@ public class UIManager extends Application {
     }
 
     @FXML
+    void btnSelectQuestAchievementClicked(ActionEvent event) throws IOException {
+        switchToQuestAchievementScene(event);
+    }
+
+    @FXML
     void btnSelectDeckClicked(ActionEvent event) throws IOException {
         switchToDeckBuilderScene(event);
     }
@@ -418,6 +423,15 @@ public class UIManager extends Application {
         stage.show();
     }
 
+    private void switchToQuestAchievementScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/QuestAchievementScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
+
     private void switchToBattleScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/BattleScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
@@ -470,8 +484,26 @@ public class UIManager extends Application {
         kuroyale.mainpack.models.ChestReward reward = kuroyale.mainpack.managers.ChestManager
                 .openBasicChest(playerProfile);
 
+        // Update PlayerStatistics for gold earned from chest
+        kuroyale.mainpack.models.PlayerStatistics stats = playerProfile.getStatistics();
+        if (stats != null) {
+            stats.incrementTotalGoldEarned(reward.getGoldAmount());
+            playerProfile.setStatistics(stats);
+        }
+
         // Save profile after chest opening
         persistenceManager.savePlayerProfile(playerProfile);
+
+        // Update achievements
+        kuroyale.mainpack.managers.AchievementManager achievementManager = 
+        new kuroyale.mainpack.managers.AchievementManager();
+        achievementManager.setAchievements(playerProfile.getAchievements());
+        if (stats != null) {
+            achievementManager.onGoldEarned(reward.getGoldAmount(), stats);
+            achievementManager.updateFromStatistics(stats);
+            playerProfile.setAchievements(achievementManager.getAchievements());
+            persistenceManager.savePlayerProfile(playerProfile);
+        }
 
         // Refresh chest count label
         Node source = (Node) event.getSource();

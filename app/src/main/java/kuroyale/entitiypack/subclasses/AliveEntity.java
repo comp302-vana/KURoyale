@@ -1,11 +1,11 @@
 package kuroyale.entitiypack.subclasses;
 
+import kuroyale.arenapack.ArenaMap;
+import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.cardpack.CardTarget;
 import kuroyale.cardpack.CardType;
 import kuroyale.cardpack.subclasses.AliveCard;
 import kuroyale.entitiypack.Entity;
-import kuroyale.arenapack.ArenaMap;
-import kuroyale.arenapack.ArenaObjectType;
 
 public class AliveEntity extends Entity {
     public static final int[][] directions = { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 }, { -1, 0 }, { -1, -1 },
@@ -78,16 +78,17 @@ public class AliveEntity extends Entity {
     }
 
     public AliveEntity findClosestTarget(ArenaMap arenaMap) {
-        // REQUIRES: arenaMap is not null and contains a valid list
+        // REQUIRES: -arenaMap is not null 
+        // -arenaMap contains a valid list
         // of entities with at least one entity available.
-        // this.row and this.col are within the boundary of the arena.
+        // -this.row and this.col are within the boundary of the arena.
         // EFFECTS: Returns an AliveEntity "closestEnemy" such that:
-        // 1. closestEnemy.isPlayer() != this.isPlayer()
-        // 2. closestEnemy is a target of this.card
-        // 3. Euclidian distance between "this" and "closestEnemy" is the minimum
+        // -closestEnemy.isPlayer() != this.isPlayer()
+        // -closestEnemy is a target of this.card
+        // -Euclidian distance between "this" and "closestEnemy" is the minimum
         // compared to the other valid candidates
-        // Returns null if no entity satisfies this conditions
-        // uses Euclidian distance
+        // -Returns null if no entity satisfies this conditions
+        // -uses Euclidian distance
         int minDist = ROWS*ROWS + COLS*COLS;
         AliveEntity closestEnemy = null;
 

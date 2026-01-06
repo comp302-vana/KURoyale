@@ -18,6 +18,8 @@ public class SpellSystem {
     private final int rows;
     private final int cols;
     private QuestManager questManager;
+    private PersistenceManager persistenceManager;
+    private AchievementManager achievementManager;
 
     public SpellSystem(ArenaMap arenaMap, CombatManager combatManager, int rows, int cols) {
         this.arenaMap = arenaMap;
@@ -26,8 +28,17 @@ public class SpellSystem {
         this.cols = cols;
     }
 
+    //setter for managers
     public void setQuestManager(QuestManager questManager) {
         this.questManager = questManager;
+    }
+
+    public void setPersistenceManager(PersistenceManager persistenceManager) {
+        this.persistenceManager = persistenceManager;
+    }
+    
+    public void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
     }
 
     public void executeSpell(int spellCardID, int targetRow, int targetCol, boolean isPlayerSpell,
@@ -82,6 +93,26 @@ public class SpellSystem {
         if (questManager != null && isPlayerSpell) {
             questManager.onSpellDamageDealt(totalDamageDealt);
         }
+
+        // Update PlayerStatistics for lifetime tracking
+        if (persistenceManager != null && isPlayerSpell && totalDamageDealt > 0) {
+            kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+            kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+    
+            if (stats != null) {
+                stats.incrementTotalSpellDamageDealt(totalDamageDealt);
+        
+                // Save updated statistics
+                profile.setStatistics(stats);
+                persistenceManager.savePlayerProfile(profile);
+        
+                // Update achievements
+                if (achievementManager != null) {
+                    achievementManager.updateFromStatistics(stats);
+                }
+            }
+        }   
+
         System.out.println("Spell " + spellCard.getName() + " cast at (" + targetRow + ", " + targetCol + ")");
     }
 }

@@ -65,7 +65,7 @@ public class EntityPlacementManager {
         this.isPvPMode = true;
     }
     
-    //setter method for quest manager
+    //setter method for quest,persistance and achievement manager
     public void setQuestManager(QuestManager questManager) {
         this.questManager = questManager;
     }
@@ -195,6 +195,10 @@ public class EntityPlacementManager {
             }
 
             boolean isSpell = (cardID >= 25 && cardID <= 28);
+            boolean isBuilding = (cardID >= 16 && cardID <= 24);
+            boolean isTroop = (cardID >= 1 && cardID <= 15);
+            boolean isCommonCard = (kuroyale.cardpack.CardRarityMapper.getRarity(cardID) == kuroyale.cardpack.CardRarity.COMMON);
+        
 
             if (isSpell) {
                 // Spells can be cast anywhere, but consume elixir from the appropriate player
@@ -303,10 +307,6 @@ public class EntityPlacementManager {
                 success = true;
                 // Notify quest manager about card played
                 if (questManager != null) {
-                    boolean isBuilding = (cardID >= 16 && cardID <= 24);
-                    boolean isTroop = (cardID >= 1 && cardID <= 15);
-                    boolean isCommonCard = (kuroyale.cardpack.CardRarityMapper.getRarity(cardID) == kuroyale.cardpack.CardRarity.COMMON);
-        
                     questManager.onCardPlayed(cardID, isSpell, isBuilding, isTroop, cost, isCommonCard);
                 }
             } else {
