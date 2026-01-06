@@ -4,6 +4,7 @@ import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.ImageView;
@@ -73,6 +74,10 @@ public class GameEngine {
     private ProgressBar elixirProgressBar;
     @FXML
     private PointsCounter pointsCounter;
+    @FXML
+    private Button pauseButton;
+    @FXML
+    private Button speedButton;
     
     // PvP mode UI elements (Player 2)
     @FXML
@@ -186,6 +191,16 @@ public class GameEngine {
         boolean isClient = false;
         if (isNetworkMode) {
             isClient = !NetworkManager.getInstance().isHost();
+        }
+        
+        // Disable pause and speed buttons for network client
+        if (isClient) {
+            if (pauseButton != null) {
+                pauseButton.setDisable(true);
+            }
+            if (speedButton != null) {
+                speedButton.setDisable(true);
+            }
         }
         
         // Setup UI visibility based on mode
@@ -331,7 +346,22 @@ public class GameEngine {
             gameStateManager = new GameStateManager(gameTimerLabel, elixirCountLabel, elixirProgressBar);
             cardManager = new CardManager(cardSlot0, cardSlot1, cardSlot2, cardSlot3,
                                          card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel);
-            cardManager.loadDeck();
+            // Use slot-based deck system: load the selected deck number (defaults to Deck1)
+            int selectedDeckNumber = DeckManager.getSelectedDeckNumber();
+            Deck selectedDeck = DeckManager.loadDeckByNumber(selectedDeckNumber);
+            if (selectedDeck != null) {
+                cardManager.loadDeckForPlayer(selectedDeck);
+            } else {
+                // Fallback: try Deck1 if selected deck doesn't exist
+                Deck defaultDeck1 = DeckManager.loadDeckByNumber(1);
+                if (defaultDeck1 != null) {
+                    cardManager.loadDeckForPlayer(defaultDeck1);
+                } else {
+                    // Last resort: use old loadDeck() method
+                    cardManager.loadDeck();
+                    System.err.println("Warning: No numbered decks found, using current deck");
+                }
+            }
         }
 
         // Initialize persistence and economy for victory rewards
