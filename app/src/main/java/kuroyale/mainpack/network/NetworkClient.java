@@ -41,6 +41,7 @@ public class NetworkClient {
         // This is because ObjectOutputStream writes a header that ObjectInputStream needs to read
         in = new ObjectInputStream(socket.getInputStream());
         out = new ObjectOutputStream(socket.getOutputStream());
+        out.flush(); // Flush header immediately so host can read it
         
         // Send connection message
         sendMessage(new NetworkMessage(

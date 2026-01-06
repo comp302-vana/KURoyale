@@ -1,9 +1,12 @@
 package kuroyale.mainpack.network;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Timer;
@@ -80,21 +83,80 @@ public class NetworkLobbyController {
     }
     
     private void updateIPAddress() {
-        try {
-            String ipAddress = getLocalIPAddress();
-            if (ipAddress != null && !ipAddress.isEmpty()) {
-                if (networkManager.isHost()) {
-                    lblIPAddress.setText("Your IP Address: " + ipAddress);
-                } else {
-                    lblIPAddress.setText("Your IP Address: " + ipAddress);
+        // Load IPs in background thread
+        new Thread(() -> {
+            String localIP = getLocalIPAddress();
+            String publicIP = null;
+            
+            // Only fetch public IP if host (they need to share it)
+            if (networkManager.isHost()) {
+                // Try multiple services in case one fails
+                String[] services = {
+                    "https://api.ipify.org",
+                    "https://checkip.amazonaws.com",
+                    "https://icanhazip.com"
+                };
+                
+                for (String serviceUrl : services) {
+                    try {
+                        URL url = new URL(serviceUrl);
+                        try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                            publicIP = in.readLine();
+                            if (publicIP != null && !publicIP.trim().isEmpty()) {
+                                publicIP = publicIP.trim();
+                                break; // Success, stop trying other services
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Try next service
+                    }
                 }
-            } else {
-                lblIPAddress.setText("IP Address: Unable to determine");
             }
-        } catch (Exception e) {
-            lblIPAddress.setText("IP Address: Error");
-            System.err.println("Error getting IP address: " + e.getMessage());
-        }
+            
+            final String finalLocalIP = localIP;
+            final String finalPublicIP = publicIP;
+            
+            Platform.runLater(() -> {
+                try {
+                    StringBuilder ipText = new StringBuilder();
+                    
+                    if (networkManager.isHost()) {
+                        // Host: Show both IPs
+                        if (finalLocalIP != null && !finalLocalIP.isEmpty()) {
+                            ipText.append("Local IP (same network): ").append(finalLocalIP).append("\n");
+                        }
+                        
+                        if (finalPublicIP != null && !finalPublicIP.isEmpty()) {
+                            ipText.append("Public IP (internet): ").append(finalPublicIP);
+                            ipText.append(" ← Share this with your friend!");
+                            lblIPAddress.setStyle("-fx-font-size: 14px; -fx-text-fill: #90EE90; -fx-font-weight: bold;");
+                        } else {
+                            if (finalLocalIP != null && !finalLocalIP.isEmpty()) {
+                                ipText.append("\nPublic IP: Unable to detect (check whatismyip.com)");
+                            }
+                            lblIPAddress.setStyle("-fx-font-size: 13px; -fx-text-fill: #FFA500;");
+                        }
+                    } else {
+                        // Client: Just show local IP
+                        if (finalLocalIP != null && !finalLocalIP.isEmpty()) {
+                            ipText.append("Your IP Address: ").append(finalLocalIP);
+                        } else {
+                            ipText.append("IP Address: Unable to determine");
+                        }
+                        lblIPAddress.setStyle("-fx-font-size: 14px; -fx-text-fill: white; -fx-font-weight: bold;");
+                    }
+                    
+                    if (ipText.length() > 0) {
+                        lblIPAddress.setText(ipText.toString());
+                    } else {
+                        lblIPAddress.setText("IP Address: Unable to determine");
+                    }
+                } catch (Exception e) {
+                    lblIPAddress.setText("IP Address: Error");
+                    System.err.println("Error updating IP address: " + e.getMessage());
+                }
+            });
+        }).start();
     }
     
     private String getLocalIPAddress() {
