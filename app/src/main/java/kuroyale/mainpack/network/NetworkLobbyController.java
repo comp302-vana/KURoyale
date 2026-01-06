@@ -1,9 +1,12 @@
 package kuroyale.mainpack.network;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Timer;
@@ -75,26 +78,81 @@ public class NetworkLobbyController {
         // Set start button visibility (only host can start)
         btnStartGame.setVisible(networkManager.isHost());
         
-        // Display IP address
-        updateIPAddress();
+        // Display connection info
+        updateConnectionInfo();
     }
     
-    private void updateIPAddress() {
-        try {
-            String ipAddress = getLocalIPAddress();
-            if (ipAddress != null && !ipAddress.isEmpty()) {
-                if (networkManager.isHost()) {
-                    lblIPAddress.setText("Your IP Address: " + ipAddress);
+    private void updateConnectionInfo() {
+        Platform.runLater(() -> {
+            try {
+                if (NetworkManager.isRelayModeEnabled()) {
+                    // Relay mode: Show relay server info
+                    String relayIP = NetworkManager.getRelayServerIP();
+                    int relayPort = NetworkManager.getRelayServerPort();
+                    
+                    StringBuilder info = new StringBuilder();
+                    info.append("Connected via Relay Server\n");
+                    info.append("Relay: ").append(relayIP).append(":").append(relayPort).append("\n");
+                    
+                    if (networkManager.isHost()) {
+                        info.append("Status: Waiting for player...");
+                        lblIPAddress.setStyle("-fx-font-size: 13px; -fx-text-fill: #90EE90; -fx-font-weight: bold;");
+                    } else {
+                        info.append("Status: Waiting for host...");
+                        lblIPAddress.setStyle("-fx-font-size: 13px; -fx-text-fill: #90EE90; -fx-font-weight: bold;");
+                    }
+                    
+                    lblIPAddress.setText(info.toString());
                 } else {
-                    lblIPAddress.setText("Your IP Address: " + ipAddress);
+                    // Direct mode: Show IP addresses (old behavior)
+                    updateIPAddressDirect();
                 }
-            } else {
-                lblIPAddress.setText("IP Address: Unable to determine");
+            } catch (Exception e) {
+                lblIPAddress.setText("Connection: Error");
+                lblIPAddress.setStyle("-fx-font-size: 13px; -fx-text-fill: white;");
+                System.err.println("Error updating connection info: " + e.getMessage());
             }
-        } catch (Exception e) {
-            lblIPAddress.setText("IP Address: Error");
-            System.err.println("Error getting IP address: " + e.getMessage());
-        }
+        });
+    }
+    
+    private void updateIPAddressDirect() {
+        // Load IPs in background thread (for direct mode only)
+        new Thread(() -> {
+            try {
+                String localIP = getLocalIPAddress();
+                String publicIP = null;
+                
+                // Only fetch public IP if host (they need to share it)
+                if (networkManager.isHost()) {
+                    // Try multiple services in case one fails
+                    String[] services = {
+                        "https://api.ipify.org",
+                        "https://checkip.amazonaws.com",
+                        "https://icanhazip.com"
+                    };
+                    
+                    for (String serviceUrl : services) {
+                        try {
+                            URL url = new URL(serviceUrl);
+                            try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                                publicIP = in.readLine();
+                                if (publicIP != null && !publicIP.trim().isEmpty()) {
+                                    publicIP = publicIP.trim();
+                                    break; // Success, stop trying other services
+                                }
+                            }
+                        } catch (Exception e) {
+                            // Try next service
+                        }
+                    }
+                } else {
+                    lblIPAddress.setText("IP Address: Unable to determine");
+                }
+            } catch (Exception e) {
+                lblIPAddress.setText("IP Address: Error");
+                System.err.println("Error getting IP address: " + e.getMessage());
+            }
+        }).start();
     }
     
     private String getLocalIPAddress() {

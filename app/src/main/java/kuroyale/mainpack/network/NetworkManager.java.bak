@@ -14,9 +14,13 @@ public class NetworkManager {
     private static NetworkManager instance;
     
     // Relay server configuration (for NAT traversal)
-    // Oracle Cloud relay server
-    private static final String RELAY_SERVER_IP = "80.225.92.3";
-    private static final int RELAY_SERVER_PORT = 8081;
+    // Set USE_RELAY=true to enable relay mode
+    private static final boolean USE_RELAY = true; // Enabled for Cloudflare tunnel
+    // IMPORTANT: Update this with the hostname/IP from Cloudflare tunnel
+    // Run: cloudflared tunnel --url tcp://localhost:8081
+    // Then copy the hostname (without https://) or IP address shown
+    private static final String RELAY_SERVER_IP = "localhost"; // TODO: Replace with Cloudflare tunnel hostname/IP
+    private static final int RELAY_SERVER_PORT = 8081; // TODO: Replace with Cloudflare tunnel port if different
     
     private NetworkHost host;
     private NetworkClient client;
@@ -32,47 +36,34 @@ public class NetworkManager {
     }
     
     public void startHost(int port, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
-        startHost(port, playerName, onMessageReceived, false); // Default to local
-    }
-    
-    public void startHost(int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
-        if (useInternet) {
-            // Internet mode: connect to relay server
+        if (USE_RELAY) {
+            // Relay mode: connect to relay server instead of listening
             host = NetworkHost.createRelayHost(RELAY_SERVER_IP, RELAY_SERVER_PORT, playerName, onMessageReceived);
-            System.out.println("Host: Using internet mode (relay server: " + RELAY_SERVER_IP + ":" + RELAY_SERVER_PORT + ")");
         } else {
-            // Local mode: listen for incoming connections
+            // Direct mode: listen for incoming connections
             host = new NetworkHost(port, playerName, onMessageReceived);
-            System.out.println("Host: Using local mode (listening on port " + port + ")");
         }
         isHost = true;
     }
     
     public void startClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
-        startClient(hostIP, port, playerName, onMessageReceived, false); // Default to local
-    }
-    
-    public void startClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
-        if (useInternet) {
-            // Internet mode: connect to relay server (hostIP is ignored)
+        if (USE_RELAY) {
+            // Relay mode: connect to relay server instead of host IP
             client = NetworkClient.createRelayClient(RELAY_SERVER_IP, RELAY_SERVER_PORT, playerName, onMessageReceived);
-            System.out.println("Client: Using internet mode (relay server: " + RELAY_SERVER_IP + ":" + RELAY_SERVER_PORT + ")");
         } else {
-            // Local mode: connect directly to host IP
+            // Direct mode: connect directly to host IP
             client = new NetworkClient(hostIP, port, playerName, onMessageReceived);
-            System.out.println("Client: Using local mode (connecting to " + hostIP + ":" + port + ")");
         }
         isHost = false;
     }
     
     /**
      * Check if relay mode is enabled.
-     * Relay server is always available - user chooses via UI toggle.
      */
     public static boolean isRelayModeEnabled() {
-        return true; // Relay server is always available
+        return USE_RELAY;
     }
     
     /**

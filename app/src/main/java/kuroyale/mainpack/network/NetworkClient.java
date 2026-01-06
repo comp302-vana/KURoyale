@@ -27,6 +27,7 @@ public class NetworkClient {
     private String hostDeckName;
     private boolean hostReady = false;
     
+    // Direct connection mode: client connects directly to host IP
     public NetworkClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
         this.clientPlayerName = playerName;
         this.onMessageReceived = onMessageReceived;
@@ -52,6 +53,57 @@ public class NetworkClient {
         receiveThread = new Thread(this::receiveMessages);
         receiveThread.setDaemon(true);
         receiveThread.start();
+    }
+    
+    // Relay mode: client connects to relay server (outbound connection - no NAT issues)
+    // Note: boolean parameter distinguishes this from direct mode constructor
+    private NetworkClient(boolean useRelay, String relayIP, int relayPort, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
+        this.clientPlayerName = playerName;
+        this.onMessageReceived = onMessageReceived;
+        this.isRunning = true;
+        
+        // Connect to relay server (outbound - no NAT issues)
+        System.out.println("Client: Connecting to relay server at " + relayIP + ":" + relayPort);
+        try {
+            socket = new java.net.Socket();
+            socket.connect(new java.net.InetSocketAddress(relayIP, relayPort), 10000);
+            socket.setSoTimeout(0);
+            System.out.println("Client: Connected to relay server");
+        } catch (java.net.ConnectException e) {
+            throw new IOException("Cannot connect to relay server. Make sure the relay server is running.", e);
+        } catch (java.net.SocketTimeoutException e) {
+            throw new IOException("Connection timeout. Check relay server IP/port.", e);
+        } catch (java.net.UnknownHostException e) {
+            throw new IOException("Unknown relay server: " + relayIP, e);
+        }
+        
+        // CRITICAL: For relay mode, create ObjectOutputStream FIRST, flush, then ObjectInputStream
+        // Relay server expects this order
+        out = new ObjectOutputStream(socket.getOutputStream());
+        out.flush();
+        in = new ObjectInputStream(socket.getInputStream());
+        
+        // Send CONNECT message to identify as CLIENT (playerId = 2)
+        sendMessage(new NetworkMessage(
+            NetworkMessage.MessageType.CONNECT,
+            2, // CLIENT identifier
+            playerName,
+            getCurrentTimestamp()
+        ));
+        System.out.println("Client: Sent CONNECT message to relay (identified as CLIENT)");
+        
+        // Start receiving messages from relay (which forwards host messages)
+        receiveThread = new Thread(this::receiveMessages);
+        receiveThread.setDaemon(true);
+        receiveThread.start();
+    }
+    
+    /**
+     * Create NetworkClient in relay mode.
+     * This is a factory method to avoid constructor signature conflicts.
+     */
+    public static NetworkClient createRelayClient(String relayIP, int relayPort, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
+        return new NetworkClient(true, relayIP, relayPort, playerName, onMessageReceived);
     }
     
     private void receiveMessages() {
