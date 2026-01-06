@@ -250,9 +250,32 @@ public class GameEngine {
                 player2CardContainer.setVisible(false);
                 player2CardContainer.setManaged(false);
             }
-            if (player2ElixirContainer != null) {
-                player2ElixirContainer.setVisible(false);
-                player2ElixirContainer.setManaged(false);
+            
+            // In network mode, show the appropriate elixir bar based on whether we're host or client
+            if (networkManager.isHost()) {
+                // Host (Player 1): show player 1 elixir bar, hide player 2
+                if (player2ElixirContainer != null) {
+                    player2ElixirContainer.setVisible(false);
+                    player2ElixirContainer.setManaged(false);
+                }
+            } else {
+                // Client (Player 2): hide player 1 elixir bar, show player 2 on the left side
+                if (elixirCountLabel != null) {
+                    elixirCountLabel.setVisible(false);
+                    elixirCountLabel.setManaged(false);
+                }
+                if (elixirProgressBar != null) {
+                    elixirProgressBar.setVisible(false);
+                    elixirProgressBar.setManaged(false);
+                }
+                // Move player 2 elixir container to the left side for client
+                if (player2ElixirContainer != null) {
+                    // Remove right anchor and set left anchor to position it on the left
+                    javafx.scene.layout.AnchorPane.clearConstraints(player2ElixirContainer);
+                    javafx.scene.layout.AnchorPane.setLeftAnchor(player2ElixirContainer, 10.0);
+                    javafx.scene.layout.AnchorPane.setTopAnchor(player2ElixirContainer, 90.0);
+                    javafx.scene.layout.AnchorPane.setBottomAnchor(player2ElixirContainer, 90.0);
+                }
             }
             
         } else if (isPvPMode) {
@@ -674,10 +697,18 @@ public class GameEngine {
                             gameLoopManager.getGameLoop().stop();
                         }
                         
-                        // Show victory/defeat message
-                        boolean clientWon = (winner == 2); // Client is player 2
-                        System.out.println("Client: Game ended - Winner: " + winner + ", Reason: " + reason);
-                        // TODO: Show victory/defeat UI
+                        // Determine if client won (client is player 2)
+                        boolean clientWon = (winner == 2);
+                        boolean isDraw = reason.contains("DRAW") || reason.contains("draw");
+                        
+                        System.out.println("Client: Game ended - Winner: " + winner + ", Reason: " + reason + ", Client won: " + clientWon);
+                        
+                        // Show victory/defeat screen using SceneNavigationManager
+                        if (sceneNavigationManager != null) {
+                            sceneNavigationManager.showGameEndScreen(clientWon, isDraw, 
+                                gameLoopManager != null ? gameLoopManager.getGameLoop() : null, 
+                                GameMode.NETWORK_MULTIPLAYER);
+                        }
                     }
                 }
             });
@@ -812,6 +843,17 @@ public class GameEngine {
             
             // End the game
             if (kingjester==15) {
+                // Send game end message to client if in network mode
+                NetworkManager netManager = NetworkManager.getInstance();
+                if (netManager != null && netManager.isConnected() && netManager.isHost()) {
+                    NetworkBattleManager battleManager = NetworkBattleManager.getInstance();
+                    if (battleManager != null) {
+                        int winner = result.playerWon ? 1 : 2; // Player 1 wins if result.playerWon is true
+                        String reason = result.isKing ? "King destroyed" : "Game ended";
+                        battleManager.sendGameEnd(winner, reason);
+                    }
+                }
+                
                 victoryConditionManager.endGame(result.playerWon, false, gameLoopManager.getGameLoop());
             }
             else{
