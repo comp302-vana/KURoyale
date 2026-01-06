@@ -1,6 +1,8 @@
 package kuroyale.mainpack;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -37,8 +39,8 @@ public class PvPDeckSelectionController {
     
     @FXML
     private void initialize() {
-        // Load all available decks into both combos
-        ObservableList<Deck> decks = FXCollections.observableArrayList(DeckManager.getAllDecks());
+        // Load only numbered decks (Deck1-Deck8) - slot-based system
+        ObservableList<Deck> decks = FXCollections.observableArrayList(getNumberedDecks());
         
         // Set StringConverter to display deck names instead of object references
         StringConverter<Deck> deckConverter = new StringConverter<Deck>() {
@@ -83,6 +85,22 @@ public class PvPDeckSelectionController {
             }
             checkReady();
         });
+    }
+    
+    /**
+     * Loads only numbered decks (Deck1-Deck8) from the slot-based system.
+     * Filters out deprecated named decks like "my" etc.
+     */
+    private List<Deck> getNumberedDecks() {
+        List<Deck> numberedDecks = new ArrayList<>();
+        // Load Deck1 through Deck8 (slot-based system)
+        for (int i = 1; i <= 8; i++) {
+            Deck deck = DeckManager.loadDeckByNumber(i);
+            if (deck != null) {
+                numberedDecks.add(deck);
+            }
+        }
+        return numberedDecks;
     }
     
     private void checkReady() {

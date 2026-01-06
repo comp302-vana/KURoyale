@@ -297,12 +297,34 @@ public class GameEngine {
             if (player1Deck != null) {
                 cardManager.loadDeckForPlayer(player1Deck);
             } else {
-                cardManager.loadDeck(); // Fallback to current deck
+                // Fallback: use numbered deck system (Deck1)
+                Deck defaultDeck1 = DeckManager.loadDeckByNumber(1);
+                if (defaultDeck1 != null) {
+                    cardManager.loadDeckForPlayer(defaultDeck1);
+                } else {
+                    cardManager.loadDeck(); // Last resort: use current deck
+                    System.err.println("Warning: Player 1 deck not set and Deck1 not found, using current deck");
+                }
             }
             if (player2Deck != null) {
                 cardManagerP2.loadDeckForPlayer(player2Deck);
             } else {
-                System.err.println("Warning: Player 2 deck not set in PvP mode!");
+                // Fallback: use numbered deck system (try Deck2, then Deck1)
+                Deck defaultDeck2 = DeckManager.loadDeckByNumber(2);
+                if (defaultDeck2 != null) {
+                    cardManagerP2.loadDeckForPlayer(defaultDeck2);
+                    System.out.println("Player 2: Using Deck2 as fallback");
+                } else {
+                    // Try Deck1 if Deck2 doesn't exist
+                    Deck defaultDeck1 = DeckManager.loadDeckByNumber(1);
+                    if (defaultDeck1 != null) {
+                        cardManagerP2.loadDeckForPlayer(defaultDeck1);
+                        System.out.println("Player 2: Using Deck1 as fallback (Deck2 not found)");
+                    } else {
+                        cardManagerP2.loadDeck(); // Last resort: use current deck
+                        System.err.println("Warning: Player 2 deck not set and no numbered decks found, using current deck");
+                    }
+                }
             }
         } else {
             // Single-player mode: use GameStateManager (existing code)
