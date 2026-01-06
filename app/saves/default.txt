@@ -1,1 +1,1 @@
-test2.csv
+kredi.csv
