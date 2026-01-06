@@ -71,13 +71,15 @@ public class NetworkHost {
         clientIn = new ObjectInputStream(clientSocket.getInputStream());
         
         // Send CONNECT message to identify as HOST (playerId = 1)
+        // Format: "playerName|roomCode" (using "default" room for now)
+        String connectData = playerName + "|default";
         sendMessage(new NetworkMessage(
             NetworkMessage.MessageType.CONNECT,
             1, // HOST identifier
-            playerName,
+            connectData,
             getCurrentTimestamp()
         ));
-        System.out.println("Host: Sent CONNECT message to relay (identified as HOST)");
+        System.out.println("Host: Sent CONNECT message to relay (identified as HOST, room=default)");
         
         // Start receiving messages from relay (which forwards client messages)
         receiveThread = new Thread(this::receiveMessages);
@@ -217,8 +219,24 @@ public class NetworkHost {
                 break;
         }
         
+        // Forward all messages (including battle messages) to registered handlers
         if (onMessageReceived != null) {
+            // Debug: Log battle messages to help diagnose issues
+            if (message.getType() == NetworkMessage.MessageType.CARD_PLACEMENT_REQUEST ||
+                message.getType() == NetworkMessage.MessageType.SPELL_CAST_REQUEST ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_SPAWN ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_UPDATE) {
+                System.out.println("Host: Received battle message: " + message.getType() + 
+                                 " (playerId=" + message.getPlayerId() + ")");
+            }
             onMessageReceived.accept(message);
+        } else {
+            // Debug: Warn if handler is null when battle message arrives
+            if (message.getType() == NetworkMessage.MessageType.CARD_PLACEMENT_REQUEST ||
+                message.getType() == NetworkMessage.MessageType.SPELL_CAST_REQUEST) {
+                System.err.println("Host: WARNING - Battle message received but onMessageReceived is null! " +
+                                 "Message type: " + message.getType());
+            }
         }
     }
     

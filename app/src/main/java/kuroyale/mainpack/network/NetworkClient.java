@@ -84,13 +84,15 @@ public class NetworkClient {
         in = new ObjectInputStream(socket.getInputStream());
         
         // Send CONNECT message to identify as CLIENT (playerId = 2)
+        // Format: "playerName|roomCode" (using "default" room for now)
+        String connectData = playerName + "|default";
         sendMessage(new NetworkMessage(
             NetworkMessage.MessageType.CONNECT,
             2, // CLIENT identifier
-            playerName,
+            connectData,
             getCurrentTimestamp()
         ));
-        System.out.println("Client: Sent CONNECT message to relay (identified as CLIENT)");
+        System.out.println("Client: Sent CONNECT message to relay (identified as CLIENT, room=default)");
         
         // Start receiving messages from relay (which forwards host messages)
         receiveThread = new Thread(this::receiveMessages);
@@ -110,11 +112,19 @@ public class NetworkClient {
         try {
             while (isRunning && socket != null && !socket.isClosed()) {
                 NetworkMessage message = MessageProtocol.receiveMessage(in);
+                System.out.println("Client: Received message: " + message.getType() + 
+                                 " (playerId=" + message.getPlayerId() + ")");
                 handleMessage(message);
             }
         } catch (IOException | ClassNotFoundException e) {
             if (isRunning) {
                 System.err.println("Client: Error receiving message: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            if (isRunning) {
+                System.err.println("Client: Unexpected error in receiveMessages: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -158,8 +168,27 @@ public class NetworkClient {
                 break;
         }
         
+        // Forward all messages (including battle messages) to registered handlers
         if (onMessageReceived != null) {
+            // Debug: Log battle messages to help diagnose issues
+            if (message.getType() == NetworkMessage.MessageType.ENTITY_SPAWN ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_UPDATE ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_DEATH ||
+                message.getType() == NetworkMessage.MessageType.TOWER_UPDATE ||
+                message.getType() == NetworkMessage.MessageType.PLACEMENT_REJECTED ||
+                message.getType() == NetworkMessage.MessageType.SPELL_CAST_EVENT) {
+                System.out.println("Client: Received battle message: " + message.getType() + 
+                                 " (playerId=" + message.getPlayerId() + ")");
+            }
             onMessageReceived.accept(message);
+        } else {
+            // Debug: Warn if handler is null when battle message arrives
+            if (message.getType() == NetworkMessage.MessageType.ENTITY_SPAWN ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_UPDATE ||
+                message.getType() == NetworkMessage.MessageType.PLACEMENT_REJECTED) {
+                System.err.println("Client: WARNING - Battle message received but onMessageReceived is null! " +
+                                 "Message type: " + message.getType());
+            }
         }
     }
     
@@ -187,10 +216,19 @@ public class NetworkClient {
     public void sendMessage(NetworkMessage message) {
         if (out != null) {
             try {
+                // Debug: Log battle messages being sent
+                if (message.getType() == NetworkMessage.MessageType.CARD_PLACEMENT_REQUEST ||
+                    message.getType() == NetworkMessage.MessageType.SPELL_CAST_REQUEST) {
+                    System.out.println("Client: Sending battle message: " + message.getType() + 
+                                     " (playerId=" + message.getPlayerId() + ", data=" + message.getData() + ")");
+                }
                 MessageProtocol.sendMessage(out, message);
             } catch (IOException e) {
                 System.err.println("Client: Error sending message: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.err.println("Client: Cannot send message - output stream is null!");
         }
     }
     
