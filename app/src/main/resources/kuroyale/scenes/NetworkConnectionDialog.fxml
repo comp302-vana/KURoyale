@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane prefHeight="500.0" prefWidth="600.0" style="-fx-background-color: BD7FFF;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.network.NetworkConnectionDialogController">
+   <children>
+      <VBox alignment="CENTER" spacing="25.0" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="40.0">
+         <children>
+            <Label text="Network Multiplayer" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;">
+               <VBox.margin>
+                  <Insets bottom="30.0" />
+               </VBox.margin>
+            </Label>
+            
+            <VBox spacing="15.0" alignment="CENTER">
+               <children>
+                  <Label text="Your Name:" style="-fx-font-size: 16px; -fx-text-fill: white;" />
+                  <TextField fx:id="txtPlayerName" prefWidth="300.0" promptText="Enter your name" />
+               </children>
+            </VBox>
+            
+            <Separator prefWidth="400.0" />
+            
+            <VBox spacing="15.0" alignment="CENTER">
+               <children>
+                  <Label text="Create Lobby" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;" />
+                  <TextField fx:id="txtHostPort" prefWidth="300.0" promptText="Port (default: 8080)" text="8080" />
+                  <Button fx:id="btnHost" mnemonicParsing="false" onAction="#btnHostClicked" prefHeight="50.0" prefWidth="250.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 18px; -fx-background-color: #9C27B0; -fx-text-fill: white;" text="Create Lobby (Host)" />
+               </children>
+            </VBox>
+            
+            <Separator prefWidth="400.0" />
+            
+            <VBox spacing="15.0" alignment="CENTER">
+               <children>
+                  <Label text="Join Lobby" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;" />
+                  <TextField fx:id="txtHostAddress" prefWidth="300.0" promptText="Host IP Address" />
+                  <TextField fx:id="txtClientPort" prefWidth="300.0" promptText="Port (default: 8080)" text="8080" />
+                  <Button fx:id="btnJoinLobby" mnemonicParsing="false" onAction="#btnJoinLobbyClicked" prefHeight="50.0" prefWidth="250.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 18px; -fx-background-color: #9C27B0; -fx-text-fill: white;" text="Join Lobby" />
+               </children>
+            </VBox>
+            
+            <Label fx:id="lblStatus" text="" style="-fx-text-fill: #FFD700; -fx-font-size: 14px;" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
+

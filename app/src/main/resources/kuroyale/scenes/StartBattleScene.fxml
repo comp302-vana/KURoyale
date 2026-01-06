@@ -57,6 +57,7 @@
          </graphic>
       </Button>
       <Button layoutX="255.0" layoutY="405.0" mnemonicParsing="false" onAction="#btnLocalPvPClicked" prefHeight="50.0" prefWidth="200.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 20px;" text="Local PvP" />
+      <Button layoutX="255.0" layoutY="465.0" mnemonicParsing="false" onAction="#btnNetworkMultiplayerClicked" prefHeight="50.0" prefWidth="200.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 20px;" text="Network Multiplayer" />
       <ImageView fx:id="arenaPreviewImage" fitHeight="266.0" layoutX="526.0" layoutY="79.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="375.0" AnchorPane.leftAnchor="404.0" AnchorPane.topAnchor="75.0">
          <viewport>
             <Rectangle2D />

@@ -17,11 +17,28 @@ public class AliveEntity extends Entity {
 
     private AliveCard card;
     private double HP;
+    private long entityId = -1; // Network entity ID, -1 means not assigned yet
 
     public AliveEntity(AliveCard card, boolean isPlayer) {
         super(card, isPlayer);
         this.card = card;
         this.HP = card.getHp();
+    }
+    
+    /**
+     * Get the network entity ID.
+     * Returns -1 if not assigned yet.
+     */
+    public long getEntityId() {
+        return entityId;
+    }
+    
+    /**
+     * Set the network entity ID.
+     * Should only be called once when entity is created on host.
+     */
+    public void setEntityId(long entityId) {
+        this.entityId = entityId;
     }
 
     public void reduceHP(double damage) {

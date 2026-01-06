@@ -49,7 +49,7 @@ public class SceneNavigationManager {
                                 : (playerWon ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING));
                 alert.setTitle("Game Over");
                 
-                // Different messages for PvP vs single-player
+                // Different messages for PvP vs single-player vs network multiplayer
                 if (gameMode == GameMode.LOCAL_PVP) {
                     if (isDraw) {
                         alert.setHeaderText("Draw!");
@@ -59,6 +59,11 @@ public class SceneNavigationManager {
                         alert.setHeaderText("Player " + winnerId + " Wins!");
                         alert.setContentText("Player " + winnerId + " destroyed the enemy king!");
                     }
+                } else if (gameMode == GameMode.NETWORK_MULTIPLAYER) {
+                    // Network multiplayer mode
+                    alert.setHeaderText(isDraw ? "Draw!" : (playerWon ? "Victory!" : "Defeat!"));
+                    alert.setContentText(isDraw ? "Time is up and tower health is same."
+                            : (playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!"));
                 } else {
                     // Single-player mode (existing messages)
                     alert.setHeaderText(isDraw ? "Draw" : (playerWon ? "Victory!" : "Defeat!"));
