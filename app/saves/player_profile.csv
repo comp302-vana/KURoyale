@@ -1,5 +1,5 @@
 GOLD
-1375
+1525
 
 LEVELS
 1,1
@@ -42,6 +42,7 @@ HISTORY
 1767705572791,50,DEFEAT
 1767709906391,150,VICTORY
 1767714677947,500,Achievement Reward: First Blood
+1767718345631,150,VICTORY
 
 UNLOCKED
 1
@@ -74,7 +75,7 @@ UNLOCKED
 28
 
 CHESTS
-21
+22
 
 QUESTS
 11,0,false,false
@@ -83,20 +84,20 @@ QUESTS
 
 ACHIEVEMENTS
 1,1,true,true
-2,9,false,false
+2,36,false,false
 3,0,false,false
 4,0,false,false
 5,0,false,false
 6,0,false,false
 7,0,false,false
 8,0,false,false
-9,65,false,false
-10,9,false,false
+9,215,false,false
+10,10,false,false
 11,0,false,false
 12,3,false,false
 
 STATISTICS
-9,4,18,0,0,0,0,0,0,0,65,0,1,3,0,0,0,0
+10,5,36,16,0,0,0,0,0,0,215,0,2,3,0,0,0,0
 
 QUEST_RESET
 1767660828869
