@@ -445,8 +445,6 @@ public class GameEngine {
         victoryConditionManager.setAchievementManager(achievementManager);
         victoryConditionManager.setPersistenceManager(persistenceManager);
         entityPlacementManager.setQuestManager(questManager);
-        entityPlacementManager.setPersistenceManager(persistenceManager);
-        entityPlacementManager.setAchievementManager(achievementManager);
         spellSystem.setQuestManager(questManager);
         spellSystem.setPersistenceManager(persistenceManager);
         spellSystem.setAchievementManager(achievementManager);
