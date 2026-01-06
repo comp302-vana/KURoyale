@@ -165,6 +165,20 @@ public class RelayServer {
                 }
             }
             
+            // Forward the CONNECT message to peer if peer is already connected
+            // This allows the host to know when client joins, and vice versa
+            RelayConnection peer = isHost ? clientConnection : hostConnection;
+            if (peer != null && !peer.socket.isClosed()) {
+                try {
+                    MessageProtocol.sendMessage(peer.out, connectMsg);
+                    System.out.println("Relay: Forwarded CONNECT message from " + 
+                                     (isHost ? "HOST" : "CLIENT") + " to " + 
+                                     (peer.isHost ? "HOST" : "CLIENT"));
+                } catch (IOException e) {
+                    System.err.println("Relay: Error forwarding CONNECT message: " + e.getMessage());
+                }
+            }
+            
             // Start forwarding messages from this connection
             forwardMessages(connection);
             

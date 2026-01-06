@@ -18,6 +18,9 @@ public class NetworkManager {
     private static final String RELAY_SERVER_IP = "80.225.92.3";
     private static final int RELAY_SERVER_PORT = 8081;
     
+    // Runtime state: tracks whether current connection is using relay mode
+    private static boolean relayModeEnabled = false;
+    
     private NetworkHost host;
     private NetworkClient client;
     private boolean isHost = false;
@@ -37,6 +40,7 @@ public class NetworkManager {
     
     public void startHost(int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
+        relayModeEnabled = useInternet; // Set state BEFORE creating connection
         if (useInternet) {
             // Internet mode: connect to relay server
             host = NetworkHost.createRelayHost(RELAY_SERVER_IP, RELAY_SERVER_PORT, playerName, onMessageReceived);
@@ -55,6 +59,7 @@ public class NetworkManager {
     
     public void startClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
+        relayModeEnabled = useInternet; // Set state BEFORE creating connection
         if (useInternet) {
             // Internet mode: connect to relay server (hostIP is ignored)
             client = NetworkClient.createRelayClient(RELAY_SERVER_IP, RELAY_SERVER_PORT, playerName, onMessageReceived);
@@ -69,10 +74,10 @@ public class NetworkManager {
     
     /**
      * Check if relay mode is enabled.
-     * Relay server is always available - user chooses via UI toggle.
+     * Returns the current runtime state of relay mode.
      */
     public static boolean isRelayModeEnabled() {
-        return true; // Relay server is always available
+        return relayModeEnabled;
     }
     
     /**
@@ -228,6 +233,7 @@ public class NetworkManager {
             client.close();
             client = null;
         }
+        relayModeEnabled = false; // Reset state when connections are closed
     }
 }
 

@@ -179,7 +179,18 @@ public class NetworkHost {
     private void handleMessage(NetworkMessage message) {
         switch (message.getType()) {
             case CONNECT:
-                clientPlayerName = message.getData();
+                // In relay mode, CONNECT from client (playerId=2) means client joined
+                if (message.getPlayerId() == 2) {
+                    clientPlayerName = message.getData();
+                    // Send PLAYER_JOINED back to client (like in direct mode)
+                    sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.PLAYER_JOINED,
+                        1, // Host playerId
+                        hostPlayerName,
+                        getCurrentTimestamp()
+                    ));
+                    System.out.println("Host: Client joined via relay: " + clientPlayerName);
+                }
                 broadcastLobbyUpdate();
                 break;
             case DECK_SELECTED:

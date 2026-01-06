@@ -258,8 +258,8 @@ public class NetworkConnectionDialogController {
         btnJoinLobby.setDisable(true);
         lblStatus.setText("Creating lobby...");
         
-        // Determine connection mode from user selection
-        boolean useInternet = radioInternet.isSelected();
+        // Always use Internet mode (Oracle relay server)
+        boolean useInternet = true;
         
         // Start host in background thread
         new Thread(() -> {
@@ -292,18 +292,17 @@ public class NetworkConnectionDialogController {
         String playerName = txtPlayerName.getText().trim();
         String hostIP = txtHostAddress.getText().trim();
         String portText = txtClientPort.getText().trim();
-        boolean useInternet = radioInternet.isSelected();
+        
+        // Always use Internet mode (Oracle relay server)
+        boolean useInternet = true;
         
         if (playerName.isEmpty()) {
             lblStatus.setText("Please enter your name");
             return;
         }
         
-        // Host IP only required for local mode
-        if (!useInternet && hostIP.isEmpty()) {
-            lblStatus.setText("Please enter host IP address");
-            return;
-        }
+        // Host IP not needed for relay mode, but keep validation for compatibility
+        // (hostIP will be ignored when useInternet = true)
         
         int port;
         try {
