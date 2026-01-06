@@ -23,6 +23,12 @@
                </VBox.margin>
             </Label>
             
+            <Label fx:id="lblIPAddress" text="" style="-fx-font-size: 14px; -fx-text-fill: white; -fx-font-weight: bold;">
+               <VBox.margin>
+                  <Insets bottom="10.0" />
+               </VBox.margin>
+            </Label>
+            
             <HBox spacing="30.0" alignment="TOP_LEFT">
                <children>
                   <VBox spacing="15.0" prefWidth="380.0" style="-fx-background-color: rgba(156, 39, 176, 0.3); -fx-background-radius: 10; -fx-padding: 20;">

@@ -1,6 +1,10 @@
 package kuroyale.mainpack.network;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -36,6 +40,8 @@ public class NetworkLobbyController {
     private Label lblStatus;
     @FXML
     private Label lblConnectionInfo;
+    @FXML
+    private Label lblIPAddress;
     
     private NetworkManager networkManager;
     private Timer updateTimer;
@@ -68,6 +74,71 @@ public class NetworkLobbyController {
         
         // Set start button visibility (only host can start)
         btnStartGame.setVisible(networkManager.isHost());
+        
+        // Display IP address
+        updateIPAddress();
+    }
+    
+    private void updateIPAddress() {
+        try {
+            String ipAddress = getLocalIPAddress();
+            if (ipAddress != null && !ipAddress.isEmpty()) {
+                if (networkManager.isHost()) {
+                    lblIPAddress.setText("Your IP Address: " + ipAddress);
+                } else {
+                    lblIPAddress.setText("Your IP Address: " + ipAddress);
+                }
+            } else {
+                lblIPAddress.setText("IP Address: Unable to determine");
+            }
+        } catch (Exception e) {
+            lblIPAddress.setText("IP Address: Error");
+            System.err.println("Error getting IP address: " + e.getMessage());
+        }
+    }
+    
+    private String getLocalIPAddress() {
+        try {
+            // Try to get a non-loopback, non-link-local IPv4 address
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                
+                // Skip loopback and inactive interfaces
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+                
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress address = addresses.nextElement();
+                    
+                    // Skip loopback and link-local addresses
+                    if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
+                        continue;
+                    }
+                    
+                    // Prefer IPv4 addresses
+                    String hostAddress = address.getHostAddress();
+                    if (hostAddress != null && !hostAddress.contains(":")) {
+                        return hostAddress;
+                    }
+                }
+            }
+            
+            // Fallback: try getLocalHost()
+            try {
+                InetAddress localhost = InetAddress.getLocalHost();
+                return localhost.getHostAddress();
+            } catch (Exception e) {
+                // Ignore
+            }
+            
+            return null;
+        } catch (SocketException e) {
+            System.err.println("Error getting network interfaces: " + e.getMessage());
+            return null;
+        }
     }
     
     private void loadAndSetDefaultDeck() {
