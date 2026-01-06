@@ -124,6 +124,46 @@ public class NetworkManager {
         }
     }
     
+    /**
+     * Send a network message. Works for both host and client.
+     * Host sends to client, client sends to host.
+     */
+    public void sendMessage(NetworkMessage message) {
+        if (isHost) {
+            if (host != null) {
+                host.sendMessage(message);
+            }
+        } else {
+            if (client != null) {
+                client.sendMessage(message);
+            }
+        }
+    }
+    
+    /**
+     * Register a battle message handler (separate from lobby handler).
+     * This allows the battle system to receive network messages.
+     */
+    public void registerBattleMessageHandler(Consumer<NetworkMessage> handler) {
+        // Store battle handler and combine with existing lobby handler
+        // Both handlers will be called for battle messages
+        if (isHost && host != null) {
+            // Update the host's message handler to also call battle handler
+            Consumer<NetworkMessage> existingHandler = host.getOnMessageReceived();
+            host.setOnMessageReceived(msg -> {
+                if (existingHandler != null) existingHandler.accept(msg);
+                handler.accept(msg);
+            });
+        } else if (client != null) {
+            // Update the client's message handler to also call battle handler
+            Consumer<NetworkMessage> existingHandler = client.getOnMessageReceived();
+            client.setOnMessageReceived(msg -> {
+                if (existingHandler != null) existingHandler.accept(msg);
+                handler.accept(msg);
+            });
+        }
+    }
+    
     public void close() {
         if (host != null) {
             host.close();

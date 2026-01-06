@@ -300,5 +300,13 @@ public class NetworkHost {
     private String getCurrentTimestamp() {
         return String.valueOf(System.currentTimeMillis());
     }
+    
+    public Consumer<NetworkMessage> getOnMessageReceived() {
+        return onMessageReceived;
+    }
+    
+    public void setOnMessageReceived(Consumer<NetworkMessage> handler) {
+        this.onMessageReceived = handler;
+    }
 }
 

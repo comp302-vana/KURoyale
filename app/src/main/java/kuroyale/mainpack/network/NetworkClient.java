@@ -86,7 +86,8 @@ public class NetworkClient {
                 parseLobbyUpdate(message.getData());
                 break;
             case START_GAME:
-                // Game starting
+                // Game starting - message handler in lobby controller will handle navigation
+                System.out.println("Client: Game starting message received");
                 break;
             case DISCONNECT:
                 System.out.println("Client: Host disconnected");
@@ -209,5 +210,14 @@ public class NetworkClient {
     private String getCurrentTimestamp() {
         return String.valueOf(System.currentTimeMillis());
     }
+    
+    public Consumer<NetworkMessage> getOnMessageReceived() {
+        return onMessageReceived;
+    }
+    
+    public void setOnMessageReceived(Consumer<NetworkMessage> handler) {
+        this.onMessageReceived = handler;
+    }
+    
 }
 

@@ -20,6 +20,7 @@ import kuroyale.cardpack.subclasses.AliveCard;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.mainpack.PointsCounter;
+import kuroyale.mainpack.network.CoordinateTransformer;
 
 /**
  * Handles all rendering of entities, health bars, and static objects.
@@ -41,6 +42,7 @@ public class EntityRenderer {
     
     private boolean entityDirty = false;
     private boolean staticDirty = false;
+    private boolean isClient = false; // True if this is the client (needs coordinate transformation)
 
     public EntityRenderer(ArenaMap arenaMap, Pane entityLayer, Pane staticLayer, 
                          PointsCounter pointsCounter, int rows, int cols, int tileSize) {
@@ -51,12 +53,29 @@ public class EntityRenderer {
         this.rows = rows;
         this.cols = cols;
         this.tileSize = tileSize;
+        
+        // Add clipping to prevent rendering outside map bounds
+        // Use Platform.runLater to ensure nodes are fully initialized before setting clip
+        javafx.application.Platform.runLater(() -> {
+            javafx.scene.shape.Rectangle clipEntity = new javafx.scene.shape.Rectangle(cols * tileSize, rows * tileSize);
+            javafx.scene.shape.Rectangle clipStatic = new javafx.scene.shape.Rectangle(cols * tileSize, rows * tileSize);
+            entityLayer.setClip(clipEntity);
+            staticLayer.setClip(clipStatic);
+        });
     }
 
     public boolean isEntityDirty() { return entityDirty; }
     public void setEntityDirty(boolean dirty) { this.entityDirty = dirty; }
     public boolean isStaticDirty() { return staticDirty; }
     public void setStaticDirty(boolean dirty) { this.staticDirty = dirty; }
+    
+    public void setIsClient(boolean isClient) {
+        this.isClient = isClient;
+    }
+    
+    public boolean isClient() {
+        return isClient;
+    }
 
     private long cellKey(int r, int c) {
         return (((long) r) << 32) ^ (c & 0xffffffffL);
@@ -105,8 +124,17 @@ public class EntityRenderer {
         Pane hb = healthBarsByEntity.get(e);
         if (iv == null || hb == null) return;
 
-        double x = col * tileSize;
-        double y = row * tileSize;
+        // Transform coordinates for client view
+        int renderRow = row;
+        int renderCol = col;
+        if (isClient) {
+            int[] clientCoords = CoordinateTransformer.absoluteToClient(row, col, rows, cols);
+            renderRow = clientCoords[0];
+            renderCol = clientCoords[1];
+        }
+
+        double x = renderCol * tileSize;
+        double y = renderRow * tileSize;
 
         double spriteW = iv.getFitWidth();
         double spriteH = iv.getFitHeight();
@@ -137,18 +165,71 @@ public class EntityRenderer {
         }
     }
 
+    /**
+     * Compute tower bounding box and return top-left + width/height.
+     * 
+     * @param tower The tower entity
+     * @return int array [topLeftRow, topLeftCol, widthTiles, heightTiles]
+     */
+    private int[] computeTowerBoundingBox(TowerEntity tower) {
+        int minRow = Integer.MAX_VALUE;
+        int maxRow = Integer.MIN_VALUE;
+        int minCol = Integer.MAX_VALUE;
+        int maxCol = Integer.MIN_VALUE;
+        boolean found = false;
+        
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (arenaMap.getEntity(r, c) == tower) {
+                    found = true;
+                    minRow = Math.min(minRow, r);
+                    maxRow = Math.max(maxRow, r);
+                    minCol = Math.min(minCol, c);
+                    maxCol = Math.max(maxCol, c);
+                }
+            }
+        }
+        
+        if (!found) {
+            // Fallback: use stored position (assumes bottom-right anchor)
+            int footprintSize = tower.isKing() ? 4 : 3;
+            int bottomRightRow = tower.getRow();
+            int bottomRightCol = tower.getCol();
+            int topLeftRow = bottomRightRow - (footprintSize - 1);
+            int topLeftCol = bottomRightCol - (footprintSize - 1);
+            return new int[] { topLeftRow, topLeftCol, footprintSize, footprintSize };
+        }
+        
+        int widthTiles = maxCol - minCol + 1;
+        int heightTiles = maxRow - minRow + 1;
+        return new int[] { minRow, minCol, widthTiles, heightTiles };
+    }
+    
     private void positionTowerHealthBar(TowerEntity tower, int bottomRightRow, int bottomRightCol) {
-        int size = tower.isKing() ? 4 : 3;
-
-        int topLeftRow = bottomRightRow;
-        int topLeftCol = bottomRightCol;
+        // Compute bounding box for accurate positioning
+        int[] bbox = computeTowerBoundingBox(tower);
+        int absoluteTopLeftRow = bbox[0];
+        int absoluteTopLeftCol = bbox[1];
+        int widthTiles = bbox[2];
+        int heightTiles = bbox[3];
+        
+        // Transform top-left to client view if needed (using footprint-aware transform)
+        int renderTopLeftRow = absoluteTopLeftRow;
+        int renderTopLeftCol = absoluteTopLeftCol;
+        if (isClient) {
+            // Use footprint-aware transform for perfect symmetry
+            int[] clientCoords = CoordinateTransformer.absoluteTopLeftToClientTopLeft(
+                absoluteTopLeftRow, absoluteTopLeftCol, widthTiles, rows, cols);
+            renderTopLeftRow = clientCoords[0];
+            renderTopLeftCol = clientCoords[1];
+        }
 
         Pane hb = healthBarsByEntity.get(tower);
         if (hb == null) return;
 
-        double footprintW = size * tileSize;
-        double x = topLeftCol * tileSize;
-        double y = topLeftRow * tileSize;
+        double footprintW = widthTiles * tileSize;
+        double x = renderTopLeftCol * tileSize;
+        double y = renderTopLeftRow * tileSize;
 
         double barW = hb.getPrefWidth();
         double barH = hb.getPrefHeight();
@@ -156,21 +237,39 @@ public class EntityRenderer {
     }
 
     public void renderTowerHealthBars() {
-        seenTowers.clear();
-
+        // Collect all alive towers first
+        java.util.Set<TowerEntity> aliveTowers = new java.util.HashSet<>();
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 AliveEntity e = arenaMap.getEntity(r, c);
-                if (e instanceof TowerEntity tower) {
-                    if (tower.getHP() <= 0) continue;
-
-                    if (seenTowers.put(tower, true) != null) continue;
-
-                    ensureHealthBar(tower, true);
-                    updateHealthBarFor(tower);
-                    positionTowerHealthBar(tower, tower.getRow(), tower.getCol());
+                if (e instanceof TowerEntity tower && tower.getHP() > 0) {
+                    aliveTowers.add(tower);
                 }
             }
+        }
+        
+        // Remove health bars for dead/destroyed towers
+        healthBarsByEntity.entrySet().removeIf(entry -> {
+            if (entry.getKey() instanceof TowerEntity tower) {
+                if (!aliveTowers.contains(tower) || tower.getHP() <= 0) {
+                    Pane hb = entry.getValue();
+                    if (hb != null) {
+                        entityLayer.getChildren().remove(hb);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        });
+        
+        // Render health bars for alive towers
+        seenTowers.clear();
+        for (TowerEntity tower : aliveTowers) {
+            if (seenTowers.put(tower, true) != null) continue;
+
+            ensureHealthBar(tower, true);
+            updateHealthBarFor(tower);
+            positionTowerHealthBar(tower, tower.getRow(), tower.getCol());
         }
     }
 
@@ -179,19 +278,95 @@ public class EntityRenderer {
         staticSpritesByCell.clear();
         staticLayer.getChildren().add(pointsCounter);
 
+        // Track which towers we've already rendered (use IdentityHashMap for object identity)
+        java.util.Map<PlacedObject, Boolean> renderedTowers = new java.util.IdentityHashMap<>();
+
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 PlacedObject obj = arenaMap.getObject(r, c);
                 if (obj == null) continue;
                 if (obj.getType() == ArenaObjectType.ENTITY) continue;
 
-                ImageView iv = SpriteLoader.getSprite(obj.getType(), tileSize);
-                if (iv == null) continue;
+                // Check if this is a tower (multi-cell object)
+                boolean isTower = obj.getType() == ArenaObjectType.OUR_TOWER || 
+                                 obj.getType() == ArenaObjectType.ENEMY_TOWER ||
+                                 obj.getType() == ArenaObjectType.OUR_KING ||
+                                 obj.getType() == ArenaObjectType.ENEMY_KING;
+                
+                if (isTower) {
+                    // Render each tower only once
+                    if (renderedTowers.containsKey(obj)) {
+                        continue; // Already rendered this tower
+                    }
+                    renderedTowers.put(obj, true);
+                    
+                    // Compute bounding box for this tower
+                    int minRow = Integer.MAX_VALUE;
+                    int maxRow = Integer.MIN_VALUE;
+                    int minCol = Integer.MAX_VALUE;
+                    int maxCol = Integer.MIN_VALUE;
+                    
+                    // Find all cells occupied by this tower object
+                    for (int tr = 0; tr < rows; tr++) {
+                        for (int tc = 0; tc < cols; tc++) {
+                            PlacedObject cellObj = arenaMap.getObject(tr, tc);
+                            if (cellObj == obj) {
+                                minRow = Math.min(minRow, tr);
+                                maxRow = Math.max(maxRow, tr);
+                                minCol = Math.min(minCol, tc);
+                                maxCol = Math.max(maxCol, tc);
+                            }
+                        }
+                    }
+                    
+                    if (minRow == Integer.MAX_VALUE) {
+                        continue; // Tower not found in arenaMap
+                    }
+                    
+                    // Compute top-left and dimensions
+                    int absoluteTopLeftRow = minRow;
+                    int absoluteTopLeftCol = minCol;
+                    int widthTiles = maxCol - minCol + 1;
+                    int heightTiles = maxRow - minRow + 1;
+                    
+                    // Transform top-left to client view using footprint-aware transform
+                    int renderTopLeftRow = absoluteTopLeftRow;
+                    int renderTopLeftCol = absoluteTopLeftCol;
+                    if (isClient) {
+                        int[] clientCoords = CoordinateTransformer.absoluteTopLeftToClientTopLeft(
+                            absoluteTopLeftRow, absoluteTopLeftCol, widthTiles, rows, cols);
+                        renderTopLeftRow = clientCoords[0];
+                        renderTopLeftCol = clientCoords[1];
+                    }
+                    
+                    ImageView iv = SpriteLoader.getSprite(obj.getType(), tileSize);
+                    if (iv != null) {
+                        // Position sprite at top-left pixel coordinates
+                        double x = renderTopLeftCol * tileSize;
+                        double y = renderTopLeftRow * tileSize;
+                        iv.relocate(x, y);
+                        staticLayer.getChildren().add(iv);
+                        // Store reference using any cell key (we only render once)
+                        staticSpritesByCell.put(cellKey(minRow, minCol), iv);
+                    }
+                } else {
+                    // Regular single-cell static object (bridges, etc.)
+                    ImageView iv = SpriteLoader.getSprite(obj.getType(), tileSize);
+                    if (iv == null) continue;
 
-                iv.relocate(c * tileSize, r * tileSize);
+                    // Transform coordinates for client view (1x1 footprint)
+                    int renderRow = r;
+                    int renderCol = c;
+                    if (isClient) {
+                        int[] clientCoords = CoordinateTransformer.absoluteToClient(r, c, rows, cols);
+                        renderRow = clientCoords[0];
+                        renderCol = clientCoords[1];
+                    }
 
-                staticLayer.getChildren().add(iv);
-                staticSpritesByCell.put(cellKey(r, c), iv);
+                    iv.relocate(renderCol * tileSize, renderRow * tileSize);
+                    staticLayer.getChildren().add(iv);
+                    staticSpritesByCell.put(cellKey(r, c), iv);
+                }
             }
         }
 

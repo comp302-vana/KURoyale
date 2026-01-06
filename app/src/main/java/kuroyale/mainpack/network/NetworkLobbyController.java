@@ -19,6 +19,7 @@ import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 import kuroyale.deckpack.Deck;
 import kuroyale.deckpack.DeckManager;
+import kuroyale.mainpack.network.NetworkMessage;
 
 public class NetworkLobbyController {
     @FXML
@@ -43,6 +44,18 @@ public class NetworkLobbyController {
     @FXML
     private void initialize() {
         networkManager = NetworkManager.getInstance();
+        
+        // Register message handler to listen for START_GAME message
+        networkManager.registerBattleMessageHandler(msg -> {
+            if (msg.getType() == NetworkMessage.MessageType.START_GAME) {
+                Platform.runLater(() -> {
+                    // Client receives START_GAME, navigate to battle
+                    if (!networkManager.isHost()) {
+                        navigateToBattleScene();
+                    }
+                });
+            }
+        });
         
         // Load and set default deck automatically
         loadAndSetDefaultDeck();
@@ -241,11 +254,46 @@ public class NetworkLobbyController {
         networkManager.startGame();
         lblStatus.setText("Starting game...");
         
-        // Navigate to battle scene (will be implemented later)
-        // For now, just show a message
-        Platform.runLater(() -> {
-            lblStatus.setText("Game starting! (Battle screen not yet implemented)");
-        });
+        // Navigate to battle scene
+        navigateToBattleScene();
+    }
+    
+    private void navigateToBattleScene() {
+        try {
+            // Cancel timer
+            if (updateTimer != null) {
+                updateTimer.cancel();
+            }
+            
+            // Load battle scene
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/kuroyale/scenes/BattleScene.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 1280, 720);
+            scene.getRoot().setStyle("-fx-background-color: BD7FFF;");
+            
+            // Get stage
+            Stage stage = null;
+            if (btnStartGame != null && btnStartGame.getScene() != null) {
+                stage = (Stage) btnStartGame.getScene().getWindow();
+            } else if (btnLeave != null && btnLeave.getScene() != null) {
+                stage = (Stage) btnLeave.getScene().getWindow();
+            } else if (listPlayers != null && listPlayers.getScene() != null) {
+                stage = (Stage) listPlayers.getScene().getWindow();
+            }
+            
+            if (stage != null) {
+                stage.setScene(scene);
+                stage.setTitle("KURoyale - Network Battle");
+            } else {
+                System.err.println("Error: Could not get stage to navigate to battle scene");
+            }
+        } catch (IOException e) {
+            System.err.println("Error navigating to battle scene: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                lblStatus.setText("Error: Failed to start game");
+            });
+        }
     }
     
     @FXML
