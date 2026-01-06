@@ -300,54 +300,49 @@ public class EntityRenderer {
                     }
                     renderedTowers.put(obj, true);
                     
-                    // Compute bounding box for this tower
-                    int minRow = Integer.MAX_VALUE;
-                    int maxRow = Integer.MIN_VALUE;
-                    int minCol = Integer.MAX_VALUE;
-                    int maxCol = Integer.MIN_VALUE;
-                    
-                    // Find all cells occupied by this tower object
-                    for (int tr = 0; tr < rows; tr++) {
-                        for (int tc = 0; tc < cols; tc++) {
-                            PlacedObject cellObj = arenaMap.getObject(tr, tc);
-                            if (cellObj == obj) {
-                                minRow = Math.min(minRow, tr);
-                                maxRow = Math.max(maxRow, tr);
-                                minCol = Math.min(minCol, tc);
-                                maxCol = Math.max(maxCol, tc);
-                            }
-                        }
+                    // Determine tower size (princess=3, king=4)
+                    int towerSize;
+                    if (obj.getType() == ArenaObjectType.OUR_KING || obj.getType() == ArenaObjectType.ENEMY_KING) {
+                        towerSize = 4; // King is 4x4
+                    } else {
+                        towerSize = 3; // Princess is 3x3
                     }
                     
-                    if (minRow == Integer.MAX_VALUE) {
-                        continue; // Tower not found in arenaMap
-                    }
-                    
-                    // Compute top-left and dimensions
-                    int absoluteTopLeftRow = minRow;
-                    int absoluteTopLeftCol = minCol;
-                    int widthTiles = maxCol - minCol + 1;
-                    int heightTiles = maxRow - minRow + 1;
-                    
-                    // Transform top-left to client view using footprint-aware transform
-                    int renderTopLeftRow = absoluteTopLeftRow;
-                    int renderTopLeftCol = absoluteTopLeftCol;
-                    if (isClient) {
-                        int[] clientCoords = CoordinateTransformer.absoluteTopLeftToClientTopLeft(
-                            absoluteTopLeftRow, absoluteTopLeftCol, widthTiles, rows, cols);
-                        renderTopLeftRow = clientCoords[0];
-                        renderTopLeftCol = clientCoords[1];
-                    }
+                    // Find the anchor cell (bottom-right) where this PlacedObject is stored
+                    // In ArenaMap, towers are stored with bottom-right anchor
+                    int anchorRow = r; // Current cell (r, c) is where we found the PlacedObject
+                    int anchorCol = c;
                     
                     ImageView iv = SpriteLoader.getSprite(obj.getType(), tileSize);
                     if (iv != null) {
-                        // Position sprite at top-left pixel coordinates
-                        double x = renderTopLeftCol * tileSize;
-                        double y = renderTopLeftRow * tileSize;
-                        iv.relocate(x, y);
+                        // SpriteLoader.getSprite() already applies translate offsets:
+                        // - Princess (3x3): translateX = -2*tileSize, translateY = -2*tileSize
+                        // - King (4x4): translateX = -3*tileSize, translateY = -3*tileSize
+                        // These offsets shift the visual content relative to the ImageView position.
+                        //
+                        // The sprite is designed to be positioned at the anchor cell (bottom-right).
+                        // The translate offsets will shift the visual content to show the full tower footprint.
+                        double spriteX;
+                        double spriteY;
+                        
+                        if (isClient) {
+                            // Transform the anchor cell (bottom-right) to client view using footprint-aware transform
+                            // This ensures the mirrored anchor position accounts for the tower's footprint size
+                            int[] clientAnchorCoords = CoordinateTransformer.absoluteBottomRightToClientBottomRight(
+                                anchorRow, anchorCol, towerSize, rows, cols);
+                            
+                            spriteX = (clientAnchorCoords[1] + (obj.getType() == ArenaObjectType.OUR_KING || obj.getType() == ArenaObjectType.ENEMY_KING ? 3 : 2)) * tileSize;
+                            spriteY = clientAnchorCoords[0] * tileSize;
+                        } else {
+                            // Host: Position at anchor cell, translate offsets handle the visual positioning
+                            spriteX = anchorCol * tileSize;
+                            spriteY = anchorRow * tileSize;
+                        }
+                        
+                        iv.relocate(spriteX, spriteY);
                         staticLayer.getChildren().add(iv);
-                        // Store reference using any cell key (we only render once)
-                        staticSpritesByCell.put(cellKey(minRow, minCol), iv);
+                        // Store reference using anchor cell key
+                        staticSpritesByCell.put(cellKey(anchorRow, anchorCol), iv);
                     }
                 } else {
                     // Regular single-cell static object (bridges, etc.)

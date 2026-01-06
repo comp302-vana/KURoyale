@@ -206,4 +206,30 @@ public class CoordinateTransformer {
         // Mirror the top-left corner to client view using footprint-aware transform
         return absoluteToClientTopLeft(absoluteTopLeftRow, absoluteTopLeftCol, footprintSize, rows, cols);
     }
+    
+    /**
+     * Transform absolute coordinates of a footprint's bottom-right anchor to client view bottom-right anchor.
+     * This accounts for the footprint size when mirroring, ensuring perfect symmetry.
+     * 
+     * @param absoluteBottomRightRow Bottom-right row in absolute coordinates (anchor)
+     * @param absoluteBottomRightCol Bottom-right column in absolute coordinates (anchor)
+     * @param footprintSize Size of the footprint (Princess=3, King=4)
+     * @param rows Total arena rows
+     * @param cols Total arena columns
+     * @return int array [clientBottomRightRow, clientBottomRightCol] for anchor positioning
+     */
+    public static int[] absoluteBottomRightToClientBottomRight(int absoluteBottomRightRow, int absoluteBottomRightCol,
+                                                              int footprintSize, int rows, int cols) {
+        // Get the client-view top-left
+        int[] clientTopLeft = absoluteBottomRightToClientTopLeft(absoluteBottomRightRow, absoluteBottomRightCol, 
+                                                                 footprintSize, rows, cols);
+        int clientTopLeftRow = clientTopLeft[0];
+        int clientTopLeftCol = clientTopLeft[1];
+        
+        // Convert back to bottom-right in client view
+        int clientBottomRightRow = clientTopLeftRow + (footprintSize - 1);
+        int clientBottomRightCol = clientTopLeftCol + (footprintSize - 1);
+        
+        return new int[] { clientBottomRightRow, clientBottomRightCol };
+    }
 }

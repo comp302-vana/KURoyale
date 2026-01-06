@@ -296,8 +296,9 @@ public class ArenaController {
                         }
 
                         boolean placementOK = true;
+                        // For bridges, only allow placement at river columns (15 or 16)
                         if (objType == ArenaObjectType.BRIDGE) {
-                            if (c == 15) {
+                            if (c != 15 && c != 16) {
                                 placementOK = false;
                             }
                         }
@@ -409,9 +410,12 @@ public class ArenaController {
                             ImageView sprite;
                             if (actualType == ArenaObjectType.BRIDGE) {
                                 sprite = SpriteLoader.getBuilderBridgeSprite(tileSize);
-                                arenaMap.setObject(r, c + (2 * (c % 2) - 1), ArenaObjectType.BRIDGE);
+                                // Bridges are placed in pairs at columns 15 and 16
+                                // Calculate the paired column: if at 15, pair is at 16; if at 16, pair is at 15
+                                int pairedCol = (c == 15) ? 16 : 15;
+                                arenaMap.setObject(r, pairedCol, ArenaObjectType.BRIDGE);
                                 System.out.printf("placed first bridge on %d, %d\n", r, c);
-                                System.out.printf("placed second bridge on %d, %d\n", r, c + (2 * (c % 2) - 1));
+                                System.out.printf("placed second bridge on %d, %d\n", r, pairedCol);
                             } else {
                                 sprite = SpriteLoader.getSprite(actualType, tileSize);
                             }

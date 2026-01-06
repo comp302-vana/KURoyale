@@ -203,6 +203,41 @@ public class TowerManager {
     }
     
     /**
+     * Legacy method for string-based tower type (for backward compatibility during transition).
+     * @deprecated Use syncTowerHealthFromNetwork(TowerId, double) instead
+     */
+    @Deprecated
+    public void syncTowerHealthFromNetwork(String towerType, double newHp) {
+        // Try to parse TowerId from string
+        TowerId towerId = null;
+        try {
+            towerId = TowerId.valueOf(towerType);
+        } catch (IllegalArgumentException e) {
+            // Fallback to old string matching
+            System.out.println("CLIENT: Legacy tower sync for type: " + towerType);
+            // Old logic for backward compatibility
+            java.util.Set<TowerEntity> updatedTowers = new java.util.HashSet<>();
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    AliveEntity entity = arenaMap.getEntity(r, c);
+                    if (entity instanceof TowerEntity tower && !updatedTowers.contains(tower)) {
+                        TowerId id = identifyTower(tower);
+                        if (id != null && id.name().equals(towerType)) {
+                            syncTowerHealthFromNetwork(id, newHp);
+                            updatedTowers.add(tower);
+                        }
+                    }
+                }
+            }
+            return;
+        }
+        
+        if (towerId != null) {
+            syncTowerHealthFromNetwork(towerId, newHp);
+        }
+    }
+    
+    /**
      * Remove tower from network (client side).
      * Clears tower from arenaMap using bounding box and marks renderer dirty.
      * 
@@ -274,40 +309,6 @@ public class TowerManager {
                          minRow + "," + minCol + ") to (" + maxRow + "," + maxCol + ")");
     }
     
-    /**
-     * Legacy method for string-based tower type (for backward compatibility during transition).
-     * @deprecated Use syncTowerHealthFromNetwork(TowerId, double) instead
-     */
-    @Deprecated
-    public void syncTowerHealthFromNetwork(String towerType, double newHp) {
-        // Try to parse TowerId from string
-        TowerId towerId = null;
-        try {
-            towerId = TowerId.valueOf(towerType);
-        } catch (IllegalArgumentException e) {
-            // Fallback to old string matching
-            System.out.println("CLIENT: Legacy tower sync for type: " + towerType);
-            // Old logic for backward compatibility
-            java.util.Set<TowerEntity> updatedTowers = new java.util.HashSet<>();
-            for (int r = 0; r < rows; r++) {
-                for (int c = 0; c < cols; c++) {
-                    AliveEntity entity = arenaMap.getEntity(r, c);
-                    if (entity instanceof TowerEntity tower && !updatedTowers.contains(tower)) {
-                        TowerId id = identifyTower(tower);
-                        if (id != null && id.name().equals(towerType)) {
-                            syncTowerHealthFromNetwork(id, newHp);
-                            updatedTowers.add(tower);
-                        }
-                    }
-                }
-            }
-            return;
-        }
-        
-        if (towerId != null) {
-            syncTowerHealthFromNetwork(towerId, newHp);
-        }
-    }
 
     public List<TowerEntity> getTowersToKillWhenKingDies(boolean isPlayer) {
         List<TowerEntity> towersToKill = new ArrayList<>();
