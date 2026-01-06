@@ -78,8 +78,10 @@ public class TowerManager {
     }
     
     /**
-     * Identify tower by its position and type.
-     * Uses bounding box to determine left/right position deterministically.
+     * Identify tower by its absolute position and type.
+     * Uses absolute column position to determine player (P1 vs P2) and left/right.
+     * This ensures host and client identify the same tower with the same TowerId,
+     * regardless of local-relative isPlayer() values.
      * 
      * @param tower The tower entity to identify
      * @return TowerId enum value, or null if tower not found
@@ -108,27 +110,34 @@ public class TowerManager {
             return null; // Tower not found
         }
         
-        // Determine left/right using bounding box center or minCol
-        // River is at cols 15-16, so left side is col < 15, right side is col >= 16
+        // Use absolute column position to determine player (P1 vs P2)
+        // River is at cols 15-16, so:
+        // - Left side (col < 15) = Player 1
+        // - Right side (col >= 16) = Player 2
         int centerCol = (minCol + maxCol) / 2;
-        boolean isLeft = centerCol < 15;
+        int centerRow = (minRow + maxRow) / 2;
         
-        // Alternative: use minCol (top-left) to determine side
-        // This is more deterministic for towers near the river
-        if (minCol < 15) {
-            isLeft = true;
-        } else if (minCol >= 16) {
-            isLeft = false;
+        // Determine player based on absolute column position (not isPlayer which is local-relative)
+        int playerId;
+        if (centerCol < 15) {
+            playerId = 1; // Left side = Player 1
+        } else if (centerCol >= 16) {
+            playerId = 2; // Right side = Player 2
         } else {
-            // Tower spans river - use center
-            isLeft = centerCol < 15;
+            // Tower spans river (cols 15-16) - use minCol for more deterministic result
+            playerId = (minCol < 15) ? 1 : 2;
         }
         
-        int playerId = tower.isPlayer() ? 1 : 2;
-        
+        // Identify tower type
         if (tower.isKing()) {
             return (playerId == 1) ? TowerId.P1_KING : TowerId.P2_KING;
         } else {
+            // For princess towers, use row position to determine LEFT vs RIGHT
+            // LEFT tower is typically at a lower row (top of player's area)
+            // RIGHT tower is typically at a higher row (bottom of player's area)
+            // Use centerRow to determine this (rows don't flip, so this is consistent)
+            boolean isLeft = centerRow < rows / 2;
+            
             if (playerId == 1) {
                 return isLeft ? TowerId.P1_LEFT : TowerId.P1_RIGHT;
             } else {
