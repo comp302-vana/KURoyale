@@ -32,10 +32,23 @@ public class NetworkClient {
         this.onMessageReceived = onMessageReceived;
         this.isRunning = true;
         
-        // Connect to host
-        socket = new Socket(hostIP, port);
-        socket.setSoTimeout(0);
-        System.out.println("Client: Connected to host at " + hostIP + ":" + port);
+        // Connect to host with timeout
+        System.out.println("Client: Attempting to connect to " + hostIP + ":" + port);
+        try {
+            socket = new java.net.Socket();
+            socket.connect(new java.net.InetSocketAddress(hostIP, port), 10000); // 10 second timeout
+            socket.setSoTimeout(0);
+            System.out.println("Client: Successfully connected to host at " + hostIP + ":" + port);
+        } catch (java.net.ConnectException e) {
+            System.err.println("Client: Connection refused - Host may not be running or port not open");
+            throw new IOException("Connection refused. Make sure:\n1. Host has started the lobby\n2. Port " + port + " is open\n3. Firewall allows connections\n4. You're using the correct IP address", e);
+        } catch (java.net.SocketTimeoutException e) {
+            System.err.println("Client: Connection timeout - Host not reachable");
+            throw new IOException("Connection timeout. Check:\n1. Host IP address is correct\n2. Port " + port + " is forwarded (for internet play)\n3. Firewall settings", e);
+        } catch (java.net.UnknownHostException e) {
+            System.err.println("Client: Unknown host - " + hostIP);
+            throw new IOException("Unknown host: " + hostIP + "\nCheck the IP address is correct", e);
+        }
         
         // CRITICAL: Client must create ObjectInputStream FIRST, then ObjectOutputStream
         // This is because ObjectOutputStream writes a header that ObjectInputStream needs to read

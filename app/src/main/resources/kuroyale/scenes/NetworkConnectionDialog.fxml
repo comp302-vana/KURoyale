@@ -40,6 +40,7 @@
                   <Label text="Join Lobby" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;" />
                   <TextField fx:id="txtHostAddress" prefWidth="300.0" promptText="Host IP Address" />
                   <TextField fx:id="txtClientPort" prefWidth="300.0" promptText="Port (default: 8080)" text="8080" />
+                  <Label text="💡 Note: Ping may fail, but TCP connections can still work!" wrapText="true" prefWidth="400.0" alignment="CENTER" style="-fx-text-fill: #87CEEB; -fx-font-size: 11px;" />
                   <Button fx:id="btnJoinLobby" mnemonicParsing="false" onAction="#btnJoinLobbyClicked" prefHeight="50.0" prefWidth="250.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 18px; -fx-background-color: #9C27B0; -fx-text-fill: white;" text="Join Lobby" />
                </children>
             </VBox>

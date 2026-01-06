@@ -264,7 +264,13 @@ public class NetworkConnectionDialogController {
                 });
             } catch (IOException e) {
                 Platform.runLater(() -> {
-                    lblStatus.setText("Connection failed: " + e.getMessage());
+                    String errorMsg = e.getMessage();
+                    // Add helpful note about ping vs TCP
+                    if (errorMsg.contains("Connection refused") || errorMsg.contains("timeout") || errorMsg.contains("Unknown host")) {
+                        errorMsg += "\n\n💡 Note: Ping may fail, but TCP connections can still work!";
+                        errorMsg += "\nMake sure the host has started the lobby first.";
+                    }
+                    lblStatus.setText("Connection failed:\n" + errorMsg);
                     btnHost.setDisable(false);
                     btnJoinLobby.setDisable(false);
                 });
