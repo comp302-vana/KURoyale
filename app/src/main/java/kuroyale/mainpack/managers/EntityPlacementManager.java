@@ -29,6 +29,8 @@ public class EntityPlacementManager {
     private final int cols;
     private final boolean isPvPMode;
     private QuestManager questManager;
+    private PersistenceManager persistenceManager;
+    private AchievementManager achievementManager;
     private kuroyale.mainpack.network.NetworkBattleManager networkBattleManager;
     private boolean isClient;
 
@@ -68,6 +70,14 @@ public class EntityPlacementManager {
     //setter method for quest,persistance and achievement manager
     public void setQuestManager(QuestManager questManager) {
         this.questManager = questManager;
+    }
+    
+    public void setPersistenceManager(PersistenceManager persistenceManager) {
+        this.persistenceManager = persistenceManager;
+    }
+    
+    public void setAchievementManager(AchievementManager achievementManager) {
+        this.achievementManager = achievementManager;
     }
     
     /**
