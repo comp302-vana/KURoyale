@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import kuroyale.arenapack.ArenaMap;
+import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.CardFactory;
 import kuroyale.cardpack.subclasses.BuildingCard;
 import kuroyale.cardpack.subclasses.UnitCard;
-import kuroyale.arenapack.ArenaMap;
-import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
@@ -18,9 +18,30 @@ import kuroyale.entitiypack.subclasses.UnitEntity;
 
 
 public class SimpleAI {
-    //OVERVIEW: IMPLEMENTS AI LOGIC USING METHODS.
-    //CREATES A DECK RANDOMLY AND CONSIDERING ITS HAND
-    //AND ELIXIR PLACES CARDS ON THE ARENA.
+    // OVERVIEW: SimpleAI represents a mutable, automated player entity 
+    // in the game.
+    // A typical SimpleAI has a specific amount of current elixir, 
+    // a managed deck of cards, and a hand of available cards.
+    // It interacts with the ArenaMap to deploy entities based on 
+    // resource availability.
+
+    // The Abstraction Function:
+    // AF(c) = An AI player where:
+    //   Elixir Resources = c.currentElixir
+    //   Deck Sequence = [c.aiDeckCards.get(0), ..., c.aiDeckCards.get(c.aiDeckCards.size()-1)]
+    //   Current Hand = {c.aiHand.get(0), ..., c.aiHand.get(c.aiHand.size()-1)}
+    //   Next Drawn Card's Index = c.nextCardIndex (pointing to the Deck Sequence)
+
+    // The Representation Invariant:
+    //   c.currentElixir >= 0 && c.currentElixir <= c.MAX_ELIXIR &&
+    //   c.aiDeckCards != null && c.aiDeckCards contains no null elements &&
+    //   c.aiDeckCards.size() == 8 (Based on createAIDeck logic) &&
+    //   c.aiHand != null && c.aiHand contains no null elements &&
+    //   c.aiHand.size() <= c.CARD_SLOT_COUNT (4) &&
+    //   c.nextCardIndex >= 0 && c.nextCardIndex < c.aiDeckCards.size() &&
+    //   c.arenaMap != null &&
+    //   c.gameEngine != null
+
     private double currentElixir =5.0;
     private final double MAX_ELIXIR = 10;
     private final double ELIXIR_REGEN_RATE = 1.0 / 2.8;
@@ -78,6 +99,37 @@ public class SimpleAI {
             }
         }
     }
+
+    //I could also use this repOk method inside other functions for assertion
+    //but as we wrote a whole test class I found that unnecessary
+    private boolean repOk() {
+        if(currentElixir < 0 || currentElixir > MAX_ELIXIR){
+            return false;
+        }
+
+        if (aiDeckCards == null || aiDeckCards.size() != 8) {
+            return false;
+        }
+        for (Card c : aiDeckCards) {
+            if (c == null) return false;
+        }
+
+        if (aiHand == null || aiHand.size() > CARD_SLOT_COUNT) {
+            return false;
+        }
+        for (Card c : aiHand) {
+            if (c == null) return false;
+        }
+
+        if (!aiDeckCards.isEmpty()) {
+            if (nextCardIndex < 0 || nextCardIndex >= aiDeckCards.size()) {
+                return false;
+            }
+        }
+
+        return gameEngine != null && arenaMap != null;
+    }
+
     public void update(double deltaTime, int totalSeconds) {
         // Regenerating elixir (same as the player)
         if (currentElixir < MAX_ELIXIR) {
