@@ -40,6 +40,12 @@ public class NetworkManager {
     
     public void startHost(int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
+        // Small delay to ensure old connection threads fully exit
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         relayModeEnabled = useInternet; // Set state BEFORE creating connection
         if (useInternet) {
             // Internet mode: connect to relay server
@@ -59,6 +65,12 @@ public class NetworkManager {
     
     public void startClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
+        // Small delay to ensure old connection threads fully exit
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         relayModeEnabled = useInternet; // Set state BEFORE creating connection
         if (useInternet) {
             // Internet mode: connect to relay server (hostIP is ignored)
@@ -203,6 +215,8 @@ public class NetworkManager {
     /**
      * Register a battle message handler (separate from lobby handler).
      * This allows the battle system to receive network messages.
+     * Note: This replaces any existing battle handler. To combine handlers,
+     * create a combined handler before calling this.
      */
     public void registerBattleMessageHandler(Consumer<NetworkMessage> handler) {
         // Store battle handler and combine with existing lobby handler
@@ -210,30 +224,54 @@ public class NetworkManager {
         if (isHost && host != null) {
             // Update the host's message handler to also call battle handler
             Consumer<NetworkMessage> existingHandler = host.getOnMessageReceived();
-            host.setOnMessageReceived(msg -> {
-                if (existingHandler != null) existingHandler.accept(msg);
-                handler.accept(msg);
-            });
+            // Only wrap if there's an existing handler, otherwise just set the battle handler
+            if (existingHandler != null) {
+                host.setOnMessageReceived(msg -> {
+                    existingHandler.accept(msg);
+                    handler.accept(msg);
+                });
+            } else {
+                host.setOnMessageReceived(handler);
+            }
         } else if (client != null) {
             // Update the client's message handler to also call battle handler
             Consumer<NetworkMessage> existingHandler = client.getOnMessageReceived();
-            client.setOnMessageReceived(msg -> {
-                if (existingHandler != null) existingHandler.accept(msg);
-                handler.accept(msg);
-            });
+            // Only wrap if there's an existing handler, otherwise just set the battle handler
+            if (existingHandler != null) {
+                client.setOnMessageReceived(msg -> {
+                    existingHandler.accept(msg);
+                    handler.accept(msg);
+                });
+            } else {
+                client.setOnMessageReceived(handler);
+            }
         }
     }
     
     public void close() {
         if (host != null) {
+            // Clear message handler before closing to prevent stale references
+            host.setOnMessageReceived(null);
             host.close();
             host = null;
         }
         if (client != null) {
+            // Clear message handler before closing to prevent stale references
+            client.setOnMessageReceived(null);
             client.close();
             client = null;
         }
         relayModeEnabled = false; // Reset state when connections are closed
+        isHost = false; // Reset host/client state
+    }
+    
+    /**
+     * Fully reset NetworkManager state. Use this when returning to menu/lobby
+     * to ensure clean state for next game.
+     */
+    public void reset() {
+        close(); // This already clears everything
+        // Additional reset if needed in future
     }
 }
 

@@ -30,6 +30,9 @@ public class NetworkHost {
     private String clientDeckName;
     private boolean clientReady = false;
     
+    // Track if game has started (to prevent LOBBY_UPDATE during battle)
+    private boolean gameStarted = false;
+    
     // Direct connection mode: host listens for incoming connections
     public NetworkHost(int port, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
         this.serverSocket = new ServerSocket(port);
@@ -296,27 +299,34 @@ public class NetworkHost {
     
     public void setHostDeck(String deckName) {
         this.hostDeckName = deckName;
-        sendMessage(new NetworkMessage(
-            NetworkMessage.MessageType.DECK_SELECTED,
-            1,
-            deckName,
-            getCurrentTimestamp()
-        ));
-        broadcastLobbyUpdate();
+        // Don't send DECK_SELECTED or LOBBY_UPDATE during battle
+        if (!gameStarted) {
+            sendMessage(new NetworkMessage(
+                NetworkMessage.MessageType.DECK_SELECTED,
+                1,
+                deckName,
+                getCurrentTimestamp()
+            ));
+            broadcastLobbyUpdate();
+        }
     }
     
     public void setHostReady(boolean ready) {
         this.hostReady = ready;
-        sendMessage(new NetworkMessage(
-            NetworkMessage.MessageType.READY_STATUS,
-            1,
-            String.valueOf(ready),
-            getCurrentTimestamp()
-        ));
-        broadcastLobbyUpdate();
+        // Don't send READY_STATUS or LOBBY_UPDATE during battle
+        if (!gameStarted) {
+            sendMessage(new NetworkMessage(
+                NetworkMessage.MessageType.READY_STATUS,
+                1,
+                String.valueOf(ready),
+                getCurrentTimestamp()
+            ));
+            broadcastLobbyUpdate();
+        }
     }
     
     public void startGame() {
+        gameStarted = true; // Mark game as started to prevent LOBBY_UPDATE during battle
         sendMessage(new NetworkMessage(
             NetworkMessage.MessageType.START_GAME,
             1,
@@ -326,6 +336,11 @@ public class NetworkHost {
     }
     
     private void broadcastLobbyUpdate() {
+        // Don't send LOBBY_UPDATE during battle - only in lobby
+        if (gameStarted) {
+            return; // Game has started, don't send lobby updates
+        }
+        
         // Send lobby state to client
         String lobbyData = hostPlayerName + ":" + hostDeckName + ":" + hostReady + "|" +
                           clientPlayerName + ":" + clientDeckName + ":" + clientReady;
@@ -374,6 +389,7 @@ public class NetworkHost {
     
     public void close() {
         isRunning = false;
+        gameStarted = false; // Reset game state when closing
         try {
             if (clientSocket != null && !clientSocket.isClosed()) {
                 sendMessage(new NetworkMessage(

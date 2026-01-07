@@ -27,6 +27,9 @@ public class NetworkClient {
     private String hostDeckName;
     private boolean hostReady = false;
     
+    // Track if game has started (to ignore LOBBY_UPDATE during battle)
+    private boolean gameStarted = false;
+    
     // Direct connection mode: client connects directly to host IP
     public NetworkClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
         this.clientPlayerName = playerName;
@@ -135,7 +138,9 @@ public class NetworkClient {
                 hostPlayerName = message.getData();
                 break;
             case DECK_SELECTED:
-                if (message.getPlayerId() == 1) {
+                // Only process DECK_SELECTED if game hasn't started yet
+                // During battle, ignore deck selection messages to prevent deck refreshes
+                if (!gameStarted && message.getPlayerId() == 1) {
                     hostDeckName = message.getData();
                 }
                 break;
@@ -145,10 +150,15 @@ public class NetworkClient {
                 }
                 break;
             case LOBBY_UPDATE:
-                parseLobbyUpdate(message.getData());
+                // Only process LOBBY_UPDATE if game hasn't started yet
+                // During battle, ignore LOBBY_UPDATE to prevent deck changes
+                if (!gameStarted) {
+                    parseLobbyUpdate(message.getData());
+                }
                 break;
             case START_GAME:
                 // Game starting - message handler in lobby controller will handle navigation
+                gameStarted = true; // Mark game as started to ignore future LOBBY_UPDATE messages
                 System.out.println("Client: Game starting message received");
                 break;
             case DISCONNECT:
@@ -194,6 +204,8 @@ public class NetworkClient {
     
     private void parseLobbyUpdate(String data) {
         // Format: hostName:hostDeck:hostReady|clientName:clientDeck:clientReady
+        // IMPORTANT: Only update host info from LOBBY_UPDATE, not client's own info
+        // Client's own deck/ready status should only be set by the client itself
         String[] parts = data.split("\\|");
         if (parts.length >= 1) {
             String[] hostData = parts[0].split(":");
@@ -203,14 +215,8 @@ public class NetworkClient {
                 hostReady = Boolean.parseBoolean(hostData[2]);
             }
         }
-        if (parts.length >= 2) {
-            String[] clientData = parts[1].split(":");
-            if (clientData.length >= 3) {
-                clientPlayerName = clientData[0];
-                clientDeckName = clientData[1].isEmpty() ? null : clientData[1];
-                clientReady = Boolean.parseBoolean(clientData[2]);
-            }
-        }
+        // Don't update client's own data from LOBBY_UPDATE - it should only be set by client
+        // This prevents the client's deck from being overwritten during battle
     }
     
     public void sendMessage(NetworkMessage message) {
@@ -283,6 +289,7 @@ public class NetworkClient {
     
     public void close() {
         isRunning = false;
+        gameStarted = false; // Reset game state when closing
         try {
             if (socket != null && !socket.isClosed()) {
                 sendMessage(new NetworkMessage(
