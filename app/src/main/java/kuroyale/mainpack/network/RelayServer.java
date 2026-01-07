@@ -77,8 +77,8 @@ public class RelayServer {
      * Lifecycle: Created when first peer connects, removed when both peers disconnect.
      */
     private static class RelayRoom {
-        private volatile RelayConnection host = null;
-        private volatile RelayConnection client = null;
+        RelayConnection host = null;  // Package-private for cleanup access
+        RelayConnection client = null;  // Package-private for cleanup access
         private final String roomId;
         
         RelayRoom(String roomId) {
@@ -87,29 +87,19 @@ public class RelayServer {
         
         /**
          * Attach a host connection to this room.
-         * If a host already exists, closes the old connection first (replacement).
+         * Note: Old connection cleanup is now handled in handleConnection() before calling this.
          * Thread-safe.
          */
         synchronized void attachHost(RelayConnection host) {
-            if (this.host != null && this.host != host) {
-                System.out.println(String.format("[%d] Relay: Replacing existing host in room %s", 
-                    System.currentTimeMillis(), roomId));
-                this.host.close();
-            }
             this.host = host;
         }
         
         /**
          * Attach a client connection to this room.
-         * If a client already exists, closes the old connection first (replacement).
+         * Note: Old connection cleanup is now handled in handleConnection() before calling this.
          * Thread-safe.
          */
         synchronized void attachClient(RelayConnection client) {
-            if (this.client != null && this.client != client) {
-                System.out.println(String.format("[%d] Relay: Replacing existing client in room %s", 
-                    System.currentTimeMillis(), roomId));
-                this.client.close();
-            }
             this.client = client;
         }
         
@@ -292,6 +282,24 @@ public class RelayServer {
             // Get or create room (thread-safe via ConcurrentHashMap)
             RelayRoom room = rooms.computeIfAbsent(roomId, RelayRoom::new);
             
+            // Check if there's an existing connection of the same role in this room
+            // If so, clean it up BEFORE creating the new connection
+            synchronized (room) {
+                RelayConnection oldConnection = isHost ? room.host : room.client;
+                if (oldConnection != null && oldConnection != connection) {
+                    System.out.println(String.format("[%d] Relay: Cleaning up old %s connection in room %s before replacement", 
+                        System.currentTimeMillis(), isHost ? "HOST" : "CLIENT", roomId));
+                    // Remove old connection from tracking map
+                    connections.remove(oldConnection.socket);
+                    // Remove old connection from room (critical: prevents stale references)
+                    room.removeConnection(oldConnection);
+                    // Close old connection (this will cause its forwardMessages thread to exit)
+                    oldConnection.close();
+                    // Note: cleanupConnection will be called by forwardMessages thread, but since
+                    // we've already removed it from connections map, it will return early safely
+                }
+            }
+            
             connection = new RelayConnection(socket, in, out, isHost, roomId, playerName);
             connections.put(socket, connection);
             
@@ -427,15 +435,28 @@ public class RelayServer {
             RelayRoom room = rooms.get(conn.roomId);
             if (room != null) {
                 synchronized (room) {
-                    room.removeConnection(conn);
-                    // Clean up empty rooms (both peers disconnected)
-                    if (room.isEmpty()) {
-                        rooms.remove(conn.roomId);
-                        System.out.println(String.format("[%d] Relay: Room %s removed (empty)", cleanupTime, conn.roomId));
+                    // Double-check room still exists (might have been removed by peer's cleanup)
+                    if (rooms.get(conn.roomId) != room) {
+                        System.out.println(String.format("[%d] Relay: Room %s was removed by peer cleanup, skipping", cleanupTime, conn.roomId));
+                    } else {
+                        // Only remove if this connection is still the current one in the room
+                        // (prevents removing a new connection if an old one's cleanup runs late)
+                        if ((conn.isHost && room.host == conn) || (!conn.isHost && room.client == conn)) {
+                            room.removeConnection(conn);
+                            // Clean up empty rooms (both peers disconnected)
+                            if (room.isEmpty()) {
+                                rooms.remove(conn.roomId);
+                                System.out.println(String.format("[%d] Relay: Room %s removed (empty)", cleanupTime, conn.roomId));
+                            }
+                        } else {
+                            System.out.println(String.format("[%d] Relay: Skipping cleanup - connection already replaced in room %s", 
+                                cleanupTime, conn.roomId));
+                        }
                     }
                 }
             }
             
+            // Close connection (idempotent - safe to call multiple times)
             conn.close();
         }
     }
