@@ -71,8 +71,8 @@ public class NetworkHost {
         clientIn = new ObjectInputStream(clientSocket.getInputStream());
         
         // Send CONNECT message to identify as HOST (playerId = 1)
-        // Format: "playerName|roomCode" (using "default" room for now)
-        String connectData = playerName + "|default";
+        // Format: "roomId:playerName" (using "default" room for now)
+        String connectData = "default:" + playerName;
         sendMessage(new NetworkMessage(
             NetworkMessage.MessageType.CONNECT,
             1, // HOST identifier
@@ -183,7 +183,14 @@ public class NetworkHost {
             case CONNECT:
                 // In relay mode, CONNECT from client (playerId=2) means client joined
                 if (message.getPlayerId() == 2) {
-                    clientPlayerName = message.getData();
+                    // Parse CONNECT data: "roomId:playerName" format
+                    String connectData = message.getData();
+                    if (connectData != null && connectData.contains(":")) {
+                        String[] parts = connectData.split(":", 2);
+                        clientPlayerName = parts.length > 1 ? parts[1] : connectData;
+                    } else {
+                        clientPlayerName = connectData; // Fallback for old format
+                    }
                     // Send PLAYER_JOINED back to client (like in direct mode)
                     sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.PLAYER_JOINED,
@@ -198,6 +205,7 @@ public class NetworkHost {
             case DECK_SELECTED:
                 if (message.getPlayerId() == 2) {
                     clientDeckName = message.getData();
+                    System.out.println("Host: Client deck selected: " + clientDeckName);
                     broadcastLobbyUpdate();
                 }
                 break;

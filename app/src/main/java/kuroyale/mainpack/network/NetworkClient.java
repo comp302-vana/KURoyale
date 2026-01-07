@@ -84,8 +84,8 @@ public class NetworkClient {
         in = new ObjectInputStream(socket.getInputStream());
         
         // Send CONNECT message to identify as CLIENT (playerId = 2)
-        // Format: "playerName|roomCode" (using "default" room for now)
-        String connectData = playerName + "|default";
+        // Format: "roomId:playerName" (using "default" room for now)
+        String connectData = "default:" + playerName;
         sendMessage(new NetworkMessage(
             NetworkMessage.MessageType.CONNECT,
             2, // CLIENT identifier
@@ -234,6 +234,7 @@ public class NetworkClient {
     
     public void setClientDeck(String deckName) {
         this.clientDeckName = deckName;
+        System.out.println("Client: Sending deck selection: " + deckName);
         sendMessage(new NetworkMessage(
             NetworkMessage.MessageType.DECK_SELECTED,
             2,

@@ -11,18 +11,19 @@ import java.util.Set;
 import java.util.HashSet;
 
 /**
- * Rendezvous/Forward Server for NAT traversal with message direction enforcement and room support.
+ * Multi-room TCP Relay Server for NAT traversal.
  * 
  * This server solves the NAT problem by allowing both host and client
  * to connect OUTBOUND to a publicly accessible server. The relay then
- * forwards NetworkMessage objects between them.
+ * forwards NetworkMessage objects between them within isolated rooms.
  * 
  * Architecture:
  * - Host connects to relay → identified by playerId=1
  * - Client connects to relay → identified by playerId=2
  * - Relay forwards messages: Client→Relay→Host and Host→Relay→Client
  * - Messages are validated for direction (CLIENT→HOST or HOST→CLIENT only)
- * - Room support: Multiple games can run simultaneously via room codes
+ * - Multiple rooms: Each game session runs in an isolated room
+ * - Room lifecycle: Created on first connection, removed when both peers disconnect
  * 
  * IMPORTANT: This server contains NO game logic. It only forwards messages.
  * All game logic remains in the game client (host is authoritative).
@@ -32,10 +33,11 @@ public class RelayServer {
     private boolean isRunning = false;
     private Thread acceptThread;
     
-    // Room support: Map<roomCode, Room>
-    private final Map<String, Room> rooms = new ConcurrentHashMap<>();
+    // Multi-room support: Map<roomId, RelayRoom>
+    // Each room is isolated - messages only forward within the same room
+    private final Map<String, RelayRoom> rooms = new ConcurrentHashMap<>();
     
-    // Map to track all connections
+    // Map to track all connections for cleanup
     private final Map<Socket, RelayConnection> connections = new ConcurrentHashMap<>();
     
     private static final int DEFAULT_PORT = 8081;
@@ -70,35 +72,59 @@ public class RelayServer {
     }
     
     /**
-     * Represents a game room with host and client connections.
+     * Represents an isolated game room with host and client connections.
+     * Thread-safe: All operations are synchronized to prevent race conditions.
+     * Lifecycle: Created when first peer connects, removed when both peers disconnect.
      */
-    private static class Room {
-        volatile RelayConnection host = null;
-        volatile RelayConnection client = null;
-        final String roomCode;
+    private static class RelayRoom {
+        private volatile RelayConnection host = null;
+        private volatile RelayConnection client = null;
+        private final String roomId;
         
-        Room(String roomCode) {
-            this.roomCode = roomCode;
+        RelayRoom(String roomId) {
+            this.roomId = roomId;
         }
         
-        synchronized void setHost(RelayConnection host) {
+        /**
+         * Attach a host connection to this room.
+         * If a host already exists, closes the old connection first (replacement).
+         * Thread-safe.
+         */
+        synchronized void attachHost(RelayConnection host) {
             if (this.host != null && this.host != host) {
+                System.out.println(String.format("[%d] Relay: Replacing existing host in room %s", 
+                    System.currentTimeMillis(), roomId));
                 this.host.close();
             }
             this.host = host;
         }
         
-        synchronized void setClient(RelayConnection client) {
+        /**
+         * Attach a client connection to this room.
+         * If a client already exists, closes the old connection first (replacement).
+         * Thread-safe.
+         */
+        synchronized void attachClient(RelayConnection client) {
             if (this.client != null && this.client != client) {
+                System.out.println(String.format("[%d] Relay: Replacing existing client in room %s", 
+                    System.currentTimeMillis(), roomId));
                 this.client.close();
             }
             this.client = client;
         }
         
+        /**
+         * Get the peer connection (opposite role) in this room.
+         * Thread-safe.
+         */
         synchronized RelayConnection getPeer(boolean isHost) {
             return isHost ? client : host;
         }
         
+        /**
+         * Remove a connection from this room (on disconnect).
+         * Thread-safe.
+         */
         synchronized void removeConnection(RelayConnection conn) {
             if (host == conn) {
                 host = null;
@@ -108,30 +134,39 @@ public class RelayServer {
             }
         }
         
+        /**
+         * Check if room is empty (both peers disconnected).
+         * Thread-safe.
+         */
         synchronized boolean isEmpty() {
             return host == null && client == null;
+        }
+        
+        String getRoomId() {
+            return roomId;
         }
     }
     
     /**
-     * Inner class to represent a connection to the relay.
+     * Represents a connection to the relay server.
+     * Contains socket, streams, role (host/client), room, and player info.
      */
     private static class RelayConnection {
         final Socket socket;
         final ObjectInputStream in;
         final ObjectOutputStream out;
         final boolean isHost;
-        final String roomCode;
+        final String roomId;
         final String playerName;
         final long connectTime;
         
         RelayConnection(Socket socket, ObjectInputStream in, ObjectOutputStream out, 
-                       boolean isHost, String roomCode, String playerName) {
+                       boolean isHost, String roomId, String playerName) {
             this.socket = socket;
             this.in = in;
             this.out = out;
             this.isHost = isHost;
-            this.roomCode = roomCode;
+            this.roomId = roomId;
             this.playerName = playerName;
             this.connectTime = System.currentTimeMillis();
         }
@@ -162,6 +197,7 @@ public class RelayServer {
             server.start(port);
             System.out.println("========================================");
             System.out.println("Relay Server running on port " + port);
+            System.out.println("Multi-room support enabled");
             System.out.println("Press Ctrl+C to stop");
             System.out.println("========================================");
             
@@ -184,6 +220,9 @@ public class RelayServer {
         acceptThread.start();
     }
     
+    /**
+     * Accept incoming connections and spawn handler threads.
+     */
     private void acceptConnections() {
         while (isRunning && serverSocket != null && !serverSocket.isClosed()) {
             try {
@@ -205,6 +244,9 @@ public class RelayServer {
         }
     }
     
+    /**
+     * Handle a new connection: establish streams, receive CONNECT, register in room.
+     */
     private void handleConnection(Socket socket, String remoteAddr) {
         RelayConnection connection = null;
         try {
@@ -225,43 +267,43 @@ public class RelayServer {
                 return;
             }
             
-            // Parse CONNECT message data: "playerName|roomCode" or just "playerName" (backward compatible)
+            // Parse CONNECT message data: "roomId:playerName"
+            // Format: roomId:playerName (e.g., "room123:Alice")
             String connectData = connectMsg.getData();
+            String roomId;
             String playerName;
-            String roomCode;
-            if (connectData != null && connectData.contains("|")) {
-                String[] parts = connectData.split("\\|", 2);
-                playerName = parts[0];
-                roomCode = parts.length > 1 && !parts[1].isEmpty() ? parts[1] : "default";
+            if (connectData != null && connectData.contains(":")) {
+                String[] parts = connectData.split(":", 2);
+                roomId = parts[0];
+                playerName = parts.length > 1 && !parts[1].isEmpty() ? parts[1] : "Unknown";
             } else {
+                // Fallback: if no colon, treat entire string as playerName, use "default" room
                 playerName = connectData != null ? connectData : "Unknown";
-                roomCode = "default";
+                roomId = "default";
             }
             
             // Determine if this is HOST (playerId == 1) or CLIENT (playerId == 2)
             boolean isHost = (connectMsg.getPlayerId() == 1);
             String role = isHost ? "HOST" : "CLIENT";
             
-            System.out.println(String.format("[%d] Relay: CONNECT received from %s - role=%s, playerId=%d, playerName=%s, roomCode=%s", 
-                receiveTime, remoteAddr, role, connectMsg.getPlayerId(), playerName, roomCode));
+            System.out.println(String.format("[%d] Relay: CONNECT received from %s - role=%s, playerId=%d, playerName=%s, roomId=%s", 
+                receiveTime, remoteAddr, role, connectMsg.getPlayerId(), playerName, roomId));
             
-            // Get or create room
-            Room room = rooms.computeIfAbsent(roomCode, Room::new);
+            // Get or create room (thread-safe via ConcurrentHashMap)
+            RelayRoom room = rooms.computeIfAbsent(roomId, RelayRoom::new);
             
-            connection = new RelayConnection(socket, in, out, isHost, roomCode, playerName);
+            connection = new RelayConnection(socket, in, out, isHost, roomId, playerName);
             connections.put(socket, connection);
             
-            // Register connection in room
-            synchronized (room) {
-                if (isHost) {
-                    room.setHost(connection);
-                } else {
-                    room.setClient(connection);
-                }
+            // Register connection in room (thread-safe)
+            if (isHost) {
+                room.attachHost(connection);
+            } else {
+                room.attachClient(connection);
             }
             
-            System.out.println(String.format("[%d] Relay: Connection registered - role=%s, roomCode=%s, playerName=%s", 
-                receiveTime, role, roomCode, playerName));
+            System.out.println(String.format("[%d] Relay: Connection registered - role=%s, roomId=%s, playerName=%s", 
+                receiveTime, role, roomId, playerName));
             
             // Forward the CONNECT message to peer if peer is already connected in the same room
             RelayConnection peer = room.getPeer(isHost);
@@ -269,12 +311,12 @@ public class RelayServer {
                 try {
                     MessageProtocol.sendMessage(peer.out, connectMsg);
                     System.out.println(String.format("[%d] Relay: FORWARDED CONNECT from %s (%s) to %s (%s) in room %s", 
-                        receiveTime, role, playerName, peer.isHost ? "HOST" : "CLIENT", peer.playerName, roomCode));
+                        receiveTime, role, playerName, peer.isHost ? "HOST" : "CLIENT", peer.playerName, roomId));
                 } catch (IOException e) {
                     System.err.println(String.format("[%d] Relay: Error forwarding CONNECT message: %s", receiveTime, e.getMessage()));
                 }
             } else {
-                System.out.println(String.format("[%d] Relay: CONNECT forwarded - peer not connected yet in room %s", receiveTime, roomCode));
+                System.out.println(String.format("[%d] Relay: CONNECT forwarded - peer not connected yet in room %s", receiveTime, roomId));
             }
             
             // Start forwarding messages from this connection
@@ -293,8 +335,9 @@ public class RelayServer {
     /**
      * Forward messages from a connection to its peer in the same room.
      * Enforces message direction: CLIENT → HOST or HOST → CLIENT only.
+     * Thread-safe: Room operations are synchronized.
      */
-    private void forwardMessages(RelayConnection connection, Room room) {
+    private void forwardMessages(RelayConnection connection, RelayRoom room) {
         try {
             while (isRunning && connection.socket != null && !connection.socket.isClosed()) {
                 // Receive message from this connection
@@ -304,7 +347,7 @@ public class RelayServer {
                 String senderRole = connection.isHost ? "HOST" : "CLIENT";
                 int playerId = connection.isHost ? 1 : 2;
                 String senderInfo = String.format("%s (playerId=%d, room=%s, player=%s)", 
-                    senderRole, playerId, connection.roomCode, connection.playerName);
+                    senderRole, playerId, connection.roomId, connection.playerName);
                 
                 System.out.println(String.format("[%d] Relay: Received %s from %s", 
                     receiveTime, message.getType(), senderInfo));
@@ -339,7 +382,7 @@ public class RelayServer {
                     continue; // Drop illegal message
                 }
                 
-                // Get peer from room
+                // Get peer from room (thread-safe)
                 RelayConnection peer = room.getPeer(connection.isHost);
                 
                 if (peer != null && !peer.socket.isClosed()) {
@@ -348,14 +391,14 @@ public class RelayServer {
                         String peerRole = peer.isHost ? "HOST" : "CLIENT";
                         int peerPlayerId = peer.isHost ? 1 : 2;
                         System.out.println(String.format("[%d] Relay: FORWARDED %s from %s to %s (playerId=%d, room=%s, player=%s)", 
-                            receiveTime, message.getType(), senderRole, peerRole, peerPlayerId, peer.roomCode, peer.playerName));
+                            receiveTime, message.getType(), senderRole, peerRole, peerPlayerId, peer.roomId, peer.playerName));
                     } catch (IOException e) {
                         System.err.println(String.format("[%d] Relay: Error forwarding %s: %s", receiveTime, message.getType(), e.getMessage()));
                         break;
                     }
                 } else {
                     System.out.println(String.format("[%d] Relay: DROPPED %s from %s - Reason: Peer not connected in room %s", 
-                        receiveTime, message.getType(), senderInfo, connection.roomCode));
+                        receiveTime, message.getType(), senderInfo, connection.roomId));
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -368,23 +411,27 @@ public class RelayServer {
         }
     }
     
+    /**
+     * Clean up a disconnected connection and remove empty rooms.
+     * Thread-safe: Room operations are synchronized.
+     */
     private void cleanupConnection(Socket socket) {
         RelayConnection conn = connections.remove(socket);
         if (conn != null) {
             String role = conn.isHost ? "HOST" : "CLIENT";
             long cleanupTime = System.currentTimeMillis();
             System.out.println(String.format("[%d] Relay: %s disconnected - room=%s, player=%s", 
-                cleanupTime, role, conn.roomCode, conn.playerName));
+                cleanupTime, role, conn.roomId, conn.playerName));
             
-            // Remove from room
-            Room room = rooms.get(conn.roomCode);
+            // Remove from room (thread-safe)
+            RelayRoom room = rooms.get(conn.roomId);
             if (room != null) {
                 synchronized (room) {
                     room.removeConnection(conn);
-                    // Clean up empty rooms
+                    // Clean up empty rooms (both peers disconnected)
                     if (room.isEmpty()) {
-                        rooms.remove(conn.roomCode);
-                        System.out.println(String.format("[%d] Relay: Room %s removed (empty)", cleanupTime, conn.roomCode));
+                        rooms.remove(conn.roomId);
+                        System.out.println(String.format("[%d] Relay: Room %s removed (empty)", cleanupTime, conn.roomId));
                     }
                 }
             }

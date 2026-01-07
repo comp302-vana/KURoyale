@@ -1,5 +1,5 @@
 GOLD
-1525
+1625
 
 LEVELS
 1,1
@@ -43,6 +43,8 @@ HISTORY
 1767709906391,150,VICTORY
 1767714677947,500,Achievement Reward: First Blood
 1767736031740,150,VICTORY
+1767739717722,50,DEFEAT
+1767740387353,50,DEFEAT
 
 UNLOCKED
 1
@@ -91,13 +93,13 @@ ACHIEVEMENTS
 6,0,false,false
 7,0,false,false
 8,0,false,false
-9,215,false,false
-10,10,false,false
+9,315,false,false
+10,12,false,false
 11,0,false,false
 12,3,false,false
 
 STATISTICS
-10,5,63,16,0,0,0,0,0,0,215,0,2,3,0,0,0,0
+12,5,108,16,0,0,0,0,0,0,315,0,0,3,0,0,0,0
 
 QUEST_RESET
 1767660828869
