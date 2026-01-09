@@ -50,7 +50,7 @@ public class PointsCounter extends HBox {
     }
 
     public void addToEnemy(){
-        enemyPoints++;
+        enemyPoints+=0.111111111111;
         enemyLabel.setText(String.valueOf((int) Math.round(enemyPoints)));
     }
     public void setOurPoints(int point){
