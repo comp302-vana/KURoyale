@@ -67,7 +67,7 @@ public class AchievementManager {
                     break;
                     
                 case TOWER_HUNTER:
-                    updateAchievementProgress(achievement, stats.getTotalCrownTowersDestroyed());
+                    updateAchievementProgress(achievement, stats.getTotalCrownTowersDestroyed() / 9);
                     break;
                     
                 case CHALLENGE_MASTER:
@@ -105,12 +105,10 @@ public class AchievementManager {
                     break;
                     
                 case UNDEFEATED:
-                    if (stats.getMaxWinStreak() >= 5) {
-                        updateAchievementProgress(achievement, 1);
-                    } else {
-                        int progress = Math.min(stats.getMaxWinStreak(), 5);
-                        updateAchievementProgress(achievement, progress);
-                    }
+                    // Use CURRENT win streak, not max win streak
+                    int currentStreak = stats.getCurrentWinStreak();
+                    int progress = Math.min(currentStreak, 5);
+                    updateAchievementProgress(achievement, progress);
                     break;
                     
                 default:
@@ -147,10 +145,10 @@ public class AchievementManager {
                     break;
                     
                 case UNDEFEATED:
-                    if (won && stats.getCurrentWinStreak() >= 5) {
-                        updateAchievementProgress(achievement, 1);
-                    } else {
-                        int progress = Math.min(stats.getCurrentWinStreak(), 5);
+                    if (won) {
+                        // Always update progress to current streak (capped at 5) when won
+                        int currentStreak = stats.getCurrentWinStreak();
+                        int progress = Math.min(currentStreak, 5);
                         updateAchievementProgress(achievement, progress);
                     }
                     break;
@@ -186,6 +184,19 @@ public class AchievementManager {
         }
     }
     
+    /**
+     * Gets a list of achievements that were just completed now.
+     */
+    public java.util.List<Achievement> getNewlyCompletedAchievements() {
+        java.util.List<Achievement> newlyCompleted = new java.util.ArrayList<>();
+        for (Achievement achievement : achievements) {
+            if (achievement.getCompleted() && !achievement.getClaimed()) {
+                newlyCompleted.add(achievement);
+            }
+        }
+        return newlyCompleted;
+    }
+
     /**
      * Called when a challenge is completed. Updates challenge-related achievements.
      * "stars": the number of stars earned (0-3)
@@ -254,7 +265,7 @@ public class AchievementManager {
      * "achievement": the achievement to update
      * "newProgress": the new progress value
      */
-    private void updateAchievementProgress(Achievement achievement, int newProgress) {
+    private boolean updateAchievementProgress(Achievement achievement, int newProgress) {
         achievement.setCurrentProgress(newProgress);
         
         // Check if achievement is completed, prompt a message if so
@@ -263,7 +274,9 @@ public class AchievementManager {
             System.out.println("Achievement unlocked: " + achievement.getAchievementType().getName() + 
                              " - " + achievement.getAchievementType().getDescription() +
                              " (+" + achievement.getAchievementType().getGoldReward() + " gold)");
+            return true;
         }
+        return false;
     }
     
     /**

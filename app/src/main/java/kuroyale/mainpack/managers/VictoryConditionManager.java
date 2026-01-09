@@ -5,7 +5,9 @@ import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.mainpack.PointsCounter;
 import kuroyale.mainpack.managers.SceneNavigationManager;
+import kuroyale.mainpack.models.Achievement;
 import kuroyale.mainpack.models.GameMode;
+import kuroyale.mainpack.models.Quest;
 
 /**
  * Handles victory conditions, tie-breaker logic, and game end determination.
@@ -22,6 +24,7 @@ public class VictoryConditionManager {
     private QuestManager questManager;
     private AchievementManager achievementManager;
     private PersistenceManager persistenceManager;
+    private NotificationManager notificationManager;
 
     public VictoryConditionManager(ArenaMap arenaMap, PointsCounter pointsCounter, int rows, int cols,
             SceneNavigationManager sceneNavigationManager) {
@@ -50,6 +53,10 @@ public class VictoryConditionManager {
     
     public void setPersistenceManager(PersistenceManager persistenceManager) {
         this.persistenceManager = persistenceManager;
+    }
+
+    public void setNotificationManager(NotificationManager notificationManager) {
+        this.notificationManager = notificationManager;
     }
 
     public void tieBreaker(javafx.animation.Timeline gameLoop, javafx.scene.control.Label gameTimerLabel) {
@@ -123,16 +130,68 @@ public class VictoryConditionManager {
                     stats.recordMatchResult(playerWon, gameMode);
                 }
             
-                // Update quest manager
+                //Update quest manager
                 if (questManager != null && stats != null) {
+                    // Track which quests were completed before update
+                    java.util.Set<Integer> questIdsBefore = new java.util.HashSet<>();
+                    for (Quest q : questManager.getDailyQuests()) {
+                        if (q.getCompleted()) {
+                            questIdsBefore.add(q.getQuestType().getId());
+                        }
+                    }
+                    
                     questManager.onMatchEnded(playerWon, gameMode, stats);
                     questManager.updateFromStatistics(stats);
+                    
+                    // Find newly completed quests
+                    java.util.List<Quest> newlyCompletedQuests = new java.util.ArrayList<>();
+                    for (Quest quest : questManager.getDailyQuests()) {
+                        if (quest.getCompleted() && !questIdsBefore.contains(quest.getQuestType().getId())) {
+                            newlyCompletedQuests.add(quest);
+                        }
+                    }
+                    
+                    // Show notifications immediately
+                    if (notificationManager != null && !newlyCompletedQuests.isEmpty()) {
+                        for (Quest quest : newlyCompletedQuests) {
+                            notificationManager.showNotification(
+                                "Quest Complete!",
+                                "+" + quest.getQuestType().getGoldReward() + " Gold"
+                            );
+                        }
+                    }
                 }
-            
+                
                 // Update achievement manager
                 if (achievementManager != null && stats != null) {
+                    // Track which achievements were completed before update
+                    java.util.Set<Integer> achievementIdsBefore = new java.util.HashSet<>();
+                    for (Achievement a : achievementManager.getAchievements()) {
+                        if (a.getCompleted()) {
+                            achievementIdsBefore.add(a.getAchievementType().getId());
+                        }
+                    }
+                    
                     achievementManager.onMatchEnded(playerWon, gameMode, stats);
                     achievementManager.updateFromStatistics(stats);
+                    
+                    // Find newly completed achievements
+                    java.util.List<Achievement> newlyCompletedAchievements = new java.util.ArrayList<>();
+                    for (Achievement achievement : achievementManager.getAchievements()) {
+                        if (achievement.getCompleted() && !achievementIdsBefore.contains(achievement.getAchievementType().getId())) {
+                            newlyCompletedAchievements.add(achievement);
+                        }
+                    }
+                    
+                    // Show notifications immediately
+                    if (notificationManager != null && !newlyCompletedAchievements.isEmpty()) {
+                        for (Achievement achievement : newlyCompletedAchievements) {
+                            notificationManager.showNotification(
+                                "Achievement Unlocked!",
+                                "+" + achievement.getAchievementType().getGoldReward() + " Gold"
+                            );
+                        }
+                    }
                 }
             
                 // Save updated profile

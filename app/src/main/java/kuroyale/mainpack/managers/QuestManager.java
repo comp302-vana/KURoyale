@@ -293,6 +293,19 @@ public class QuestManager {
             }
         }
     }
+
+    /**
+     * Gets a list of quests that were just completed now.
+     */
+    public java.util.List<Quest> getNewlyCompletedQuests() {
+        java.util.List<Quest> newlyCompleted = new java.util.ArrayList<>();
+        for (Quest quest : dailyQuests) {
+            if (quest.getCompleted() && !quest.getClaimed()) {
+                newlyCompleted.add(quest);
+            }
+        }
+        return newlyCompleted;
+    }
     
     /**
      * Called when a challenge is completed.
@@ -314,8 +327,9 @@ public class QuestManager {
      * Updates a quest's progress and checks for completion.
      * "quest": the quest to update
      * "newProgress": the new progress value
+     * returns true if the quest was just completed now.
      */
-    private void updateQuestProgress(Quest quest, int newProgress) {
+    private boolean updateQuestProgress(Quest quest, int newProgress) {
         quest.setCurrentProgress(newProgress);
         
         // Check if quest is completed
@@ -323,7 +337,9 @@ public class QuestManager {
             quest.setCompleted(true);
             System.out.println("Quest completed: " + quest.getQuestType().getDescription() + 
                              " (+" + quest.getQuestType().getGoldReward() + " gold)");
+            return true;
         }
+        return false;
     }
     
     /**
