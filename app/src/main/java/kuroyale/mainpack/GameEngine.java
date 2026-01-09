@@ -21,6 +21,7 @@ import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.mainpack.managers.EntityRenderer;
 import kuroyale.mainpack.managers.CombatManager;
 import kuroyale.mainpack.managers.GameStateManager;
+import kuroyale.mainpack.managers.NotificationManager;
 import kuroyale.mainpack.managers.QuestManager;
 import kuroyale.mainpack.managers.CardManager;
 import kuroyale.mainpack.managers.SpellSystem;
@@ -274,6 +275,15 @@ public class GameEngine {
         arenaSetupManager.fillArenaGrid(entityPlacementManager);
         arenaSetupManager.loadDefaultArenaIfExists();
         entityRenderer.renderStaticObjects();
+        javafx.application.Platform.runLater(() -> {
+            if (arenaGrid != null && arenaGrid.getScene() != null) {
+                javafx.scene.Node root = arenaGrid.getScene().getRoot();
+                if (root instanceof javafx.scene.layout.AnchorPane) {
+                    NotificationManager notificationManager = new NotificationManager((javafx.scene.layout.AnchorPane) root);
+                    victoryConditionManager.setNotificationManager(notificationManager);
+                }
+            }
+        });
 
         // Initialize the AI opponent before starting game loop (only in single-player mode)
         if (!isPvPMode) {
