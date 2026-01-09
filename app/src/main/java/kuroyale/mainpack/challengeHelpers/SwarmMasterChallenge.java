@@ -7,6 +7,11 @@ import kuroyale.cardpack.Card;
 import kuroyale.mainpack.challengeHelpers.ChallengeValidator.ValidationResult;
 import kuroyale.mainpack.models.Challenge;
 
+/**
+ * Two patterns are used together for the implementation of challenges
+ * Strategy Pattern: Concrete implementation of Swarm Master challenge validation strategy.
+ * Template Method Pattern: Implements validateDeckImpl() hook method.
+ */
 public class SwarmMasterChallenge extends AbstractChallenge{
     // Swarm troop card IDs: 9 (Skeletons), 10 (Goblins), 11 (Spear Goblins), 
     // 12 (Archers), 13 (Minions), 14 (Minion Horde), 15 (Barbarians)
