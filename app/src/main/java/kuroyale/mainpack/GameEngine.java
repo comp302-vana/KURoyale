@@ -22,8 +22,11 @@ import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.mainpack.managers.EntityRenderer;
 import kuroyale.mainpack.managers.CombatManager;
 import kuroyale.mainpack.managers.GameStateManager;
+import kuroyale.mainpack.managers.NotificationManager;
+import kuroyale.mainpack.managers.PersistenceManager;
 import kuroyale.mainpack.managers.QuestManager;
 import kuroyale.mainpack.managers.CardManager;
+import kuroyale.mainpack.managers.ChallengeManager;
 import kuroyale.mainpack.managers.SpellSystem;
 import kuroyale.mainpack.managers.EntityUpdater;
 import kuroyale.mainpack.managers.TowerManager;
@@ -31,11 +34,15 @@ import kuroyale.mainpack.managers.SceneNavigationManager;
 import kuroyale.mainpack.managers.VictoryConditionManager;
 import kuroyale.mainpack.managers.EntityLifecycleManager;
 import kuroyale.mainpack.managers.EntityPlacementManager;
+import kuroyale.mainpack.challengeHelpers.ChallengeValidator;
 import kuroyale.mainpack.managers.AchievementManager;
 import kuroyale.mainpack.managers.ArenaSetupManager;
 import kuroyale.mainpack.managers.GameLoopManager;
 import kuroyale.mainpack.managers.DualPlayerStateManager;
+import kuroyale.mainpack.managers.EconomyManager;
+import kuroyale.mainpack.models.Challenge;
 import kuroyale.mainpack.models.GameMode;
+import kuroyale.mainpack.models.PlayerProfile;
 import kuroyale.deckpack.Deck;
 import kuroyale.mainpack.network.NetworkManager;
 import kuroyale.mainpack.network.NetworkBattleManager;
@@ -144,6 +151,8 @@ public class GameEngine {
     private GameLoopManager gameLoopManager;
     private QuestManager questManager;
     private AchievementManager achievementManager;
+    private ChallengeManager challengeManager;
+    private static Challenge.ChallengeType activeChallengeType = null;
 
     private SimpleAI aiOpponent;
 
@@ -365,9 +374,9 @@ public class GameEngine {
         }
 
         // Initialize persistence and economy for victory rewards
-        kuroyale.mainpack.managers.PersistenceManager persistenceManager = new kuroyale.mainpack.managers.PersistenceManager();
-        kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
-        kuroyale.mainpack.managers.EconomyManager economyManager = new kuroyale.mainpack.managers.EconomyManager(profile.getTotalGold(), persistenceManager);
+        PersistenceManager persistenceManager = new PersistenceManager();
+        PlayerProfile profile = persistenceManager.loadPlayerProfile();
+        EconomyManager economyManager = new EconomyManager(profile.getTotalGold(), persistenceManager);
         
         // Initialize new managers (careful with dependencies)
         sceneNavigationManager = new SceneNavigationManager(arenaGrid, gameStateManager);
@@ -379,6 +388,7 @@ public class GameEngine {
         entityLifecycleManager = new EntityLifecycleManager(arenaMap, combatManager, entityRenderer, entityUpdater, towerManager, rows, cols);
         questManager = new QuestManager();
         achievementManager = new AchievementManager();
+        challengeManager = new ChallengeManager(profile);
 
         // EntityPlacementManager needs to know about dual player state if PvP or network
         if (isPvPMode || isNetworkMode) {
@@ -431,6 +441,15 @@ public class GameEngine {
         arenaSetupManager.fillArenaGrid(entityPlacementManager);
         arenaSetupManager.loadDefaultArenaIfExists();
         entityRenderer.renderStaticObjects();
+        javafx.application.Platform.runLater(() -> {
+            if (arenaGrid != null && arenaGrid.getScene() != null) {
+                javafx.scene.Node root = arenaGrid.getScene().getRoot();
+                if (root instanceof javafx.scene.layout.AnchorPane) {
+                    NotificationManager notificationManager = new NotificationManager((javafx.scene.layout.AnchorPane) root);
+                    victoryConditionManager.setNotificationManager(notificationManager);
+                }
+            }
+        });
 
         // Initialize the AI opponent before starting game loop (only in single-player mode)
         if (!isPvPMode) {
@@ -440,13 +459,40 @@ public class GameEngine {
                 gameLoopManager.setAIOpponent(aiOpponent);
             }
         }
+
+        activeChallengeType = ChallengeController.getSelectedChallengeType();
+        if (activeChallengeType != null) {
+            // Challenge validation was already done before switching to battle scene
+            challengeManager.startChallenge(activeChallengeType);
+        }
         
         victoryConditionManager.setQuestManager(questManager);
         victoryConditionManager.setAchievementManager(achievementManager);
         victoryConditionManager.setPersistenceManager(persistenceManager);
+        victoryConditionManager.setChallengeManager(challengeManager);
+        if (!isPvPMode) {
+            victoryConditionManager.setGameStateManager(gameStateManager);
+        }
+        // Initialize match tracking for challenges
+        victoryConditionManager.initializeMatchTracking();
+        
+        // Set ChallengeManager on CardManager for cost display (only if challenge is active)
+        if (activeChallengeType != null) {
+            cardManager.setChallengeManager(challengeManager);
+            if (isPvPMode && cardManagerP2 != null) {
+                cardManagerP2.setChallengeManager(challengeManager);
+            }
+        } else {
+            // Clear challenge manager for normal battles
+            cardManager.setChallengeManager(null);
+            if (isPvPMode && cardManagerP2 != null) {
+                cardManagerP2.setChallengeManager(null);
+            }
+        }
         entityPlacementManager.setQuestManager(questManager);
         entityPlacementManager.setPersistenceManager(persistenceManager);
         entityPlacementManager.setAchievementManager(achievementManager);
+        entityPlacementManager.setChallengeManager(challengeManager);
         spellSystem.setQuestManager(questManager);
         spellSystem.setPersistenceManager(persistenceManager);
         spellSystem.setAchievementManager(achievementManager);

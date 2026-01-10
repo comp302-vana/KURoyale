@@ -19,6 +19,7 @@ public class PlayerProfile {
     private List<GoldTransaction> goldHistory;
     private Set<Integer> unlockedCards; // cardIds that are unlocked
     private int chestCount; // number of accumulated chests
+    private List<Challenge> challenges = new ArrayList<>();
 
     //necessary variables for quest,achievement and stats tracking
     private List<Quest> dailyQuests = new ArrayList<>();
@@ -82,6 +83,14 @@ public class PlayerProfile {
 
     public int getCardLevel(int cardId) {
         return cardLevels.getOrDefault(cardId, 1); // Default to Level 1 if not found
+    }
+
+    public List<Challenge> getChallenges() {
+        return new ArrayList<>(challenges);
+    }
+    
+    public void setChallenges(List<Challenge> challenges) {
+        this.challenges = challenges != null ? new ArrayList<>(challenges) : new ArrayList<>();
     }
 
     public void setCardLevel(int cardId, int level) {

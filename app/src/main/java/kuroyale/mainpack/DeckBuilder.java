@@ -62,6 +62,7 @@ public class DeckBuilder {
     private EconomyManager economyManager;
     private CardDataRepository cardDataRepository;
     private CardUpgradeManager cardUpgradeManager;
+    private AchievementManager achievementManager;
     private PlayerProfile playerProfile;
 
     @FXML
@@ -98,6 +99,10 @@ public class DeckBuilder {
         economyManager = new EconomyManager(playerProfile.getTotalGold(), persistenceManager);
         cardDataRepository = new CardDataRepository(playerProfile.getCardLevels());
         cardUpgradeManager = new CardUpgradeManager(economyManager, cardDataRepository, persistenceManager);
+
+        achievementManager = new AchievementManager();
+        achievementManager.setAchievements(playerProfile.getAchievements());
+        cardUpgradeManager.setAchievementManager(achievementManager);
 
         // Setup gold display
         if (goldLabel != null) {
@@ -419,6 +424,8 @@ public class DeckBuilder {
         CardUpgradeManager.UpgradeResult result = cardUpgradeManager.upgradeCard(card.getId());
 
         if (result.success) {
+            playerProfile.setAchievements(achievementManager.getAchievements());
+            persistenceManager.savePlayerProfile(playerProfile);
             // Update UI: refresh card display, gold display
             // Refresh the card node to show new level
             refreshCardDisplay(card.getId());
