@@ -313,7 +313,6 @@ public class QuestAchievementController implements Initializable {
     private void showNotification(String title, String message, int durationSeconds) {
         // Simple notification - you can enhance this with animations
         System.out.println(title + " - " + message);
-        // TODO: Implement visual notification popup if needed
     }
     
     @FXML

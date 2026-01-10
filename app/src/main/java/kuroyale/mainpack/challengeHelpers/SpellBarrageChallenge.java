@@ -41,10 +41,10 @@ public class SpellBarrageChallenge extends AbstractChallenge{
 
     @Override
     protected int getModifiedCostImpl(int originalCost, int cardId) {
-        //Decorator Pattern: Spell costs are reduced by 1
+        //Decorator Pattern: Spell costs are reduced by 1 (minimum 1)
         if (REQUIRED_SPELL_IDS.contains(cardId)) {
-                return (originalCost - 1);
-            }
+            return Math.max(1, originalCost - 1);
+        }
         return originalCost;
     }
 

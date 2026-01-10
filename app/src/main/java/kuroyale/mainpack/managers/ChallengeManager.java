@@ -20,37 +20,44 @@ public class ChallengeManager {
     private AbstractChallenge currentChallengeRules; //Implementation of challenge rules
 
     public ChallengeManager(PlayerProfile profile) {
-        this.challenges = profile.getChallenges();
-        if (this.challenges == null || this.challenges.isEmpty()) {
-            initializeChallenges();
-        }
+        List<Challenge> profileChallenges = profile.getChallenges();
+        this.challenges = new ArrayList<>(profileChallenges);
+        // Ensure all challenge types exist
+        ensureAllChallengesExist();
     }
 
-    private void initializeChallenges() {
-        challenges = new ArrayList<>();
-        for (ChallengeType type: ChallengeType.values()){
-            challenges.add(new Challenge(type, false, 0, 0, 0));
+    private void ensureAllChallengesExist() {
+        java.util.Set<ChallengeType> existingTypes = new java.util.HashSet<>();
+        for (Challenge challenge : challenges) {
+            existingTypes.add(challenge.getType());
+        }
+        
+        // Add any missing challenge types
+        for (ChallengeType type : ChallengeType.values()) {
+            if (!existingTypes.contains(type)) {
+                challenges.add(new Challenge(type, false, 0, 0, 0));
+            }
         }
     }
-
+    
     /**
      * Factory Pattern: Uses ChallengeFactory to create challenge rule instances.
      * Checks if a challenge is unlocked (previous challenge completed).
      */
     public boolean isChallengeUnlocked(ChallengeType type){
-        if(type.equals(ChallengeType.SWARM_MASTER)){
+        if(type == ChallengeType.SWARM_MASTER){
             return true;//first challenge is always unlocked
         }
-        if(type.equals(ChallengeType.SPELL_BARRAGE) && getChallenge(ChallengeType.SWARM_MASTER).isCompleted()){
+        if(type == ChallengeType.SPELL_BARRAGE && getChallenge(ChallengeType.SWARM_MASTER).isCompleted()){
             return true;//these ones are unlocked if the previous one is completed
         }
-        if(type.equals(ChallengeType.NO_BUILDINGS_ALLOWED) && getChallenge(ChallengeType.SPELL_BARRAGE).isCompleted()){
+        if(type == ChallengeType.NO_BUILDINGS_ALLOWED && getChallenge(ChallengeType.SPELL_BARRAGE).isCompleted()){
             return true;
         }
-        if(type.equals(ChallengeType.BUDGET_BATTLE) && getChallenge(ChallengeType.NO_BUILDINGS_ALLOWED).isCompleted()){
+        if(type == ChallengeType.BUDGET_BATTLE && getChallenge(ChallengeType.NO_BUILDINGS_ALLOWED).isCompleted()){
             return true;
         }
-        if(type.equals(ChallengeType.TANK_RUSH) && getChallenge(ChallengeType.BUDGET_BATTLE).isCompleted()){
+        if(type == ChallengeType.TANK_RUSH && getChallenge(ChallengeType.BUDGET_BATTLE).isCompleted()){
             return true;
         }
         return false;
@@ -63,7 +70,10 @@ public class ChallengeManager {
                 return challenge;
             }
         }
-        return null;
+        // Challenge not found - create it
+        Challenge newChallenge = new Challenge(type, false, 0, 0, 0);
+        challenges.add(newChallenge);
+        return newChallenge;
     }
 
     /**
@@ -143,6 +153,6 @@ public class ChallengeManager {
     }
     
     public List<Challenge> getChallenges() {
-        return challenges;
+        return new ArrayList<>(challenges);
     }
 }

@@ -13,6 +13,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import kuroyale.mainpack.managers.ChallengeManager;
@@ -45,6 +46,8 @@ public class ChallengeController implements Initializable {
     private Label challenge5Label, challenge5Desc, challenge5Reward, challenge5Stars;
     @FXML
     private Button challenge5Button;
+    @FXML
+    private VBox statsVBox;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -59,6 +62,9 @@ public class ChallengeController implements Initializable {
         PersistenceManager persistenceManager = new PersistenceManager();
         PlayerProfile profile = persistenceManager.loadPlayerProfile();
         ChallengeManager challengeManager = new ChallengeManager(profile);
+
+        profile.setChallenges(challengeManager.getChallenges());
+        persistenceManager.savePlayerProfile(profile);
         
         Challenge[] challenges = new Challenge[5];
         challenges[0] = challengeManager.getChallenge(Challenge.ChallengeType.SWARM_MASTER);
@@ -89,6 +95,37 @@ public class ChallengeController implements Initializable {
             } else {
                 buttons[i].setText(challenge.isCompleted() ? "Replay" : "Start Challenge");
             }
+        }
+        
+        // Populate statistics VBox
+        populateStatsVBox(challenges);
+    }
+    
+    private void populateStatsVBox(Challenge[] challenges) {
+        if (statsVBox == null) return;
+        
+        // Clear existing content except title
+        statsVBox.getChildren().clear();
+        Label titleLabel = new Label("Statistics");
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+        statsVBox.getChildren().add(titleLabel);
+        
+        String[] challengeNames = {"Swarm Master", "Spell Barrage", "No Buildings", "Budget Battle", "Tank Rush"};
+        
+        for (int i = 0; i < challenges.length; i++) {
+            Challenge challenge = challenges[i];
+            
+            Label nameLabel = new Label(challengeNames[i]);
+            nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5 0 0 0;");
+            statsVBox.getChildren().add(nameLabel);
+            
+            Label attemptsLabel = new Label("Attempts: " + challenge.getAttempts());
+            attemptsLabel.setStyle("-fx-font-size: 12px; -fx-padding: 0 0 0 10;");
+            statsVBox.getChildren().add(attemptsLabel);
+            
+            Label completionsLabel = new Label("Completions: " + challenge.getNumOfCompletion());
+            completionsLabel.setStyle("-fx-font-size: 12px; -fx-padding: 0 0 5 10;");
+            statsVBox.getChildren().add(completionsLabel);
         }
     }
 

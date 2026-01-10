@@ -29,6 +29,7 @@ public class EntityPlacementManager {
     private QuestManager questManager;
     private PersistenceManager persistenceManager;
     private AchievementManager achievementManager;
+    private ChallengeManager challengeManager;
 
     // Constructor for single-player mode
     public EntityPlacementManager(ArenaMap arenaMap, GameStateManager gameStateManager,
@@ -75,6 +76,11 @@ public class EntityPlacementManager {
     public void setAchievementManager(AchievementManager achievementManager) {
         this.achievementManager = achievementManager;
     }
+
+    public void setChallengeManager(ChallengeManager challengeManager) {
+        this.challengeManager = challengeManager;
+    }
+
     /**
      * Determine which player (1 or 2) based on drop location.
      * Player 1 controls left side (col < cols/2 - 1), Player 2 controls right side (col >= cols/2).
@@ -94,6 +100,11 @@ public class EntityPlacementManager {
 
             Card cardToCheck = CardFactory.createCard(cardID);
             int cost = cardToCheck.getCost();
+
+            // Decorator Pattern: Apply challenge-specific cost modification
+            if (challengeManager != null) {
+                cost = challengeManager.getModifiedCost(cost, cardID);
+            }
 
             // Determine player and get appropriate managers
             int playerId = determinePlayerFromDropLocation(targetCol);

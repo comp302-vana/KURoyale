@@ -25,6 +25,7 @@ public class CardManager {
 
     private AnchorPane[] cardSlots;
     private Label[] costLabels;
+    private ChallengeManager challengeManager;
 
     public CardManager(AnchorPane cardSlot0, AnchorPane cardSlot1, AnchorPane cardSlot2, AnchorPane cardSlot3,
                       Label card1CostLabel, Label card2CostLabel, Label card3CostLabel, Label card4CostLabel) {
@@ -33,6 +34,25 @@ public class CardManager {
     }
 
     public List<Card> getCurrentHand() { return currentHand; }
+    
+    public void setChallengeManager(ChallengeManager challengeManager) {
+        this.challengeManager = challengeManager;
+        // Refresh costs for cards currently in hand
+        refreshCurrentHandCosts();
+    }
+    
+    private void refreshCurrentHandCosts() {
+        for (int i = 0; i < currentHand.size() && i < CARD_SLOT_COUNT; i++) {
+            Card card = currentHand.get(i);
+            if (card != null && costLabels[i] != null) {
+                int displayCost = card.getCost();
+                if (challengeManager != null) {
+                    displayCost = challengeManager.getModifiedCost(card.getCost(), card.getId());
+                }
+                costLabels[i].setText(String.valueOf(displayCost));
+            }
+        }
+    }
     public int findCardSlotIndex(int cardID) {
         for (int i = 0; i < currentHand.size(); i++) {
             Card handCard = currentHand.get(i);
@@ -162,7 +182,12 @@ public class CardManager {
         }
 
         if (costLabel != null) {
-            costLabel.setText(String.valueOf(card.getCost()));
+            int displayCost = card.getCost();
+            // Decorator Pattern: Apply challenge-specific cost modification for display
+            if (challengeManager != null) {
+                displayCost = challengeManager.getModifiedCost(card.getCost(), card.getId());
+            }
+            costLabel.setText(String.valueOf(displayCost));
         }
 
         slotPane.setOnDragDetected(null);

@@ -6,9 +6,10 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.UIManager">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.ChallengeController">
    <children>
       <Label alignment="CENTER" layoutX="359.0" layoutY="14.0" prefHeight="60.0" prefWidth="572.0" text="Challenge Mode">
          <font>
@@ -30,10 +31,8 @@
         </rowConstraints>
          <children>
             <Label fx:id="challenge1Label" style="-fx-font-weight: bold; -fx-font-size: 16px;" text="Swarm Master" />
-            <Label fx:id="challenge5Desc" prefHeight="18.0" prefWidth="146.0" style="-fx-font-size: 12px;" wrapText="true" GridPane.columnIndex="1" />
-            <Label fx:id="challenge5Reward" style="-fx-font-size: 12px;" text="Reward: 250 Gold" GridPane.rowIndex="1" />
             <Label fx:id="challenge1Stars" style="-fx-font-size: 14px;" text="Stars: ★☆☆" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button fx:id="challenge1Button" mnemonicParsing="false" onAction="#challenge5Clicked" prefHeight="34.0" prefWidth="186.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Button fx:id="challenge1Button" mnemonicParsing="false" onAction="#challenge1Clicked" prefHeight="34.0" prefWidth="186.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <Label fx:id="challenge1Reward" prefWidth="101.0" style="-fx-font-size: 12px;" text="Reward: 250 Gold" GridPane.rowIndex="1" />
             <Label fx:id="challenge1Desc" style="-fx-font-size: 12px;" text="Use only swarm troops" wrapText="true" GridPane.columnIndex="1" />
          </children>
@@ -53,7 +52,7 @@
             <Label fx:id="challenge2Desc" prefHeight="18.0" prefWidth="134.0" style="-fx-font-size: 12px;" text="All 4 spells, spell cost -1" wrapText="true" GridPane.columnIndex="1" />
             <Label fx:id="challenge2Reward" style="-fx-font-size: 12px;" text="Reward: 300 Gold" GridPane.rowIndex="1" />
             <Label fx:id="challenge2Stars" style="-fx-font-size: 14px;" text="Stars: ★☆☆" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button fx:id="challenge2Button" mnemonicParsing="false" onAction="#challenge5Clicked" prefHeight="34.0" prefWidth="190.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Button fx:id="challenge2Button" mnemonicParsing="false" onAction="#challenge2Clicked" prefHeight="34.0" prefWidth="190.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
          </children>
       </GridPane>
       <GridPane layoutX="502.0" layoutY="321.0" prefHeight="100.0" prefWidth="366.0">
@@ -71,7 +70,7 @@
             <Label fx:id="challenge3Desc" style="-fx-font-size: 12px;" text="Only troops or spells, no buildings" wrapText="true" GridPane.columnIndex="1" />
             <Label fx:id="challenge3Reward" style="-fx-font-size: 12px;" text="Reward: 200 Gold" GridPane.rowIndex="1" />
             <Label fx:id="challenge3Stars" style="-fx-font-size: 14px;" text="Stars: ★☆☆" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button fx:id="challenge3Button" mnemonicParsing="false" onAction="#challenge5Clicked" prefHeight="34.0" prefWidth="194.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Button fx:id="challenge3Button" mnemonicParsing="false" onAction="#challenge3Clicked" prefHeight="34.0" prefWidth="194.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
          </children>
       </GridPane>
       <GridPane layoutX="502.0" layoutY="429.0" prefHeight="100.0" prefWidth="366.0">
@@ -89,7 +88,7 @@
             <Label fx:id="challenge4Desc" style="-fx-font-size: 12px;" text="Cards cost ≤3 elixir" wrapText="true" GridPane.columnIndex="1" />
             <Label fx:id="challenge4Reward" style="-fx-font-size: 12px;" text="Reward: 250 Gold" GridPane.rowIndex="1" />
             <Label fx:id="challenge4Stars" style="-fx-font-size: 14px;" text="Stars: ★☆☆" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button fx:id="challenge4Button" mnemonicParsing="false" onAction="#challenge5Clicked" prefHeight="34.0" prefWidth="198.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Button fx:id="challenge4Button" mnemonicParsing="false" onAction="#challenge4Clicked" prefHeight="34.0" prefWidth="198.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
          </children>
       </GridPane>
       <GridPane layoutX="502.0" layoutY="538.0" prefHeight="100.0" prefWidth="366.0">
@@ -110,5 +109,10 @@
             <Button fx:id="challenge5Button" mnemonicParsing="false" onAction="#challenge5Clicked" prefHeight="34.0" prefWidth="198.0" text="Start Challenge" GridPane.columnIndex="1" GridPane.rowIndex="2" />
          </children>
       </GridPane>
+      <VBox fx:id="statsVBox" layoutX="900.0" layoutY="105.0" prefHeight="510.0" prefWidth="250.0" spacing="10.0">
+         <children>
+            <Label style="-fx-font-weight: bold; -fx-font-size: 18px;" text="Statistics" />
+         </children>
+      </VBox>
    </children>
 </AnchorPane>
