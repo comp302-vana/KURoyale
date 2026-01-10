@@ -7,6 +7,9 @@ import kuroyale.cardpack.Card;
 import kuroyale.mainpack.challengeHelpers.ChallengeValidator.ValidationResult;
 import kuroyale.mainpack.models.Challenge.ChallengeType;
 
+/**
+ * Strategy Pattern + Decorator Pattern: Tank Rush challenge.
+ */
 public class TankRushChallenge extends AbstractChallenge{
     // High-hp Unit IDs: 1 (Knight), 3 (Mini P.E.K.K.A), 4 (Giant), 
     // 7 (Valkyrie), 15 (Barbarians)

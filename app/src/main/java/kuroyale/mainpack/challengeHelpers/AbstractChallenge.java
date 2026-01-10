@@ -3,7 +3,9 @@ package kuroyale.mainpack.challengeHelpers;
 import java.util.List;
 
 import kuroyale.cardpack.Card;
+import kuroyale.mainpack.challengeHelpers.ChallengeValidator.ValidationResult;
 import kuroyale.mainpack.models.Challenge;
+import kuroyale.mainpack.models.Challenge.ChallengeType;
 
 /**
  * Template Method Pattern: Defines the skeleton of the challenge algorithm.
@@ -11,9 +13,9 @@ import kuroyale.mainpack.models.Challenge;
  * challenge-specific behavior.
  */
 public abstract class AbstractChallenge {
-    protected final Challenge.ChallengeType type;
+    protected final ChallengeType type;
 
-    public AbstractChallenge(Challenge.ChallengeType type){
+    public AbstractChallenge(ChallengeType type){
         this.type = type;
     }
 
@@ -21,9 +23,9 @@ public abstract class AbstractChallenge {
      * Template Method: Validates a deck using the challenge-specific validator.
      * Subclasses implement validateDeckImpl() to provide specific validation logic.
      */
-    public ChallengeValidator.ValidationResult validateDeck(List<Card> cards) {
+    public ValidationResult validateDeck(List<Card> cards) {
         if (cards == null || cards.size() != 8) {
-            return ChallengeValidator.ValidationResult.failed("Deck must contain exactly 8 cards");
+            return ValidationResult.failed("Deck must contain exactly 8 cards");
         }
         return validateDeckImpl(cards);
     }
@@ -32,7 +34,7 @@ public abstract class AbstractChallenge {
      * Hook method: Challenge-specific deck validation (Strategy Pattern).
      * Each challenge implements this differently.
      */
-    protected abstract ChallengeValidator.ValidationResult validateDeckImpl(List<Card> cards);
+    protected abstract ValidationResult validateDeckImpl(List<Card> cards);
     
     /**
      * Hook method: Challenge-specific cost modification (Decorator Pattern).
@@ -49,5 +51,5 @@ public abstract class AbstractChallenge {
      */
     public abstract String getRuleDisplayText();
     
-    public Challenge.ChallengeType getType() { return type; }
+    public ChallengeType getType() { return type; }
 }
