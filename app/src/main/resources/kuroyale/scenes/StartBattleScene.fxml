@@ -56,6 +56,15 @@
             </ImageView>
          </graphic>
       </Button>
+      <Button layoutX="500.0" layoutY="225.0" mnemonicParsing="false" onAction="#btnChallengeModeClicked" prefHeight="120.0" prefWidth="240.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="230.0" AnchorPane.leftAnchor="540.0" AnchorPane.rightAnchor="500.0" AnchorPane.topAnchor="370.0">
+         <graphic>
+            <ImageView pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@../images/challenge_btn.png" />
+               </image>
+            </ImageView>
+         </graphic>
+      </Button>
       <Button layoutX="255.0" layoutY="405.0" mnemonicParsing="false" onAction="#btnLocalPvPClicked" prefHeight="50.0" prefWidth="200.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 20px;" text="Local PvP" />
       <ImageView fx:id="arenaPreviewImage" fitHeight="266.0" layoutX="526.0" layoutY="79.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="375.0" AnchorPane.leftAnchor="404.0" AnchorPane.topAnchor="75.0">
          <viewport>
