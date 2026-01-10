@@ -5,7 +5,7 @@ import java.util.Set;
 
 import kuroyale.cardpack.Card;
 import kuroyale.mainpack.challengeHelpers.ChallengeValidator.ValidationResult;
-import kuroyale.mainpack.models.Challenge;
+import kuroyale.mainpack.models.Challenge.ChallengeType;
 
 /**
  * Two patterns are used together for the implementation of challenges
@@ -19,7 +19,7 @@ public class SwarmMasterChallenge extends AbstractChallenge{
     
     //this class is the super of "SWARM_MASTER" in Challange.java
     public SwarmMasterChallenge() {
-        super(Challenge.ChallengeType.SWARM_MASTER);
+        super(ChallengeType.SWARM_MASTER);
     }
     
     @Override

@@ -5,8 +5,12 @@ import java.util.Set;
 
 import kuroyale.cardpack.Card;
 import kuroyale.mainpack.challengeHelpers.ChallengeValidator.ValidationResult;
-import kuroyale.mainpack.models.Challenge;
+import kuroyale.mainpack.models.Challenge.ChallengeType;
 
+/**
+ * Strategy Pattern + Decorator Pattern: No Buildings Allowed challenge.
+ * Template Method Pattern: Implements validateDeckImpl() and canPlayCardImpl() hooks.
+ */
 public class NoBuildingsAllowedChallenge extends AbstractChallenge {
     //IDs of the building cards: 16 (Cannon), 17 (Tesla), 18 (Mortar), 19 (Bomb Tower)
     //20 (Inferno Tower), 21 (Tombstone), 22 (Goblin Hut), 23 (Barbarian Hut), 24 (Elixir Collector)
@@ -14,7 +18,7 @@ public class NoBuildingsAllowedChallenge extends AbstractChallenge {
 
     //this class is the super of "NO_BUILDINGS_ALLOWED" in Challange.java
     public NoBuildingsAllowedChallenge() {
-        super(Challenge.ChallengeType.NO_BUILDINGS_ALLOWED);
+        super(ChallengeType.NO_BUILDINGS_ALLOWED);
     }
 
     @Override

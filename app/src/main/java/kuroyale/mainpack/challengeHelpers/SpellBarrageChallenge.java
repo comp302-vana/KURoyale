@@ -5,7 +5,7 @@ import java.util.Set;
 
 import kuroyale.cardpack.Card;
 import kuroyale.mainpack.challengeHelpers.ChallengeValidator.ValidationResult;
-import kuroyale.mainpack.models.Challenge;
+import kuroyale.mainpack.models.Challenge.ChallengeType;
 
 /**
  * Three patterns are used together for the implementation of challenges
@@ -19,7 +19,7 @@ public class SpellBarrageChallenge extends AbstractChallenge{
 
     //this class is the super of "SPELL_BARRAGE" in Challange.java
     public SpellBarrageChallenge() {
-        super(Challenge.ChallengeType.SPELL_BARRAGE);
+        super(ChallengeType.SPELL_BARRAGE);
     }
 
     @Override
