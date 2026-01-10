@@ -433,6 +433,25 @@ public class UIManager extends Application {
     void btnLocalPvPClicked(ActionEvent event) throws IOException {
         switchToPvPDeckSelectionScene(event);
     }
+    
+    @FXML
+    void btnNetworkMultiplayerClicked(ActionEvent event) throws IOException {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/kuroyale/scenes/NetworkConnectionDialog.fxml"));
+            Parent root = loader.load();
+            kuroyale.mainpack.network.NetworkConnectionDialogController controller = loader.getController();
+            
+            Stage dialog = new Stage();
+            controller.setStage(dialog);
+            dialog.setTitle("Network Multiplayer");
+            dialog.setScene(new Scene(root));
+            dialog.setResizable(false);
+            dialog.initOwner((Stage) ((Node) event.getSource()).getScene().getWindow());
+            dialog.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private void switchToStartBattleScene(ActionEvent event) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/kuroyale/scenes/StartBattleScene.fxml"));

@@ -43,20 +43,30 @@ public class PointsCounter extends HBox {
         label.setStyle("-fx-font-size: 12px;" + "-fx-text-fill: black;" + "-fx-font-weight: bold;");
         return label;
     }
-
+    //REQUIRES: PointsCounter to be initialized
+    //MODIFIES: this.ourPoints:
+    //EFFECTS: Increments outPoints by 0.111111111111 and updates label by rounding.
     public void addToUs(){
         ourPoints+=0.111111111111;
         ourLabel.setText(String.valueOf((int) Math.round(ourPoints)));
     }
-
+    //REQUIRES: PointsCounter to be initialized
+    //MODIFIES: this.enemyPoints:
+    //EFFECTS: Increments enemyPoints by 0.111111111111 and updates label by rounding.
     public void addToEnemy(){
         enemyPoints+=0.111111111111;
         enemyLabel.setText(String.valueOf((int) Math.round(enemyPoints)));
     }
+    //REQUIRES: PointsCounter to be initialized
+    //MODIFIES: this.ourPoints:
+    //EFFECTS: Sets outPoints to point and updates label by rounding.
     public void setOurPoints(int point){
         ourPoints=point;
         ourLabel.setText(String.valueOf((int) Math.round(ourPoints)));
     }
+    //REQUIRES: PointsCounter to be initialized
+    //MODIFIES: this.enemyPoints:
+    //EFFECTS: Sets enemyPoints to point and updates label by rounding.
     public void setEnemyPoints(int point){
         enemyPoints=point;
         enemyLabel.setText(String.valueOf((int) Math.round(enemyPoints)));

@@ -35,6 +35,29 @@ public class CombatManager {
 
     public void updateCooldowns(java.util.List<AliveEntity> activeEntities) {
         // Update attack cooldowns
+        /*
+         * REQUIRES: activeEntities is not null.
+         * activeEntities contains all currently active AliveEntity instances.
+         * ENTITY_UPDATE_INTERVAL > 0.
+         * MODIFIES: attackCooldowns, stunDurations.
+         * EFFECTS: For each entity tracked in attackCooldowns and stunDurations:
+         * 1. If the entity is dead (HP <= 0) or not present in activeEntities,
+         * removes the entity from both maps.
+         * 2. Otherwise, decreases the stored cooldown or stun duration by ENTITY_UPDATE_INTERVAL.
+         * 3. If a cooldown or stun duration reaches 0 or below after the update,
+         * removes that entry from the corresponding map.
+         *//*
+         * REQUIRES: activeEntities is not null.
+         * activeEntities contains all currently active AliveEntity instances.
+         * ENTITY_UPDATE_INTERVAL > 0.
+         * MODIFIES: attackCooldowns, stunDurations.
+         * EFFECTS: For each entity tracked in attackCooldowns and stunDurations:
+         * 1. If the entity is dead (HP <= 0) or not present in activeEntities,
+         * removes the entity from both maps.
+         * 2. Otherwise, decreases the stored cooldown or stun duration by ENTITY_UPDATE_INTERVAL.
+         * 3. If a cooldown or stun duration reaches 0 or below after the update,
+         * removes that entry from the corresponding map.
+         */
         for (AliveEntity entity : new java.util.ArrayList<>(attackCooldowns.keySet())) {
             if (entity.getHP() <= 0 || !activeEntities.contains(entity)) {
                 attackCooldowns.remove(entity);
