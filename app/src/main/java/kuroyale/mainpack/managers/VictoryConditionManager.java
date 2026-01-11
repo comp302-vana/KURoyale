@@ -1,5 +1,7 @@
 package kuroyale.mainpack.managers;
 
+import java.util.List;
+
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
@@ -280,11 +282,33 @@ public class VictoryConditionManager {
                                 
                                 // Update challenge progress in profile
                                 profile.setChallenges(challengeManager.getChallenges());
+                                
+                                // Update PlayerStatistics to sync with challenge list
+                                List<Challenge> allChallenges = challengeManager.getChallenges();
+                                int completedCount = 0;
+                                boolean hasThreeStars = false;
+                                for (Challenge ch : allChallenges) {
+                                    if (ch.isCompleted()) {
+                                        completedCount++;
+                                    }
+                                    if (ch.getStarsEarned() > 3) {
+                                        hasThreeStars = true;
+                                    }
+                                }
+                                stats.setChallengesCompleted(completedCount);
+                                if (hasThreeStars) {
+                                    stats.setChallengesWithThreeStars(1);
+                                }
                             }
                             
                             // Notify quest manager about challenge completion
                             if (questManager != null) {
                                 questManager.onChallengeCompleted(stars);
+                            }
+                            
+                            // Notify achievement manager about challenge completion
+                            if (achievementManager != null && stats != null) {
+                                achievementManager.onChallengeCompleted(stars, stats);
                             }
                         }
                         
