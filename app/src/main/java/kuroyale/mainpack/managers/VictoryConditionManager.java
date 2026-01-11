@@ -228,21 +228,34 @@ public class VictoryConditionManager {
                         Challenge currentChallenge = challengeManager.getCurrentChallenge();
                         
                         if (playerWon) {
-                            // Calculate actual match time
-                            long matchEndTime = System.currentTimeMillis();
-                            int timeSeconds = (int) ((matchEndTime - matchStartTime) / 1000);
+                            // Calculate actual match time using game timer (starts at 180, counts down)
+                            int timeSeconds = 0;
+                            if (gameStateManager != null) {
+                                timeSeconds = 180 - gameStateManager.getTotalSeconds();
+                            } else {
+                                long matchEndTime = System.currentTimeMillis();
+                                if (matchStartTime > 0) {
+                                    timeSeconds = (int) ((matchEndTime - matchStartTime) / 1000);
+                                }
+                            }
                             
                             // Check if player king tower took damage
                             boolean tookDamage = false;
+                            TowerEntity playerKingTower = null;
                             for (int r = 0; r < rows; r++) {
                                 for (int c = 0; c < cols; c++) {
                                     AliveEntity entity = arenaMap.getEntity(r, c);
                                     if (entity instanceof TowerEntity tower && tower.isKing() && tower.isPlayer()) {
-                                        if (tower.getHP() < playerKingTowerInitialHP) {
-                                            tookDamage = true;
-                                        }
+                                        playerKingTower = tower;
                                         break;
                                     }
+                                }
+                            }
+                            
+                            // Check damage: compare current HP to initial HP (if tower exists)
+                            if (playerKingTower != null && playerKingTowerInitialHP > 0) {
+                                if (playerKingTower.getHP() < playerKingTowerInitialHP) {
+                                    tookDamage = true;
                                 }
                             }
                             
@@ -255,6 +268,7 @@ public class VictoryConditionManager {
                                 currentChallenge.setStarsEarned(stars);
                             }
                             currentChallenge.incrementCompletion();
+                            currentChallenge.updateFastestTime(timeSeconds);
                             
                             // Award gold
                             int goldReward = currentChallenge.getType().getGoldReward();
@@ -299,3 +313,4 @@ public class VictoryConditionManager {
         System.out.println("Chest awarded! Total chests: " + profile.getChestCount());
     }
 }
+
