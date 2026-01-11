@@ -242,7 +242,9 @@ public class GameEngine {
             // Network mode: only one card manager (each player sees only their deck)
             cardManager = new CardManager(cardSlot0, cardSlot1, cardSlot2, cardSlot3,
                                          card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel);
-            
+            // Set elixir manager for EntityUpdater
+            entityUpdater.setDualPlayerStateManager(dualPlayerStateManager);
+    
             // Load deck based on whether we're host or client
             NetworkManager networkManager = NetworkManager.getInstance();
             DeckManager deckManager = new DeckManager();
@@ -316,7 +318,8 @@ public class GameEngine {
                                          card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel);
             cardManagerP2 = new CardManager(cardSlotP2_0, cardSlotP2_1, cardSlotP2_2, cardSlotP2_3,
                                            card1CostLabelP2, card2CostLabelP2, card3CostLabelP2, card4CostLabelP2);
-            
+            // Set elixir manager for EntityUpdater
+            entityUpdater.setDualPlayerStateManager(dualPlayerStateManager);
             // Load decks for both players
             if (player1Deck != null) {
                 cardManager.loadDeckForPlayer(player1Deck);
@@ -355,9 +358,12 @@ public class GameEngine {
             gameStateManager = new GameStateManager(gameTimerLabel, elixirCountLabel, elixirProgressBar);
             cardManager = new CardManager(cardSlot0, cardSlot1, cardSlot2, cardSlot3,
                                          card1CostLabel, card2CostLabel, card3CostLabel, card4CostLabel);
+            // Set elixir manager for EntityUpdater
+            entityUpdater.setGameStateManager(gameStateManager);
             // Use slot-based deck system: load the selected deck number (defaults to Deck1)
             int selectedDeckNumber = DeckManager.getSelectedDeckNumber();
             Deck selectedDeck = DeckManager.loadDeckByNumber(selectedDeckNumber);
+
             if (selectedDeck != null) {
                 cardManager.loadDeckForPlayer(selectedDeck);
             } else {
