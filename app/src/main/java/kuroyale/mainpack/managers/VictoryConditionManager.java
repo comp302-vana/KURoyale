@@ -1,5 +1,7 @@
 package kuroyale.mainpack.managers;
 
+import java.util.List;
+
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
@@ -228,21 +230,34 @@ public class VictoryConditionManager {
                         Challenge currentChallenge = challengeManager.getCurrentChallenge();
                         
                         if (playerWon) {
-                            // Calculate actual match time
-                            long matchEndTime = System.currentTimeMillis();
-                            int timeSeconds = (int) ((matchEndTime - matchStartTime) / 1000);
+                            // Calculate actual match time using game timer (starts at 180, counts down)
+                            int timeSeconds = 0;
+                            if (gameStateManager != null) {
+                                timeSeconds = 180 - gameStateManager.getTotalSeconds();
+                            } else {
+                                long matchEndTime = System.currentTimeMillis();
+                                if (matchStartTime > 0) {
+                                    timeSeconds = (int) ((matchEndTime - matchStartTime) / 1000);
+                                }
+                            }
                             
                             // Check if player king tower took damage
                             boolean tookDamage = false;
+                            TowerEntity playerKingTower = null;
                             for (int r = 0; r < rows; r++) {
                                 for (int c = 0; c < cols; c++) {
                                     AliveEntity entity = arenaMap.getEntity(r, c);
                                     if (entity instanceof TowerEntity tower && tower.isKing() && tower.isPlayer()) {
-                                        if (tower.getHP() < playerKingTowerInitialHP) {
-                                            tookDamage = true;
-                                        }
+                                        playerKingTower = tower;
                                         break;
                                     }
+                                }
+                            }
+                            
+                            // Check damage: compare current HP to initial HP (if tower exists)
+                            if (playerKingTower != null && playerKingTowerInitialHP > 0) {
+                                if (playerKingTower.getHP() < playerKingTowerInitialHP) {
+                                    tookDamage = true;
                                 }
                             }
                             
@@ -255,6 +270,7 @@ public class VictoryConditionManager {
                                 currentChallenge.setStarsEarned(stars);
                             }
                             currentChallenge.incrementCompletion();
+                            currentChallenge.updateFastestTime(timeSeconds);
                             
                             // Award gold
                             int goldReward = currentChallenge.getType().getGoldReward();
@@ -266,11 +282,33 @@ public class VictoryConditionManager {
                                 
                                 // Update challenge progress in profile
                                 profile.setChallenges(challengeManager.getChallenges());
+                                
+                                // Update PlayerStatistics to sync with challenge list
+                                List<Challenge> allChallenges = challengeManager.getChallenges();
+                                int completedCount = 0;
+                                boolean hasThreeStars = false;
+                                for (Challenge ch : allChallenges) {
+                                    if (ch.isCompleted()) {
+                                        completedCount++;
+                                    }
+                                    if (ch.getStarsEarned() > 3) {
+                                        hasThreeStars = true;
+                                    }
+                                }
+                                stats.setChallengesCompleted(completedCount);
+                                if (hasThreeStars) {
+                                    stats.setChallengesWithThreeStars(1);
+                                }
                             }
                             
                             // Notify quest manager about challenge completion
                             if (questManager != null) {
                                 questManager.onChallengeCompleted(stars);
+                            }
+                            
+                            // Notify achievement manager about challenge completion
+                            if (achievementManager != null && stats != null) {
+                                achievementManager.onChallengeCompleted(stars, stats);
                             }
                         }
                         
@@ -299,3 +337,4 @@ public class VictoryConditionManager {
         System.out.println("Chest awarded! Total chests: " + profile.getChestCount());
     }
 }
+

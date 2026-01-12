@@ -35,7 +35,7 @@ public class ChallengeManager {
         // Add any missing challenge types
         for (ChallengeType type : ChallengeType.values()) {
             if (!existingTypes.contains(type)) {
-                challenges.add(new Challenge(type, false, 0, 0, 0));
+                challenges.add(new Challenge(type, false, 0, 0, 0, -1));
             }
         }
     }
@@ -71,7 +71,7 @@ public class ChallengeManager {
             }
         }
         // Challenge not found - create it
-        Challenge newChallenge = new Challenge(type, false, 0, 0, 0);
+        Challenge newChallenge = new Challenge(type, false, 0, 0, 0, -1);
         challenges.add(newChallenge);
         return newChallenge;
     }

@@ -10,13 +10,15 @@ public class Challenge {
     private int starsEarned;
     private int timesAttempted;
     private int timesCompleted;
+    private int fastestTime = -1; //fastest time of completion
 
-    public Challenge(ChallengeType type, boolean completed, int starsEarned, int timesAttempted, int timesCompleted){
+    public Challenge(ChallengeType type, boolean completed, int starsEarned, int timesAttempted, int timesCompleted, int fastestTime){
         this.type = type;
         this.completed = completed;
         this.starsEarned = starsEarned;
         this.timesAttempted = timesAttempted;
         this.timesCompleted = timesCompleted;
+        this.fastestTime = fastestTime;
     }
 
     public enum ChallengeType{
@@ -64,5 +66,11 @@ public class Challenge {
     public void incrementAttempts() { this.timesAttempted++; }
     public int getNumOfCompletion() {return timesCompleted;}
     public void incrementCompletion() {this.timesCompleted++;}
+    public int getFastestTime() { return fastestTime; }
+    public void updateFastestTime(int timeSeconds) {
+        if (fastestTime == -1 || timeSeconds < fastestTime) {
+            fastestTime = timeSeconds;
+        }
+    }
 
 }

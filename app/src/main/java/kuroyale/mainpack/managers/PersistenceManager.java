@@ -145,7 +145,8 @@ public class PersistenceManager {
                             challenge.isCompleted() + "," +
                             challenge.getStarsEarned() + "," +
                             challenge.getAttempts() + "," +
-                            challenge.getNumOfCompletion());
+                            challenge.getNumOfCompletion() + "," +
+                            challenge.getFastestTime());
                     }
                 }
                 pw.println();
@@ -308,9 +309,15 @@ public class PersistenceManager {
                         int attempts = Integer.parseInt(parts[3].trim());
                         int completions = Integer.parseInt(parts[4].trim());
                         
+                        // Handle backwards compatibility: if fastestTime not present, default to -1
+                        int fastestTime = -1;
+                        if (parts.length >= 6) {
+                            fastestTime = Integer.parseInt(parts[5].trim());
+                        }
+                        
                         Challenge.ChallengeType type = findChallengeTypeById(typeId);
                         if (type != null) {
-                            Challenge challenge = new Challenge(type, completed, stars, attempts, completions);
+                            Challenge challenge = new Challenge(type, completed, stars, attempts, completions, fastestTime);
                             challenges.add(challenge);
                         }
                     }
@@ -332,7 +339,7 @@ public class PersistenceManager {
             // Add any missing challenge types
             for (Challenge.ChallengeType type : Challenge.ChallengeType.values()) {
                 if (!existingTypes.contains(type)) {
-                    challenges.add(new Challenge(type, false, 0, 0, 0));
+                    challenges.add(new Challenge(type, false, 0, 0, 0, -1));
                 }
             }
             
