@@ -36,6 +36,10 @@ public class SceneNavigationManager {
     }
 
     public void showGameEndScreen(boolean playerWon, boolean isDraw, javafx.animation.Timeline gameLoop, GameMode gameMode) {
+        showGameEndScreen(playerWon, isDraw, gameLoop, gameMode, null);
+    }
+    
+    public void showGameEndScreen(boolean playerWon, boolean isDraw, javafx.animation.Timeline gameLoop, GameMode gameMode, kuroyale.mainpack.managers.ComboManager comboManager) {
         // Stop the game loop
         if (gameLoop != null) {
             gameLoop.stop();
@@ -49,26 +53,38 @@ public class SceneNavigationManager {
                                 : (playerWon ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING));
                 alert.setTitle("Game Over");
                 
+                // Build combo info string
+                String comboInfo = "";
+                if (comboManager != null) {
+                    int comboCount = comboManager.getUniqueComboCount();
+                    int comboGold = comboManager.getComboGoldReward();
+                    if (comboCount > 0) {
+                        comboInfo = "\n\nCombos Triggered: " + comboCount + " (+" + comboGold + " gold)";
+                    }
+                }
+                
                 // Different messages for PvP vs single-player vs network multiplayer
                 if (gameMode == GameMode.LOCAL_PVP) {
                     if (isDraw) {
                         alert.setHeaderText("Draw!");
-                        alert.setContentText("Both players survived!");
+                        alert.setContentText("Both players survived!" + comboInfo);
                     } else {
                         int winnerId = playerWon ? 1 : 2;
                         alert.setHeaderText("Player " + winnerId + " Wins!");
-                        alert.setContentText("Player " + winnerId + " destroyed the enemy king!");
+                        alert.setContentText("Player " + winnerId + " destroyed the enemy king!" + comboInfo);
                     }
                 } else if (gameMode == GameMode.NETWORK_MULTIPLAYER) {
                     // Network multiplayer mode
                     alert.setHeaderText(isDraw ? "Draw!" : (playerWon ? "Victory!" : "Defeat!"));
-                    alert.setContentText(isDraw ? "Time is up and tower health is same."
-                            : (playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!"));
+                    String baseText = isDraw ? "Time is up and tower health is same."
+                            : (playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!");
+                    alert.setContentText(baseText + comboInfo);
                 } else {
                     // Single-player mode (existing messages)
                     alert.setHeaderText(isDraw ? "Draw" : (playerWon ? "Victory!" : "Defeat!"));
-                    alert.setContentText(isDraw ? "Time is up and tower health is same."
-                            : (playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!"));
+                    String baseText = isDraw ? "Time is up and tower health is same."
+                            : (playerWon ? "You destroyed the enemy king!" : "Your king has been destroyed!");
+                    alert.setContentText(baseText + comboInfo);
                 }
 
                 // Show and wait

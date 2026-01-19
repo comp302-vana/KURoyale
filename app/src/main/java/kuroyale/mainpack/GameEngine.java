@@ -16,6 +16,7 @@ import javafx.scene.shape.Rectangle;
 import java.util.List;
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.cardpack.Card;
+import kuroyale.entitiypack.Entity;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 
@@ -40,6 +41,7 @@ import kuroyale.mainpack.managers.ArenaSetupManager;
 import kuroyale.mainpack.managers.GameLoopManager;
 import kuroyale.mainpack.managers.DualPlayerStateManager;
 import kuroyale.mainpack.managers.EconomyManager;
+import kuroyale.mainpack.managers.ComboManager;
 import kuroyale.mainpack.models.Challenge;
 import kuroyale.mainpack.models.GameMode;
 import kuroyale.mainpack.models.PlayerProfile;
@@ -152,6 +154,7 @@ public class GameEngine {
     private QuestManager questManager;
     private AchievementManager achievementManager;
     private ChallengeManager challengeManager;
+    private ComboManager comboManager;
     private static Challenge.ChallengeType activeChallengeType = null;
 
     private SimpleAI aiOpponent;
@@ -453,6 +456,18 @@ public class GameEngine {
                 if (root instanceof javafx.scene.layout.AnchorPane) {
                     NotificationManager notificationManager = new NotificationManager((javafx.scene.layout.AnchorPane) root);
                     victoryConditionManager.setNotificationManager(notificationManager);
+                }
+                // Initialize ComboManager (needs root pane from scene)
+                if (root instanceof Pane && comboManager == null) {
+                    comboManager = new ComboManager(arenaMap, entityRenderer, (Pane) root);
+                    // Wire up ComboManager
+                    entityPlacementManager.setComboManager(comboManager);
+                    entityUpdater.setComboManager(comboManager);
+                    Entity.setComboManager(comboManager);
+                    entityLifecycleManager.setComboManager(comboManager);
+                    victoryConditionManager.setComboManager(comboManager);
+                    // Reset for new match
+                    comboManager.resetForNewMatch();
                 }
             }
         });
@@ -819,7 +834,7 @@ public class GameEngine {
                         if (sceneNavigationManager != null) {
                             sceneNavigationManager.showGameEndScreen(clientWon, isDraw, 
                                 gameLoopManager != null ? gameLoopManager.getGameLoop() : null, 
-                                GameMode.NETWORK_MULTIPLAYER);
+                                GameMode.NETWORK_MULTIPLAYER, comboManager);
                         }
                     }
                 }
