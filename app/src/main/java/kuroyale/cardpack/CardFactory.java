@@ -167,7 +167,7 @@ public class CardFactory {
                 return new BuildingCard(23, "Barbarian Hut",
                         "Spawns 1 Barbarians every 7s.",
                         7, CardCategory.SPAWNER_BUILDING, CardTarget.NONE,
-                        640, 0, 7, 0, 0.0, 60, (UnitCard) createCardBase(15));
+                        1100, 0, 14, 0, 0.0, 60, (UnitCard) createCardBase(15));
             case 24:
                 return new BuildingCard(24, "Elixir Collector",
                         "Generates elixir over time.",

@@ -13,6 +13,7 @@ import kuroyale.mainpack.models.GoldTransaction;
 import kuroyale.mainpack.models.PlayerProfile;
 import kuroyale.mainpack.models.Quest;
 import kuroyale.mainpack.models.Achievement;
+import kuroyale.mainpack.models.Challenge;
 import kuroyale.mainpack.models.PlayerStatistics;
 
 /**
@@ -31,6 +32,7 @@ public class PersistenceManager {
     private static final String ACHIEVEMENTS_SECTION = "ACHIEVEMENTS";
     private static final String STATISTICS_SECTION = "STATISTICS";
     private static final String QUEST_RESET_SECTION = "QUEST_RESET";
+    private static final String CHALLENGES_SECTION = "CHALLENGES";
 
     /**
      * Saves the player profile to file.
@@ -133,10 +135,24 @@ public class PersistenceManager {
                 // Quest reset timestamp section
                 pw.println(QUEST_RESET_SECTION);
                 pw.println(profile.getLastQuestResetTimestamp());
+
+                pw.println();
+                pw.println(CHALLENGES_SECTION);
+                java.util.List<Challenge> challenges = profile.getChallenges();
+                if (challenges != null && !challenges.isEmpty()) {
+                    for (Challenge challenge : challenges) {
+                        pw.println(challenge.getType().getId() + "," +
+                            challenge.isCompleted() + "," +
+                            challenge.getStarsEarned() + "," +
+                            challenge.getAttempts() + "," +
+                            challenge.getNumOfCompletion() + "," +
+                            challenge.getFastestTime());
+                    }
                 }
+                pw.println();
 
             System.out.println("Player profile saved to: " + PROFILE_FILE);
-
+            }
         } catch (Exception e) {
             System.err.println("Failed to save player profile: " + e.getMessage());
             e.printStackTrace();
@@ -165,6 +181,7 @@ public class PersistenceManager {
             int chestCount = 0;
             List<Quest> dailyQuests = new ArrayList<>();
             List<Achievement> achievements = new ArrayList<>();
+            List<Challenge> challenges = new ArrayList<>();
             PlayerStatistics statistics = new PlayerStatistics();
             long lastQuestResetTimestamp = 0;
 
@@ -202,6 +219,9 @@ public class PersistenceManager {
                     continue;
                 } else if (line.equals(QUEST_RESET_SECTION)) {
                     currentSection = QUEST_RESET_SECTION;
+                    continue;
+                } else if (line.equals(CHALLENGES_SECTION)) {
+                    currentSection = CHALLENGES_SECTION;
                     continue;
                 }
 
@@ -280,6 +300,27 @@ public class PersistenceManager {
                     }
                 } else if (QUEST_RESET_SECTION.equals(currentSection)) {
                     lastQuestResetTimestamp = Long.parseLong(line.trim());
+                } else if (CHALLENGES_SECTION.equals(currentSection)) {
+                    String[] parts = line.split(",");
+                    if (parts.length >= 5) {
+                        int typeId = Integer.parseInt(parts[0].trim());
+                        boolean completed = Boolean.parseBoolean(parts[1].trim());
+                        int stars = Integer.parseInt(parts[2].trim());
+                        int attempts = Integer.parseInt(parts[3].trim());
+                        int completions = Integer.parseInt(parts[4].trim());
+                        
+                        // Handle backwards compatibility: if fastestTime not present, default to -1
+                        int fastestTime = -1;
+                        if (parts.length >= 6) {
+                            fastestTime = Integer.parseInt(parts[5].trim());
+                        }
+                        
+                        Challenge.ChallengeType type = findChallengeTypeById(typeId);
+                        if (type != null) {
+                            Challenge challenge = new Challenge(type, completed, stars, attempts, completions, fastestTime);
+                            challenges.add(challenge);
+                        }
+                    }
                 }
             }
 
@@ -288,12 +329,27 @@ public class PersistenceManager {
                 cardLevels.putIfAbsent(cardId, 1);
             }
 
+            
+            // Ensure all challenge types exist (initialize if empty or incomplete)
+            java.util.Set<Challenge.ChallengeType> existingTypes = new java.util.HashSet<>();
+            for (Challenge challenge : challenges) {
+                existingTypes.add(challenge.getType());
+            }
+            
+            // Add any missing challenge types
+            for (Challenge.ChallengeType type : Challenge.ChallengeType.values()) {
+                if (!existingTypes.contains(type)) {
+                    challenges.add(new Challenge(type, false, 0, 0, 0, -1));
+                }
+            }
+            
             System.out.println("Player profile loaded from: " + PROFILE_FILE);
             PlayerProfile profile = new PlayerProfile(gold, cardLevels, goldHistory, unlockedCards);
             profile.setChestCount(chestCount);
             profile.setDailyQuests(dailyQuests);
             profile.setAchievements(achievements);
             profile.setStatistics(statistics);
+            profile.setChallenges(challenges);
             profile.setLastQuestResetTimestamp(lastQuestResetTimestamp);
             return profile;
 
@@ -326,6 +382,20 @@ public class PersistenceManager {
      */
     private Achievement.AchievementType findAchievementTypeById(int id) {
         for (Achievement.AchievementType type : Achievement.AchievementType.values()) {
+            if (type.getId() == id) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Helper method to find ChallengeType by ID.
+     * "id": the achievement type ID
+     * returns the type, or null if not found
+     */
+    private Challenge.ChallengeType findChallengeTypeById(int id) {
+        for (Challenge.ChallengeType type : Challenge.ChallengeType.values()) {
             if (type.getId() == id) {
                 return type;
             }

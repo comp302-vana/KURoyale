@@ -31,6 +31,7 @@ public class EntityPlacementManager {
     private QuestManager questManager;
     private PersistenceManager persistenceManager;
     private AchievementManager achievementManager;
+    private ChallengeManager challengeManager;
     private kuroyale.mainpack.network.NetworkBattleManager networkBattleManager;
     private boolean isClient;
 
@@ -79,6 +80,11 @@ public class EntityPlacementManager {
     public void setAchievementManager(AchievementManager achievementManager) {
         this.achievementManager = achievementManager;
     }
+
+    public void setChallengeManager(ChallengeManager challengeManager) {
+        this.challengeManager = challengeManager;
+    }
+
     
     /**
      * Set network battle manager for network multiplayer mode.
@@ -184,6 +190,11 @@ public class EntityPlacementManager {
 
             Card cardToCheck = CardFactory.createCard(cardID);
             int cost = cardToCheck.getCost();
+
+            // Decorator Pattern: Apply challenge-specific cost modification
+            if (challengeManager != null) {
+                cost = challengeManager.getModifiedCost(cost, cardID);
+            }
 
             // Determine player and get appropriate managers
             int playerId = determinePlayerFromDropLocation(targetCol);

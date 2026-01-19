@@ -16,7 +16,14 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import kuroyale.deckpack.Deck;
+import kuroyale.deckpack.DeckManager;
+import kuroyale.mainpack.challengeHelpers.ChallengeValidator;
+import kuroyale.mainpack.managers.ChallengeManager;
+import kuroyale.mainpack.managers.PersistenceManager;
+import kuroyale.mainpack.models.Challenge;
 import kuroyale.mainpack.models.GameMode;
+import kuroyale.mainpack.models.PlayerProfile;
 
 public class UIManager extends Application {
     private Stage stage;
@@ -431,7 +438,65 @@ public class UIManager extends Application {
     }
 
     @FXML
+    void btnChallengeModeClicked(ActionEvent event) throws IOException {
+        switchToChallengeSelectionScene(event);
+    }
+
+    private boolean validateChallengeDeckIfNeeded() {
+        Challenge.ChallengeType challengeType = ChallengeController.getSelectedChallengeType();
+        if (challengeType == null) {
+            return true; // No challenge active, deck is fine
+        }
+        
+        // Validate deck before starting battle
+        PersistenceManager persistenceManager = new PersistenceManager();
+        PlayerProfile profile = persistenceManager.loadPlayerProfile();
+        ChallengeManager challengeManager = new ChallengeManager(profile);
+        
+        // Check if startChallenge succeeded
+        if (!challengeManager.startChallenge(challengeType)) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("Challenge Error");
+            alert.setHeaderText("Cannot start challenge");
+            alert.setContentText("Challenge is locked or not found. Please select a valid challenge.");
+            alert.showAndWait();
+            return false;
+        }
+        
+        Deck currentDeck = DeckManager.loadDeckByNumber(DeckManager.getSelectedDeckNumber());
+        
+        if (currentDeck == null) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("No Deck Selected");
+            alert.setHeaderText("No deck found");
+            alert.setContentText("Please create and select a deck first.");
+            alert.showAndWait();
+            return false;
+        }
+        
+        ChallengeValidator.ValidationResult validation = challengeManager.validateChallengeDeck(currentDeck.getCards());
+        
+        if (!validation.isValid()) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("Invalid Deck");
+            alert.setHeaderText("Deck does not meet challenge requirements");
+            alert.setContentText(validation.getErrorMessage());
+            alert.showAndWait();
+            return false;
+        }
+        
+        return true;
+    }
+
+    @FXML
     void btnNoAIClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            // Return to challenge selection if coming from challenge, otherwise stay here
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "NoAI";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -439,6 +504,12 @@ public class UIManager extends Application {
 
     @FXML
     void btnSimpleClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "Simple";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -446,6 +517,12 @@ public class UIManager extends Application {
 
     @FXML
     void btnMediumClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "Medium";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -453,6 +530,12 @@ public class UIManager extends Application {
 
     @FXML
     void btnAdvancedClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "Advanced";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -502,6 +585,15 @@ public class UIManager extends Application {
 
     private void switchToDeckBuilderScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/DeckBuilderScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void switchToChallengeSelectionScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/ChallengeSelectionScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
