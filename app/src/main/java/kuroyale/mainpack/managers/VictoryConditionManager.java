@@ -29,6 +29,7 @@ public class VictoryConditionManager {
     private NotificationManager notificationManager;
     private ChallengeManager challengeManager;
     private GameStateManager gameStateManager;
+    private ComboManager comboManager;
     private long matchStartTime;
     private double playerKingTowerInitialHP;
 
@@ -71,6 +72,10 @@ public class VictoryConditionManager {
     
     public void setGameStateManager(GameStateManager gameStateManager) {
         this.gameStateManager = gameStateManager;
+    }
+    
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
     }
     
     /**
@@ -148,6 +153,36 @@ public class VictoryConditionManager {
                 awardChest();
             } else {
                 economyManager.awardGold("DEFEAT");
+            }
+        }
+        
+        // Award combo gold rewards
+        if (comboManager != null && economyManager != null) {
+            int comboGold = comboManager.getComboGoldReward();
+            if (comboGold > 0) {
+                economyManager.addGold(comboGold);
+                System.out.println("Combo bonus: +" + comboGold + " gold (" + 
+                                  comboManager.getUniqueComboCount() + " combos)");
+                
+                // Update statistics and persistence
+                if (persistenceManager != null) {
+                    kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+                    kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+                    
+                    if (stats != null) {
+                        stats.incrementTotalGoldEarned(comboGold);
+                        profile.setStatistics(stats);
+                        
+                        // Update achievements
+                        if (achievementManager != null) {
+                            achievementManager.onGoldEarned(comboGold, stats);
+                        }
+                    }
+                    
+                    profile.setTotalGold(economyManager.getCurrentGold());
+                    profile.addGoldTransaction(comboGold, "Combo Bonus: " + comboManager.getUniqueComboCount() + " combos");
+                    persistenceManager.savePlayerProfile(profile);
+                }
             }
         }
 
@@ -325,7 +360,7 @@ public class VictoryConditionManager {
             }
         }
 
-        sceneNavigationManager.showGameEndScreen(playerWon, isDraw, gameLoop, gameMode);
+        sceneNavigationManager.showGameEndScreen(playerWon, isDraw, gameLoop, gameMode, comboManager);
     }
 
     private void awardChest() {

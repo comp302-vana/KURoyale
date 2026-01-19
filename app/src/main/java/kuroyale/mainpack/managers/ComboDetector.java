@@ -15,7 +15,7 @@ public class ComboDetector {
     private static final int MAX_TRACKED_CARDS = 10;
 
     final List<CardPlayRecord> recentCardPlays = new ArrayList<>();
-    private final Set<ComboType> triggeredCombosInWindow = new HashSet();
+    private final Set<ComboType> triggeredCombosInWindow = new HashSet<>();
     private long lastComboWindowStart = 0;
 
     /**
@@ -58,6 +58,10 @@ public class ComboDetector {
         );
     }
 
+    // Store the two cards that triggered the last combo
+    private CardPlayRecord lastComboCard1;
+    private CardPlayRecord lastComboCard2;
+    
     /**
      * Check if the newly played card triggers any combos with recent cards.
      */
@@ -73,8 +77,21 @@ public class ComboDetector {
             ComboType combo = detectCombo(oldRecord, newRecord);
             if (combo != null && !triggeredCombosInWindow.contains(combo)) {
                 triggeredCombosInWindow.add(combo);
+                // Store the two cards that triggered this combo
+                lastComboCard1 = oldRecord;
+                lastComboCard2 = newRecord;
                 return combo;
             }
+        }
+        return null;
+    }
+    
+    /**
+     * Get the two cards that triggered the last combo.
+     */
+    public CardPlayRecord[] getLastComboCards() {
+        if (lastComboCard1 != null && lastComboCard2 != null) {
+            return new CardPlayRecord[]{lastComboCard1, lastComboCard2};
         }
         return null;
     }
@@ -169,6 +186,8 @@ public class ComboDetector {
         recentCardPlays.clear();
         triggeredCombosInWindow.clear();
         lastComboWindowStart = 0;
+        lastComboCard1 = null;
+        lastComboCard2 = null;
     }
     
     /**

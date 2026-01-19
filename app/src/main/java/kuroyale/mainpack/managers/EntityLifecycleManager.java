@@ -24,6 +24,7 @@ public class EntityLifecycleManager {
     private QuestManager questManager;
     private PersistenceManager persistenceManager;
     private AchievementManager achievementManager;
+    private ComboManager comboManager;
     private java.util.function.Consumer<TowerManager.TowerDestroyResult> towerDestroyCallback;
 
     public EntityLifecycleManager(ArenaMap arenaMap, CombatManager combatManager, EntityRenderer entityRenderer,
@@ -54,6 +55,9 @@ public class EntityLifecycleManager {
         this.achievementManager = achievementManager;
     }
     
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
+    }
 
     public void updateEntities() {
         List<AliveEntity> entitiesToUpdate = new ArrayList<>();
@@ -73,6 +77,10 @@ public class EntityLifecycleManager {
 
         // Remove dead entities first
         for (AliveEntity deadEntity : deadEntities) {
+            // Cleanup combo effects for destroyed entity
+            if (comboManager != null) {
+                comboManager.cleanupDestroyedEntity(deadEntity);
+            }
             TowerManager.TowerDestroyResult result = removeDeadEntity(deadEntity);
             if (result.isGameEnd && towerDestroyCallback != null) {
                 towerDestroyCallback.accept(result);
@@ -106,6 +114,9 @@ public class EntityLifecycleManager {
             if (entity instanceof UnitEntity) {
                 entityUpdater.updateUnitEntity((UnitEntity) entity);
                 if (entity.getHP() <= 0) {
+                    if (comboManager != null) {
+                        comboManager.cleanupDestroyedEntity(entity);
+                    }
                     TowerManager.TowerDestroyResult result = removeDeadEntity(entity);
                     if (result.isGameEnd && towerDestroyCallback != null) {
                         towerDestroyCallback.accept(result);
@@ -114,6 +125,9 @@ public class EntityLifecycleManager {
             } else if (entity instanceof BuildingEntity && !(entity instanceof TowerEntity)) {
                 entityUpdater.updateBuildingEntity((BuildingEntity) entity);
                 if (entity.getHP() <= 0) {
+                    if (comboManager != null) {
+                        comboManager.cleanupDestroyedEntity(entity);
+                    }
                     TowerManager.TowerDestroyResult result = removeDeadEntity(entity);
                     if (result.isGameEnd && towerDestroyCallback != null) {
                         towerDestroyCallback.accept(result);
@@ -122,6 +136,9 @@ public class EntityLifecycleManager {
             } else if (entity instanceof TowerEntity) {
                 entityUpdater.updateTowerEntity((TowerEntity) entity);
                 if (entity.getHP() <= 0) {
+                    if (comboManager != null) {
+                        comboManager.cleanupDestroyedEntity(entity);
+                    }
                     TowerManager.TowerDestroyResult result = removeDeadEntity(entity);
                     if (result.isGameEnd && towerDestroyCallback != null) {
                         towerDestroyCallback.accept(result);

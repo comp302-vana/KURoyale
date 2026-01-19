@@ -29,6 +29,7 @@ public class EntityPlacementManager {
     private final int cols;
     private final boolean isPvPMode;
     private QuestManager questManager;
+    private ComboManager comboManager;
     private PersistenceManager persistenceManager;
     private AchievementManager achievementManager;
     private ChallengeManager challengeManager;
@@ -85,6 +86,9 @@ public class EntityPlacementManager {
         this.challengeManager = challengeManager;
     }
 
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
+    }
     
     /**
      * Set network battle manager for network multiplayer mode.
@@ -225,10 +229,23 @@ public class EntityPlacementManager {
                 // Spells can be cast anywhere, but consume elixir from the appropriate player
                 executeSpell(cardID, targetRow, targetCol, playerId == 1);
                 
+                // Check for spell synergy combo refund
+                int refundAmount = 0;
+                if (comboManager != null && comboManager.shouldRefundLastSpell()) {
+                    refundAmount = 1;
+                    System.out.println("Spell Synergy combo: Refunding 1 Elixir");
+                }
+                
+                int actualCost = Math.max(1, cost - refundAmount); // Minimum 1 elixir
                 if (isPvPMode) {
-                    dualPlayerStateManager.consumeElixir(playerId, cost);
+                    dualPlayerStateManager.consumeElixir(playerId, actualCost);
                 } else {
-                    gameStateManager.consumeElixir(cost);
+                    gameStateManager.consumeElixir(actualCost);
+                }
+                
+                // Notify combo manager about spell play (for detection)
+                if (comboManager != null) {
+                    comboManager.onCardPlayed(cardID, null, playerId); // Spells don't have entities
                 }
                 
                 int slotIndex = activeCardManager.findCardSlotIndex(cardID);
@@ -329,6 +346,9 @@ public class EntityPlacementManager {
                 // Notify quest manager about card played
                 if (questManager != null) {
                     questManager.onCardPlayed(cardID, isSpell, isBuilding, isTroop, cost, isCommonCard);
+                }
+                if (comboManager != null) {
+                    comboManager.onCardPlayed(cardID, playedEntity, playerId);
                 }
             } else {
                 System.out.println("no");
@@ -435,7 +455,21 @@ public class EntityPlacementManager {
         if (isSpell) {
             // Host executes spell authoritatively
             executeSpell(cardID, row, col, playerId == 1);
-            dualPlayerStateManager.consumeElixir(playerId, cost);
+            
+            // Check for spell synergy combo refund
+            int refundAmount = 0;
+            if (comboManager != null && comboManager.shouldRefundLastSpell()) {
+                refundAmount = 1;
+                System.out.println("Spell Synergy combo: Refunding 1 Elixir");
+            }
+            
+            int actualCost = Math.max(1, cost - refundAmount); // Minimum 1 elixir
+            dualPlayerStateManager.consumeElixir(playerId, actualCost);
+            
+            // Notify combo manager about spell play (for detection)
+            if (comboManager != null) {
+                comboManager.onCardPlayed(cardID, null, playerId); // Spells don't have entities
+            }
             
             // Send spell event to client (for VFX)
             if (requestId > 0) {
@@ -499,6 +533,10 @@ public class EntityPlacementManager {
                 dualPlayerStateManager.getElixir(1),
                 dualPlayerStateManager.getElixir(2)
             );
+
+            if (comboManager != null) {
+                comboManager.onCardPlayed(cardID, entity, playerId);
+            }
             
             // Cycle card if from local UI
             if (fromLocalUI) {

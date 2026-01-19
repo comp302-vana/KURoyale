@@ -22,6 +22,8 @@ public class ComboManager {
         this.comboDetector = new ComboDetector();
         this.effectApplier = new ApplyComboEffect(arenaMap);
         this.comboUI = new ComboUI(rootPane);
+        // Set reference so ComboUI can get actual combo count
+        this.comboUI.setComboManager(this);
     }
 
     /**
@@ -44,18 +46,72 @@ public class ComboManager {
         // Track unique combos
         uniqueCombosThisMatch.add(comboType);
         
+        // Update combo counter first
+        comboUI.updateComboCounter();
+        
         // Show visual feedback
         comboUI.showComboTrigger(comboType);
         
-        // Get the two cards that triggered the combo
-        List<ComboDetector.CardPlayRecord> recentPlays = comboDetector.recentCardPlays;
-        if (recentPlays.size() >= 2) {
-            ComboDetector.CardPlayRecord card1 = recentPlays.get(recentPlays.size() - 2);
-            ComboDetector.CardPlayRecord card2 = recentPlays.get(recentPlays.size() - 1);
-            
-            // Apply combo effects
-            effectApplier.applyComboEffect(comboType, card1, card2);
+        // Get the two cards that triggered the combo from detector
+        ComboDetector.CardPlayRecord[] comboCards = comboDetector.getLastComboCards();
+        if (comboCards != null && comboCards.length == 2) {
+            // Apply combo effects with the correct two cards
+            effectApplier.applyComboEffect(comboType, comboCards[0], comboCards[1]);
+        } else {
+            // Fallback: use last two cards if detector didn't store them
+            List<ComboDetector.CardPlayRecord> recentPlays = comboDetector.recentCardPlays;
+            if (recentPlays.size() >= 2) {
+                ComboDetector.CardPlayRecord card1 = recentPlays.get(recentPlays.size() - 2);
+                ComboDetector.CardPlayRecord card2 = recentPlays.get(recentPlays.size() - 1);
+                effectApplier.applyComboEffect(comboType, card1, card2);
+            }
         }
+    }
+    
+    /**
+     * Get the last card play record (for spell synergy refund).
+     */
+    public ComboDetector.CardPlayRecord getLastCardPlay() {
+        List<ComboDetector.CardPlayRecord> recentPlays = comboDetector.recentCardPlays;
+        if (!recentPlays.isEmpty()) {
+            return recentPlays.get(recentPlays.size() - 1);
+        }
+        return null;
+    }
+    
+    /**
+     * Check if last spell should get refund (for Spell Synergy combo).
+     * This checks if the last card play triggered a Spell Synergy combo.
+     */
+    public boolean shouldRefundLastSpell() {
+        ComboDetector.CardPlayRecord lastPlay = getLastCardPlay();
+        if (lastPlay == null) return false;
+        
+        // Check if last play was a spell
+        if (lastPlay.cardID < 25 || lastPlay.cardID > 28) {
+            return false;
+        }
+        
+        // Check if Spell Synergy combo was just triggered (check recent plays)
+        List<ComboDetector.CardPlayRecord> recentPlays = comboDetector.recentCardPlays;
+        if (recentPlays.size() < 2) {
+            return false;
+        }
+        
+        // Get last two plays
+        ComboDetector.CardPlayRecord secondLast = recentPlays.get(recentPlays.size() - 2);
+        ComboDetector.CardPlayRecord last = recentPlays.get(recentPlays.size() - 1);
+        
+        // Check if both are spells and different
+        boolean secondLastIsSpell = secondLast.cardID >= 25 && secondLast.cardID <= 28;
+        boolean lastIsSpell = last.cardID >= 25 && last.cardID <= 28;
+        boolean differentSpells = secondLast.cardID != last.cardID;
+        
+        // Check if within combo window (5 seconds)
+        double timeDiff = (last.timestamp - secondLast.timestamp) / 1000.0;
+        boolean withinWindow = timeDiff <= 5.0;
+        
+        return secondLastIsSpell && lastIsSpell && differentSpells && withinWindow;
     }
 
     /**

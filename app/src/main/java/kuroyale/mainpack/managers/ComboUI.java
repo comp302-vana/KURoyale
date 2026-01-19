@@ -15,27 +15,28 @@ import kuroyale.mainpack.models.Combo.ComboType;
 public class ComboUI {
     private final Pane rootPane;
     private final Text comboCounterText;
-    private int comboCount = 0;
+    private ComboManager comboManager; // Reference to get actual combo count
     
     public ComboUI(Pane rootPane) {
         this.rootPane = rootPane;
         
-        // Create combo counter text (top-right corner)
+        // Create combo counter text (top-left corner, white)
         comboCounterText = new Text("Combos: 0");
         comboCounterText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        comboCounterText.setFill(Color.GOLD);
-        comboCounterText.setLayoutX(rootPane.getWidth() - 150);
+        comboCounterText.setFill(Color.WHITE);
+        comboCounterText.setLayoutX(10); // Top-left
         comboCounterText.setLayoutY(30);
         rootPane.getChildren().add(comboCounterText);
+    }
+    
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
     }
 
     /**
      * Show combo trigger animation.
      */
     public void showComboTrigger(ComboType combo) {
-        comboCount++;
-        updateComboCounter();
-        
         javafx.application.Platform.runLater(() -> {
             // Create "COMBO!" text
             Text comboText = new Text("COMBO!");
@@ -44,17 +45,17 @@ public class ComboUI {
             comboText.setStroke(Color.ORANGE);
             comboText.setStrokeWidth(2);
             
-            // Center on screen
-            double centerX = rootPane.getWidth() / 2 - comboText.getBoundsInLocal().getWidth() / 2;
+            double bridgeAreaX = rootPane.getWidth() * 0.55; // 60% from left (similar to bridge area)
+            double comboX = bridgeAreaX - comboText.getBoundsInLocal().getWidth() / 2;
             double centerY = rootPane.getHeight() / 2 - 50;
-            comboText.setLayoutX(centerX);
+            comboText.setLayoutX(comboX);
             comboText.setLayoutY(centerY);
             
             // Create combo name text
             Text comboNameText = new Text(combo.getName() + "!");
             comboNameText.setFont(Font.font("Arial", FontWeight.BOLD, 36));
             comboNameText.setFill(Color.WHITE);
-            comboNameText.setLayoutX(rootPane.getWidth() / 2 - comboNameText.getBoundsInLocal().getWidth() / 2);
+            comboNameText.setLayoutX(bridgeAreaX - comboNameText.getBoundsInLocal().getWidth() / 2);
             comboNameText.setLayoutY(centerY + 80);
             
             rootPane.getChildren().addAll(comboText, comboNameText);
@@ -78,17 +79,17 @@ public class ComboUI {
      * Show visual effect on entity.
      */
     public void showEntityEffect(kuroyale.entitiypack.subclasses.AliveEntity entity, String effectType) {
-        // This would show visual effects like glows, icons, etc.
-        // Implementation depends on your rendering system
         System.out.println("Showing " + effectType + " effect on " + entity.getCard().getName());
     }
     
     /**
      * Update combo counter display.
      */
-    private void updateComboCounter() {
+    public void updateComboCounter() {
         javafx.application.Platform.runLater(() -> {
-            comboCounterText.setText("Combos: " + comboCount);
+            // Get actual unique combo count from ComboManager
+            int actualCount = (comboManager != null) ? comboManager.getUniqueComboCount() : 0;
+            comboCounterText.setText("Combos: " + actualCount);
         });
     }
     
@@ -96,7 +97,6 @@ public class ComboUI {
      * Reset UI for new match.
      */
     public void reset() {
-        comboCount = 0;
         updateComboCounter();
     }
 }

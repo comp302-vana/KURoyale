@@ -138,9 +138,13 @@ public class ApplyComboEffect {
     }
 
     private void addSwarmUnitsFromEntity(AliveEntity entity, List<AliveEntity> list) {
-    // For swarm cards, add the entity itself
-    // In a full implementation, you'd track all units spawned from a card
-    list.add(entity);
+        // For swarm cards, add the entity itself
+        // Note: Swarm cards create a single UnitEntity with a count property
+        // The count represents multiple units but they're handled as one entity
+        // So we apply the effect to the single entity
+        if (entity != null && entity instanceof UnitEntity) {
+            list.add(entity);
+        }
     }
 
     /**

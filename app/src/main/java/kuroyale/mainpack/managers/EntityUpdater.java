@@ -28,6 +28,7 @@ public class EntityUpdater {
     private GameStateManager gameStateManager;
     private DualPlayerStateManager dualPlayerStateManager;
     private boolean isPvPMode;
+    private ComboManager comboManager;
 
     public EntityUpdater(ArenaMap arenaMap, CombatManager combatManager, EntityRenderer entityRenderer,
                         int rows, int cols, double entityUpdateInterval) {
@@ -47,6 +48,10 @@ public class EntityUpdater {
     public void setDualPlayerStateManager(DualPlayerStateManager dualPlayerStateManager) {
         this.dualPlayerStateManager = dualPlayerStateManager;
         this.isPvPMode = true;
+    }
+    
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
     }
 
     public void updateUnitEntity(UnitEntity unit) {
@@ -139,6 +144,11 @@ public class EntityUpdater {
         } else {
             String speedStr = getUnitSpeed(unit);
             double speedMultiplier = 1 / getSpeedMultiplier(speedStr);
+            
+            // Apply combo speed multiplier
+            if (comboManager != null) {
+                speedMultiplier *= comboManager.getSpeedMultiplier(unit);
+            }
 
             if (unit.getTicksSinceLastMove() >= (speedMultiplier / ENTITY_UPDATE_INTERVAL)) {
                 unit.resetTicksSinceLastMove();
@@ -273,8 +283,14 @@ public class EntityUpdater {
         AliveCard aliveCard = (AliveCard) building.getCard();
         double actSpeed = aliveCard.getActSpeed();
         double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0;
+        
+        // Apply combo range boost
+        double buildingRange = building.getRange();
+        if (comboManager != null) {
+            buildingRange += comboManager.getRangeBoost(building);
+        }
 
-        if (distance <= building.getRange() + 0.5 || canAttackTower) {
+        if (distance <= buildingRange + 0.5 || canAttackTower) {
             double currentCooldown = combatManager.getAttackCooldown(building);
             if (currentCooldown <= 0) {
                 building.attack(target);
