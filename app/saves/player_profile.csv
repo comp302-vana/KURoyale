@@ -1,4 +1,5 @@
 GOLD
+2275
 55557500
 
 LEVELS
@@ -42,6 +43,8 @@ HISTORY
 1767705572791,50,DEFEAT
 1767709906391,150,VICTORY
 1767714677947,500,Achievement Reward: First Blood
+1767718345631,150,VICTORY
+1768858340210,750,Achievement Reward: Tower Hunter
 1768085474475,150,VICTORY
 1768113432038,150,VICTORY
 1768113432075,250,Challenge: Swarm Master
@@ -99,6 +102,24 @@ UNLOCKED
 28
 
 CHESTS
+2
+
+QUESTS
+5,0,false,false
+9,0,false,false
+13,0,false,false
+
+ACHIEVEMENTS
+1,1,true,true
+2,54,true,true
+3,0,false,false
+4,0,false,false
+5,0,false,false
+6,0,false,false
+7,0,false,false
+8,0,false,false
+9,1209,false,false
+10,10,false,false
 13
 
 QUESTS
@@ -121,6 +142,10 @@ ACHIEVEMENTS
 12,5,true,true
 
 STATISTICS
+10,5,54,16,0,0,0,0,0,0,1209,0,2,3,0,0,0,0
+
+QUEST_RESET
+1768857276195
 22,17,195,192,0,0,0,0,1915,0,4766,0,14,14,3,0,0,0
 
 QUEST_RESET
