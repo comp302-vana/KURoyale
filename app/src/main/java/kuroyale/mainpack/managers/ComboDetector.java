@@ -14,7 +14,7 @@ public class ComboDetector {
     private static final double COMBO_WINDOW_SECONDS = 5.0;
     private static final int MAX_TRACKED_CARDS = 10;
 
-    private final List<CardPlayRecord> recentCardPlays = new ArrayList<>();
+    final List<CardPlayRecord> recentCardPlays = new ArrayList<>();
     private final Set<ComboType> triggeredCombosInWindow = new HashSet();
     private long lastComboWindowStart = 0;
 
