@@ -34,7 +34,8 @@
 /* ===== Scrollbar Track ===== */
 .scroll-bar:vertical .track,
 .scroll-bar:horizontal .track {
-    -fx-background-color: rgba(0,0,0,0.15); /* light track */
+    -fx-background-color: rgba(0, 0, 0, 0.15);
+    /* light track */
     -fx-background-radius: 3px;
     -fx-background-insets: 0;
 }
@@ -42,7 +43,8 @@
 /* ===== Scrollbar Thumb (the draggable bit) ===== */
 .scroll-bar:vertical .thumb,
 .scroll-bar:horizontal .thumb {
-    -fx-background-color: #8A00B8;     /* Your purple */
+    -fx-background-color: #8A00B8;
+    /* Your purple */
     -fx-background-insets: 2;
     -fx-background-radius: 3px;
 }
@@ -60,22 +62,53 @@
 
 /* ===== Hover effect for thumb ===== */
 .scroll-bar .thumb:hover {
-    -fx-background-color: #A834D4; /* lighter purple */
+    -fx-background-color: #A834D4;
+    /* lighter purple */
 }
 
 /* ===== Pressed effect ===== */
 .scroll-bar .thumb:pressed {
-    -fx-background-color: #6A008A; /* darker purple */
+    -fx-background-color: #6A008A;
+    /* darker purple */
 }
 
-.elixir-bar > .track {
+.elixir-bar>.track {
     -fx-background-color: white;
     -fx-background-insets: 0;
     -fx-background-radius: 20px;
 }
 
-.elixir-bar> .bar { 
-	-fx-background-color: #ff1fff;
-    	-fx-background-insets: 0;
-   	 -fx-background-radius: 20px;
+.elixir-bar>.bar {
+    -fx-background-color: #ff1fff;
+    -fx-background-insets: 0;
+    -fx-background-radius: 20px;
+}
+
+/* ===== Medieval Purple Style Battle Button ===== */
+.battle-button {
+    -fx-background-color: linear-gradient(to bottom, #9b59b6 0%, #8e44ad 50%, #6c3483 100%);
+    -fx-background-insets: 0;
+    -fx-background-radius: 10;
+    -fx-padding: 15 25;
+    -fx-text-fill: #f5e6d3;
+    -fx-font-family: 'Trebuchet MS Bold', 'Arial Black', sans-serif;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 15, 0.5, 0, 6);
+    -fx-cursor: hand;
+    -fx-border-color: linear-gradient(to bottom, #d4af37 0%, #c9a227 50%, #b8860b 100%);
+    -fx-border-width: 3;
+    -fx-border-radius: 8;
+}
+
+.battle-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #a86cc4 0%, #9b59b6 50%, #7d3c98 100%);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 20, 0.6, 0, 8);
+}
+
+.battle-button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #6c3483 0%, #5b2c6f 50%, #4a235a 100%);
+    -fx-background-insets: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0.3, 0, 3);
+    -fx-padding: 17 25 13 25;
 }
