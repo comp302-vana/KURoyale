@@ -204,9 +204,10 @@ public class NetworkLobbyController {
     }
     
     private void loadAndSetDefaultDeck() {
+        DeckManager dm = DeckManager.getInstance();
         // Get the currently selected deck number
-        int selectedDeckNumber = DeckManager.getSelectedDeckNumber();
-        Deck defaultDeck = DeckManager.loadDeckByNumber(selectedDeckNumber);
+        int selectedDeckNumber = dm.getSelectedDeckNumber();
+        Deck defaultDeck = dm.loadDeckByNumber(selectedDeckNumber);
         
         if (defaultDeck != null && defaultDeck.getCards().size() == 8) {
             selectedDeckName = defaultDeck.getName();
@@ -221,7 +222,7 @@ public class NetworkLobbyController {
             lblDeckInfo.setText(deckInfo.toString());
         } else {
             // Try to find any valid deck
-            List<Deck> allDecks = DeckManager.getAllDecks();
+            List<Deck> allDecks = dm.getAllDecks();
             for (Deck deck : allDecks) {
                 if (deck.getCards().size() == 8) {
                     selectedDeckName = deck.getName();

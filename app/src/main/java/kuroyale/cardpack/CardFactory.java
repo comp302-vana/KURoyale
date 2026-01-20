@@ -9,13 +9,20 @@ import kuroyale.cardpack.subclasses.SpellCard;
 import kuroyale.mainpack.util.LevelCalculator;
 
 public class CardFactory {
+    private static CardFactory INSTANCE;
+    public static CardFactory getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new CardFactory();
+        }
+        return INSTANCE;
+    }
 
     /**
      * Creates a card at Level 1 (base stats).
      * @param id Card ID (1-28)
      * @return The card with base stats
      */
-    public static Card createCard(int id) {
+    public Card createCard(int id) {
         return createCard(id, 1); // Default to Level 1
     }
     
@@ -27,7 +34,7 @@ public class CardFactory {
      * @param level Card level (1-3)
      * @return The card with stats adjusted for the level
      */
-    public static Card createCard(int id, int level) {
+    public Card createCard(int id, int level) {
         if (level < 1 || level > 3) {
             level = 1; // Default to Level 1 if invalid
         }
@@ -50,7 +57,7 @@ public class CardFactory {
     /**
      * Creates a card with base stats (internal method).
      */
-    private static Card createCardBase(int id) {
+    private Card createCardBase(int id) {
         switch (id) {
 
             case 1:
@@ -197,7 +204,7 @@ public class CardFactory {
     /**
      * Creates a card with level-adjusted stats from a base card.
      */
-    private static Card createCardWithLevel(Card baseCard, int level) {
+    private Card createCardWithLevel(Card baseCard, int level) {
         if (baseCard instanceof UnitCard) {
             UnitCard unit = (UnitCard) baseCard;
             double baseHP = unit.getHp();
@@ -268,7 +275,7 @@ public class CardFactory {
         return baseCard;
     }
 
-    public static List<Card> getAllCards() {
+    public List<Card> getAllCards() {
         List<Card> list = new ArrayList<>();
         for (int i = 1; i <= 28; i++) {
             list.add(createCard(i));

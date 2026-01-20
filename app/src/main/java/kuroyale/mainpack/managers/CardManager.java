@@ -64,7 +64,7 @@ public class CardManager {
     }
 
     public void loadDeck() {
-        Deck currentDeck = DeckManager.getCurrentDeck();
+        Deck currentDeck = DeckManager.getInstance().getCurrentDeck();
         if (currentDeck != null) {
             currentDeckCards = new ArrayList<>(currentDeck.getCards());
             nextCardIndex = 0;

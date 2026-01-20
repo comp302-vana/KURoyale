@@ -436,6 +436,7 @@ public class EntityUpdater {
     }
 
     private void spawnUnitAdjacentToBuilding(BuildingEntity building, UnitCard unitCard){
+        CardFactory cf = CardFactory.getInstance();
         int buildingRow = building.getRow();
         int buildingCol = building.getCol();
         boolean isPlayer = building.isPlayer();
@@ -452,7 +453,7 @@ public class EntityUpdater {
                     arenaMap.getEntity(spawnRow, spawnCol) == null) {
                     
                     // Create and place unit
-                    UnitCard spawnCard = (UnitCard) CardFactory.createCard(unitCard.getId());
+                    UnitCard spawnCard = (UnitCard) cf.createCard(unitCard.getId());
                     spawnCard.setCount(1); // Each spawned unit is a single entity
                     UnitEntity spawnedUnit = new UnitEntity(spawnCard, isPlayer);
                     spawnedUnit.setPosition(spawnRow, spawnCol);

@@ -15,11 +15,16 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import java.util.List;
 import kuroyale.arenapack.ArenaMap;
+import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.cardpack.Card;
+import kuroyale.cardpack.CardFactory;
+import kuroyale.cardpack.subclasses.BuildingCard;
+import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.entitiypack.Entity;
 import kuroyale.entitiypack.subclasses.AliveEntity;
+import kuroyale.entitiypack.subclasses.BuildingEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
-
+import kuroyale.entitiypack.subclasses.UnitEntity;
 import kuroyale.mainpack.managers.EntityRenderer;
 import kuroyale.mainpack.managers.CombatManager;
 import kuroyale.mainpack.managers.GameStateManager;
@@ -35,7 +40,6 @@ import kuroyale.mainpack.managers.SceneNavigationManager;
 import kuroyale.mainpack.managers.VictoryConditionManager;
 import kuroyale.mainpack.managers.EntityLifecycleManager;
 import kuroyale.mainpack.managers.EntityPlacementManager;
-import kuroyale.mainpack.challengeHelpers.ChallengeValidator;
 import kuroyale.mainpack.managers.AchievementManager;
 import kuroyale.mainpack.managers.ArenaSetupManager;
 import kuroyale.mainpack.managers.GameLoopManager;
@@ -48,8 +52,10 @@ import kuroyale.mainpack.models.GameMode;
 import kuroyale.mainpack.models.PlayerProfile;
 import kuroyale.deckpack.Deck;
 import kuroyale.mainpack.network.NetworkManager;
+import kuroyale.mainpack.network.EntityRegistry;
 import kuroyale.mainpack.network.NetworkBattleManager;
 import kuroyale.mainpack.network.NetworkMessage;
+import kuroyale.mainpack.network.TowerId;
 import kuroyale.deckpack.DeckManager;
 import javafx.scene.layout.VBox;
 
@@ -119,6 +125,7 @@ public class GameEngine {
     @FXML
     private Label player2Label;
 
+    private static GameEngine INSTANCE;
     private ArenaMap arenaMap = new ArenaMap();
 
     // Game mode tracking
@@ -140,7 +147,9 @@ public class GameEngine {
     private EntityRenderer entityRenderer;
     private CombatManager combatManager;
     private GameStateManager gameStateManager;
+    private DeckManager deckManager;
     private CardManager cardManager;
+    private CardFactory cardFactory;
     private SpellSystem spellSystem;
     private EntityUpdater entityUpdater;
 
@@ -166,6 +175,13 @@ public class GameEngine {
     public static void main(String[] args) {
         UIManager.launch(UIManager.class, args);
     }
+    
+    public static GameEngine getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new GameEngine();
+        }
+        return INSTANCE;
+    }
 
     // Static methods for setting game mode and decks (called from
     // PvPDeckSelectionController)
@@ -187,6 +203,8 @@ public class GameEngine {
 
     @FXML
     private void initialize() {
+        deckManager = DeckManager.getInstance();
+
         entityLayer.setPrefSize(cols * tileSize, rows * tileSize);
         staticLayer.setPrefSize(cols * tileSize, rows * tileSize);
 
@@ -252,7 +270,6 @@ public class GameEngine {
 
             // Load deck based on whether we're host or client
             NetworkManager networkManager = NetworkManager.getInstance();
-            DeckManager deckManager = new DeckManager();
             String deckName;
 
             if (networkManager.isHost()) {
@@ -331,7 +348,7 @@ public class GameEngine {
                 cardManager.loadDeckForPlayer(player1Deck);
             } else {
                 // Fallback: use numbered deck system (Deck1)
-                Deck defaultDeck1 = DeckManager.loadDeckByNumber(1);
+                Deck defaultDeck1 = deckManager.loadDeckByNumber(1);
                 if (defaultDeck1 != null) {
                     cardManager.loadDeckForPlayer(defaultDeck1);
                 } else {
@@ -343,13 +360,13 @@ public class GameEngine {
                 cardManagerP2.loadDeckForPlayer(player2Deck);
             } else {
                 // Fallback: use numbered deck system (try Deck2, then Deck1)
-                Deck defaultDeck2 = DeckManager.loadDeckByNumber(2);
+                Deck defaultDeck2 = deckManager.loadDeckByNumber(2);
                 if (defaultDeck2 != null) {
                     cardManagerP2.loadDeckForPlayer(defaultDeck2);
                     System.out.println("Player 2: Using Deck2 as fallback");
                 } else {
                     // Try Deck1 if Deck2 doesn't exist
-                    Deck defaultDeck1 = DeckManager.loadDeckByNumber(1);
+                    Deck defaultDeck1 = deckManager.loadDeckByNumber(1);
                     if (defaultDeck1 != null) {
                         cardManagerP2.loadDeckForPlayer(defaultDeck1);
                         System.out.println("Player 2: Using Deck1 as fallback (Deck2 not found)");
@@ -368,14 +385,14 @@ public class GameEngine {
             // Set elixir manager for EntityUpdater
             entityUpdater.setGameStateManager(gameStateManager);
             // Use slot-based deck system: load the selected deck number (defaults to Deck1)
-            int selectedDeckNumber = DeckManager.getSelectedDeckNumber();
-            Deck selectedDeck = DeckManager.loadDeckByNumber(selectedDeckNumber);
+            int selectedDeckNumber = deckManager.getSelectedDeckNumber();
+            Deck selectedDeck = deckManager.loadDeckByNumber(selectedDeckNumber);
 
             if (selectedDeck != null) {
                 cardManager.loadDeckForPlayer(selectedDeck);
             } else {
                 // Fallback: try Deck1 if selected deck doesn't exist
-                Deck defaultDeck1 = DeckManager.loadDeckByNumber(1);
+                Deck defaultDeck1 = deckManager.loadDeckByNumber(1);
                 if (defaultDeck1 != null) {
                     cardManager.loadDeckForPlayer(defaultDeck1);
                 } else {
@@ -608,7 +625,7 @@ public class GameEngine {
 
                     // Spawn entity from host (could be host's own entity or client's confirmed
                     // placement)
-                    kuroyale.mainpack.network.EntityRegistry registry = battleManager.getEntityRegistry();
+                    EntityRegistry registry = battleManager.getEntityRegistry();
                     AliveEntity existingEntity = registry.getEntity(entityId);
 
                     if (existingEntity != null) {
@@ -621,15 +638,15 @@ public class GameEngine {
                         boolean isPlayer = (ownerId == 1);
                         AliveEntity entity;
                         if (cardID <= 15) {
-                            entity = new kuroyale.entitiypack.subclasses.UnitEntity(
-                                    ((kuroyale.cardpack.subclasses.UnitCard) kuroyale.cardpack.CardFactory
-                                            .createCard(cardID)),
-                                    isPlayer);
+                            entity = new UnitEntity(
+                                    ((UnitCard) cardFactory.createCard(cardID)),
+                                    isPlayer
+                                );
                         } else {
-                            entity = new kuroyale.entitiypack.subclasses.BuildingEntity(
-                                    ((kuroyale.cardpack.subclasses.BuildingCard) kuroyale.cardpack.CardFactory
-                                            .createCard(cardID)),
-                                    isPlayer);
+                            entity = new BuildingEntity(
+                                    ((BuildingCard) cardFactory.createCard(cardID)),
+                                    isPlayer
+                                );
                         }
 
                         entity.setEntityId(entityId);
@@ -650,7 +667,7 @@ public class GameEngine {
 
                         // Place at exact host-provided position (authoritative)
                         boolean placementOK = arenaMap.placeObject(absoluteRow, absoluteCol,
-                                kuroyale.arenapack.ArenaObjectType.ENTITY);
+                                ArenaObjectType.ENTITY);
 
                         if (placementOK) {
                             entity.setPosition(absoluteRow, absoluteCol);
@@ -692,7 +709,7 @@ public class GameEngine {
                         int row = Integer.parseInt(parts[2]);
                         int col = Integer.parseInt(parts[3]);
 
-                        kuroyale.mainpack.network.EntityRegistry registry = battleManager.getEntityRegistry();
+                        EntityRegistry registry = battleManager.getEntityRegistry();
                         AliveEntity entity = registry.getEntity(entityId);
 
                         if (entity != null) {
@@ -720,11 +737,11 @@ public class GameEngine {
                                 arenaMap.clearObject(oldRow, oldCol);
 
                                 // Set new cell
-                                arenaMap.placeObject(row, col, kuroyale.arenapack.ArenaObjectType.ENTITY);
+                                arenaMap.placeObject(row, col, ArenaObjectType.ENTITY);
                                 arenaMap.setEntity(row, col, entity);
                             } else if (oldRow < 0) {
                                 // Entity not in map yet - place it
-                                arenaMap.placeObject(row, col, kuroyale.arenapack.ArenaObjectType.ENTITY);
+                                arenaMap.placeObject(row, col, ArenaObjectType.ENTITY);
                                 arenaMap.setEntity(row, col, entity);
                             }
 
@@ -736,7 +753,7 @@ public class GameEngine {
                 } else if (msg.getType() == NetworkMessage.MessageType.ENTITY_DEATH) {
                     // Parse: "entityId"
                     long entityId = Long.parseLong(msg.getData());
-                    kuroyale.mainpack.network.EntityRegistry registry = battleManager.getEntityRegistry();
+                    EntityRegistry registry = battleManager.getEntityRegistry();
                     AliveEntity entity = registry.getEntity(entityId);
 
                     if (entity != null) {
@@ -757,8 +774,7 @@ public class GameEngine {
                     String[] parts = msg.getData().split("\\|");
                     if (parts.length >= 3) {
                         try {
-                            kuroyale.mainpack.network.TowerId towerId = kuroyale.mainpack.network.TowerId
-                                    .valueOf(parts[0]);
+                            TowerId towerId = TowerId.valueOf(parts[0]);
                             double hp = Double.parseDouble(parts[1]);
                             double maxHp = Double.parseDouble(parts[2]);
 
@@ -788,19 +804,18 @@ public class GameEngine {
                 } else if (msg.getType() == NetworkMessage.MessageType.TOWER_DESTROY) {
                     // Parse: "TowerId" (enum name)
                     try {
-                        kuroyale.mainpack.network.TowerId towerId = kuroyale.mainpack.network.TowerId
-                                .valueOf(msg.getData());
+                        TowerId towerId = TowerId.valueOf(msg.getData());
                         System.out.println("Client: TOWER_DESTROY received - " + towerId);
 
                         // Find tower BEFORE removal (getTowerById will return null after removal)
-                        kuroyale.entitiypack.subclasses.TowerEntity tower = towerManager.getTowerById(towerId);
+                        TowerEntity tower = towerManager.getTowerById(towerId);
 
                         // Remove tower using TowerManager method (clears arenaMap)
                         towerManager.removeTowerFromNetwork(towerId);
 
                         // Remove from entity registry if it exists
                         if (tower != null) {
-                            kuroyale.mainpack.network.EntityRegistry registry = battleManager.getEntityRegistry();
+                            EntityRegistry registry = battleManager.getEntityRegistry();
                             if (tower.getEntityId() > 0) {
                                 registry.removeEntity(tower.getEntityId());
                             }

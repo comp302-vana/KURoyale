@@ -188,7 +188,7 @@ public class ComboDetector {
     }
 
     private boolean isLowCostCard(int cardID) {
-        Card card = CardFactory.createCard(cardID);
+        Card card = CardFactory.getInstance().createCard(cardID);
         return card != null && card.getCost() <= 2;
     }
 

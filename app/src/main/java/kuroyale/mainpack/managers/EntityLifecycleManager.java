@@ -3,6 +3,10 @@ package kuroyale.mainpack.managers;
 import java.util.ArrayList;
 import java.util.List;
 import kuroyale.arenapack.ArenaMap;
+import kuroyale.arenapack.ArenaObjectType;
+import kuroyale.cardpack.CardFactory;
+import kuroyale.mainpack.models.PlayerProfile;
+import kuroyale.mainpack.models.PlayerStatistics;
 import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
@@ -188,8 +192,8 @@ public class EntityLifecycleManager {
             if (persistenceManager != null && entity instanceof TowerEntity) {
                 TowerEntity tower = (TowerEntity) entity;
                 if (!tower.isPlayer()) { // Enemy tower destroyed
-                    kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
-                    kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+                    PlayerProfile profile = persistenceManager.loadPlayerProfile();
+                    PlayerStatistics stats = profile.getStatistics();
                     
                     if (stats != null) {
                         if (tower.isKing()) {
@@ -215,6 +219,8 @@ public class EntityLifecycleManager {
     }
 
     private void spawnTombstoneDeathSkeletons(BuildingEntity tombstone) {
+        CardFactory cf = CardFactory.getInstance();
+
         int tombstoneRow = tombstone.getRow();
         int tombstoneCol = tombstone.getCol();
         boolean isPlayer = tombstone.isPlayer();
@@ -233,13 +239,13 @@ public class EntityLifecycleManager {
                 if (arenaMap.isWalkable(spawnRow, spawnCol, false) && 
                     arenaMap.getEntity(spawnRow, spawnCol) == null) {
                     
-                    UnitCard skeletonCard = (UnitCard) kuroyale.cardpack.CardFactory.createCard(9);
+                    UnitCard skeletonCard = (UnitCard) cf.createCard(9);
                     skeletonCard.setCount(1);
                     UnitEntity skeleton = new UnitEntity(skeletonCard, isPlayer);
                     skeleton.setPosition(spawnRow, spawnCol);
                     
                     arenaMap.setEntity(spawnRow, spawnCol, skeleton);
-                    arenaMap.placeObject(spawnRow, spawnCol, kuroyale.arenapack.ArenaObjectType.ENTITY);
+                    arenaMap.placeObject(spawnRow, spawnCol, ArenaObjectType.ENTITY);
                     arenaMap.addEntity(skeleton);
                     
                     spawnedCount++;

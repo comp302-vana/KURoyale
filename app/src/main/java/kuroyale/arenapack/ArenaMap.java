@@ -274,7 +274,7 @@ public class ArenaMap {
                         int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2
                                 : (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
 
-                        // Create a single TowerEntity instance for all tiles in the tower
+                        // Create a single TowerEntity INSTANCE for all tiles in the tower
                         TowerEntity towerEntity = null;
                         switch (type) {
                             case ArenaObjectType.BRIDGE:
@@ -300,12 +300,12 @@ public class ArenaMap {
                                 break;
                         }
 
-                        // Use the same TowerEntity instance for all tiles in the tower
+                        // Use the same TowerEntity INSTANCE for all tiles in the tower
                         if (towerEntity != null) {
                             for (int rr = r - s; rr <= r; rr++) {
                                 for (int cc = c - s; cc <= c; cc++) {
                                     collisions[rr][cc].setPlacedObject(new PlacedObject(type));
-                                    entityArray[rr][cc] = towerEntity; // Same instance for all tiles
+                                    entityArray[rr][cc] = towerEntity; // Same INSTANCE for all tiles
                                 }
                             }
                             entityList.add(towerEntity);

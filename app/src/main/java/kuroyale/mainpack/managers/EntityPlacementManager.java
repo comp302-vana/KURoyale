@@ -23,6 +23,7 @@ public class EntityPlacementManager {
     private final DualPlayerStateManager dualPlayerStateManager; // PvP mode
     private final CardManager cardManager; // Player 1 cards
     private final CardManager cardManagerP2; // Player 2 cards (PvP mode)
+    private final CardFactory cardFactory;
     private final EntityRenderer entityRenderer;
     private final SpellSystem spellSystem;
     private final int rows;
@@ -45,6 +46,7 @@ public class EntityPlacementManager {
         this.dualPlayerStateManager = null;
         this.cardManager = cardManager;
         this.cardManagerP2 = null;
+        this.cardFactory = CardFactory.getInstance();
         this.entityRenderer = entityRenderer;
         this.spellSystem = spellSystem;
         this.rows = rows;
@@ -62,6 +64,7 @@ public class EntityPlacementManager {
         this.dualPlayerStateManager = dualPlayerStateManager;
         this.cardManager = cardManager;
         this.cardManagerP2 = cardManagerP2;
+        this.cardFactory = CardFactory.getInstance();
         this.entityRenderer = entityRenderer;
         this.spellSystem = spellSystem;
         this.rows = rows;
@@ -197,7 +200,7 @@ public class EntityPlacementManager {
                 return;
             }
 
-            Card cardToCheck = CardFactory.createCard(cardID);
+            Card cardToCheck = cardFactory.createCard(cardID);
             int cost = cardToCheck.getCost();
 
             // Decorator Pattern: Apply challenge-specific cost modification
@@ -302,9 +305,9 @@ public class EntityPlacementManager {
             boolean isPlayer = (playerId == 1);
             AliveEntity playedEntity;
             if (cardID <= 15) {
-                playedEntity = new UnitEntity(((UnitCard) CardFactory.createCard(cardID)), isPlayer);
+                playedEntity = new UnitEntity(((UnitCard) cardFactory.createCard(cardID)), isPlayer);
             } else {
-                playedEntity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), isPlayer);
+                playedEntity = new BuildingEntity(((BuildingCard) cardFactory.createCard(cardID)), isPlayer);
             }
             System.out.println(playedEntity.getCard().getName() + " by Player " + playerId);
 
@@ -429,7 +432,7 @@ public class EntityPlacementManager {
      * @return Final column where placed, or -1 if rejected
      */
     public int placeCardAuthoritative(int playerId, int cardID, int row, int col, int requestId, boolean fromLocalUI) {
-        Card cardToCheck = CardFactory.createCard(cardID);
+        Card cardToCheck = cardFactory.createCard(cardID);
         int cost = cardToCheck.getCost();
 
         // Validate zone
@@ -504,9 +507,9 @@ public class EntityPlacementManager {
         boolean isPlayer = (playerId == 1);
         AliveEntity entity;
         if (cardID <= 15) {
-            entity = new UnitEntity(((UnitCard) CardFactory.createCard(cardID)), isPlayer);
+            entity = new UnitEntity(((UnitCard) cardFactory.createCard(cardID)), isPlayer);
         } else {
-            entity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), isPlayer);
+            entity = new BuildingEntity(((BuildingCard) cardFactory.createCard(cardID)), isPlayer);
         }
 
         // Assign entity ID (host assigns IDs)

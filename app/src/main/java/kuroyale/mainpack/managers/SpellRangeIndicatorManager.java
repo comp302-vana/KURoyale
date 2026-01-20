@@ -86,7 +86,7 @@ public class SpellRangeIndicatorManager {
         }
 
         // Get the spell card to retrieve its radius
-        Card card = CardFactory.createCard(spellCardId);
+        Card card = CardFactory.getInstance().createCard(spellCardId);
         if (card == null || card.getType() != CardType.SPELL) {
             hideIndicator();
             return;

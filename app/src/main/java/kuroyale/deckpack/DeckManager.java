@@ -3,21 +3,32 @@ package kuroyale.deckpack;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+
 import kuroyale.cardpack.Card;
 import kuroyale.cardpack.CardFactory;
 
 public class DeckManager {
+    private static DeckManager INSTANCE;
     private static final String DECKS_DIR = "decks";
-    private static Deck currentDeck;
-    private static List<Deck> savedDecks;
-    private static int selectedDeckNumber = 1;
+    
+    private Deck currentDeck;
+    private List<Deck> savedDecks;
+    private int selectedDeckNumber;
 
-    static {
+    public static DeckManager getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new DeckManager();
+        }
+        return INSTANCE;
+    }
+
+    public DeckManager() {
         savedDecks = new ArrayList<>();
+        selectedDeckNumber = 1;
         loadAllDecks();
     }
 
-    public static void saveDeck(Deck deck) {
+    public void saveDeck(Deck deck) {
         File decksDir = new File(DECKS_DIR);
         if (!decksDir.exists()) {
             decksDir.mkdirs();
@@ -34,7 +45,7 @@ public class DeckManager {
         }
     }
 
-    public static Deck loadDeck(String name) {
+    public Deck loadDeck(String name) {
         File deckFile = new File(DECKS_DIR, name + ".deck");
         if (!deckFile.exists()) {
             return null;
@@ -59,8 +70,9 @@ public class DeckManager {
     }
 
     // Helper method to find a card by its name using getName()
-    private static Card findCardByName(String name) {
-        for (Card card : CardFactory.getAllCards()) {
+    private Card findCardByName(String name) {
+        CardFactory cf = CardFactory.getInstance();
+        for (Card card : cf.getAllCards()) {
             if (card.getName().equals(name)) {
                 return card;
             }
@@ -68,7 +80,7 @@ public class DeckManager {
         return null;
     }
 
-    public static void loadAllDecks() {
+    public void loadAllDecks() {
         File decksDir = new File(DECKS_DIR);
         if (!decksDir.exists()) {
             return;
@@ -87,7 +99,7 @@ public class DeckManager {
         }
     }
 
-    public static void deleteDeck(String name) {
+    public void deleteDeck(String name) {
         File deckFile = new File(DECKS_DIR, name + ".deck");
         if (deckFile.exists()) {
             deckFile.delete();
@@ -98,11 +110,11 @@ public class DeckManager {
         }
     }
 
-    public static List<Deck> getAllDecks() {
+    public List<Deck> getAllDecks() {
         return new ArrayList<>(savedDecks);
     }
 
-    public static Deck getDeckByName(String name) {
+    public Deck getDeckByName(String name) {
         for (Deck deck : savedDecks) {
             if (deck.getName().equals(name)) {
                 return deck;
@@ -111,36 +123,36 @@ public class DeckManager {
         return null;
     }
 
-    public static Deck getCurrentDeck() {
+    public Deck getCurrentDeck() {
         return currentDeck;
     }
 
-    public static void setCurrentDeck(Deck deck) {
+    public void setCurrentDeck(Deck deck) {
         currentDeck = deck;
     }
 
     // ===== Numbered Deck System Methods =====
 
-    public static int getSelectedDeckNumber() {
+    public int getSelectedDeckNumber() {
         return selectedDeckNumber;
     }
 
-    public static void setSelectedDeckNumber(int deckNumber) {
+    public void setSelectedDeckNumber(int deckNumber) {
         if (deckNumber >= 1 && deckNumber <= 8) {
             selectedDeckNumber = deckNumber;
         }
     }
 
-    public static int getDeckCardCount(int deckNumber) {
+    public int getDeckCardCount(int deckNumber) {
         Deck deck = loadDeckByNumber(deckNumber);
         return deck != null ? deck.getCards().size() : 0;
     }
 
-    public static Deck loadDeckByNumber(int deckNumber) {
+    public Deck loadDeckByNumber(int deckNumber) {
         return loadDeck("Deck" + deckNumber);
     }
 
-    public static void saveDeckByNumber(int deckNumber, Deck deck) {
+    public void saveDeckByNumber(int deckNumber, Deck deck) {
         if (deck == null) {
             // Delete the deck file if deck is null or empty
             deleteDeck("Deck" + deckNumber);

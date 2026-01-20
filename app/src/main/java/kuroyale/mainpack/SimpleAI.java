@@ -10,6 +10,7 @@ import kuroyale.cardpack.Card;
 import kuroyale.cardpack.CardFactory;
 import kuroyale.cardpack.subclasses.BuildingCard;
 import kuroyale.cardpack.subclasses.UnitCard;
+import kuroyale.deckpack.DeckManager;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
@@ -60,12 +61,14 @@ public class SimpleAI {
     private final double PLAY_CARD_PROBABILITY = 0.67;
 
     private GameEngine gameEngine;
+    private CardFactory cardFactory;
     private double timeSinceLastAICheck = 0.0;
     private double AI_CHECK_INTERVAL = 2.8;
 
     public SimpleAI(ArenaMap arenaMap, GameEngine gameEngine) {
         this.arenaMap = arenaMap;
         this.gameEngine = gameEngine;
+        this.cardFactory = CardFactory.getInstance();
         this.rows = ArenaMap.getRows();
         this.cols = ArenaMap.getCols();
         
@@ -82,7 +85,7 @@ public class SimpleAI {
                 a = random.nextInt(1,28);
             }
             selectedCards.add(a);
-            aiDeckCards.add(CardFactory.createCard(a));
+            aiDeckCards.add(cardFactory.createCard(a));
         }
         nextCardIndex = 0;
     }
@@ -211,9 +214,9 @@ public class SimpleAI {
             // Entity creation
             AliveEntity playedEntity;
             if (cardID <= 15) {
-                playedEntity = new UnitEntity(((UnitCard) CardFactory.createCard(cardID)), false); // false = enemy
+                playedEntity = new UnitEntity(((UnitCard) cardFactory.createCard(cardID)), false); // false = enemy
             } else if (cardID <= 24) {
-                playedEntity = new BuildingEntity(((BuildingCard) CardFactory.createCard(cardID)), false); // false = enemy
+                playedEntity = new BuildingEntity(((BuildingCard) cardFactory.createCard(cardID)), false); // false = enemy
             } else {
                 // Spell cards will be implemented in the future update
                 continue;

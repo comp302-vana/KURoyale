@@ -413,8 +413,9 @@ public class UIManager extends Application {
     }
 
     private void handleVsAIClicked(ActionEvent event) throws IOException {
-        int selectedDeckNumber = kuroyale.deckpack.DeckManager.getSelectedDeckNumber();
-        int cardCount = kuroyale.deckpack.DeckManager.getDeckCardCount(selectedDeckNumber);
+        DeckManager dm = DeckManager.getInstance();
+        int selectedDeckNumber = dm.getSelectedDeckNumber();
+        int cardCount = dm.getDeckCardCount(selectedDeckNumber);
         if (cardCount != 8) {
             switchToDeckBuilderSceneWithFlash(event);
             return;
@@ -424,9 +425,10 @@ public class UIManager extends Application {
 
     @FXML
     void btnStartBattleClicked(ActionEvent event) throws IOException {
+        DeckManager dm = DeckManager.getInstance();
         // Check if current deck has 8 cards
-        int selectedDeckNumber = kuroyale.deckpack.DeckManager.getSelectedDeckNumber();
-        int cardCount = kuroyale.deckpack.DeckManager.getDeckCardCount(selectedDeckNumber);
+        int selectedDeckNumber = dm.getSelectedDeckNumber();
+        int cardCount = dm.getDeckCardCount(selectedDeckNumber);
 
         if (cardCount != 8) {
             // Redirect to deck builder with flash animation
@@ -463,7 +465,8 @@ public class UIManager extends Application {
             return false;
         }
         
-        Deck currentDeck = DeckManager.loadDeckByNumber(DeckManager.getSelectedDeckNumber());
+        DeckManager dm = DeckManager.getInstance();
+        Deck currentDeck = dm.loadDeckByNumber(dm.getSelectedDeckNumber());
         
         if (currentDeck == null) {
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);

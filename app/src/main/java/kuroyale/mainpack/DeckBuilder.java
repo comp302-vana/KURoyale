@@ -58,6 +58,8 @@ public class DeckBuilder {
     private Button[] deckNumberButtons = new Button[8];
 
     // Managers for economy and upgrades
+    private DeckManager deckManager;
+    private CardStats cardStats = CardStats.getInstance();
     private PersistenceManager persistenceManager;
     private EconomyManager economyManager;
     private CardDataRepository cardDataRepository;
@@ -71,6 +73,7 @@ public class DeckBuilder {
             System.err.println("ERROR: FXML fields not injected! Check FXML file.");
             return;
         }
+        deckManager = DeckManager.getInstance();
 
         deckCards = FXCollections.observableArrayList();
 
@@ -84,7 +87,7 @@ public class DeckBuilder {
         setupDeckSlots();
 
         // Load the selected deck (default: 1)
-        selectedDeckNumber = DeckManager.getSelectedDeckNumber();
+        selectedDeckNumber = deckManager.getSelectedDeckNumber();
         loadDeck(selectedDeckNumber);
 
         updateUI();
@@ -143,7 +146,7 @@ public class DeckBuilder {
                 continue;
 
             int deckNum = i + 1;
-            int cardCount = DeckManager.getDeckCardCount(deckNum);
+            int cardCount = deckManager.getDeckCardCount(deckNum);
             boolean isSelected = (deckNum == selectedDeckNumber);
             boolean isComplete = cardCount == 8;
             boolean isIncomplete = cardCount > 0 && cardCount < 8;
@@ -219,12 +222,12 @@ public class DeckBuilder {
 
         // Auto-save current deck before switching (even if empty)
         if (currentDeck != null) {
-            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+            deckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
         }
 
         // Switch to the new deck
         selectedDeckNumber = deckNumber;
-        DeckManager.setSelectedDeckNumber(deckNumber);
+        deckManager.setSelectedDeckNumber(deckNumber);
 
         // Load the new deck
         loadDeck(deckNumber);
@@ -234,8 +237,8 @@ public class DeckBuilder {
     }
 
     private void loadDeck(int deckNumber) {
-        currentDeck = DeckManager.loadDeckByNumber(deckNumber);
-        DeckManager.setCurrentDeck(currentDeck);
+        currentDeck = deckManager.loadDeckByNumber(deckNumber);
+        deckManager.setCurrentDeck(currentDeck);
         updateDeckDisplay();
         updateUI();
     }
@@ -251,7 +254,7 @@ public class DeckBuilder {
 
         // create buttons for all cards (using level 1 for display, actual level from
         // repository)
-        for (Card card : CardFactory.getAllCards()) {
+        for (Card card : CardFactory.getInstance().getAllCards()) {
             AnchorPane cardButton = createCardNode(card);
             // Store card ID in userData for later reference
             cardButton.setUserData(card.getId());
@@ -557,8 +560,8 @@ public class DeckBuilder {
         if (card instanceof UnitCard) {
             UnitCard unitCard = (UnitCard) card;
             // Get stats at current level
-            int currentHP = CardStats.getHPRounded(card.getId(), cardLevel);
-            int currentDamage = CardStats.getDamageRounded(card.getId(), cardLevel);
+            int currentHP = cardStats.getHPRounded(card.getId(), cardLevel);
+            int currentDamage = cardStats.getDamageRounded(card.getId(), cardLevel);
             hitSpeed = String.valueOf(unitCard.getActSpeed());
             range = String.valueOf(unitCard.getRange());
             speed = unitCard.getSpeed();
@@ -585,8 +588,8 @@ public class DeckBuilder {
             // will be disabled)
             if (!isMaxLevel) {
                 int nextLevel = cardLevel + 1;
-                int nextHP = CardStats.getHPRounded(card.getId(), nextLevel);
-                int nextDamage = CardStats.getDamageRounded(card.getId(), nextLevel);
+                int nextHP = cardStats.getHPRounded(card.getId(), nextLevel);
+                int nextDamage = cardStats.getDamageRounded(card.getId(), nextLevel);
 
                 javafx.scene.shape.Line upgradeSeparator = new javafx.scene.shape.Line(0, 0, 340, 0);
                 upgradeSeparator.setStroke(Color.GRAY);
@@ -636,8 +639,8 @@ public class DeckBuilder {
         if (card instanceof BuildingCard) {
             BuildingCard buildingCard = (BuildingCard) card;
             // Get stats at current level
-            int currentHP = CardStats.getHPRounded(card.getId(), cardLevel);
-            int currentDamage = CardStats.getDamageRounded(card.getId(), cardLevel);
+            int currentHP = cardStats.getHPRounded(card.getId(), cardLevel);
+            int currentDamage = cardStats.getDamageRounded(card.getId(), cardLevel);
             range = String.valueOf(buildingCard.getRange());
             lifetime = String.valueOf(buildingCard.getLifetime());
 
@@ -660,8 +663,8 @@ public class DeckBuilder {
             // will be disabled)
             if (!isMaxLevel) {
                 int nextLevel = cardLevel + 1;
-                int nextHP = CardStats.getHPRounded(card.getId(), nextLevel);
-                int nextDamage = CardStats.getDamageRounded(card.getId(), nextLevel);
+                int nextHP = cardStats.getHPRounded(card.getId(), nextLevel);
+                int nextDamage = cardStats.getDamageRounded(card.getId(), nextLevel);
 
                 javafx.scene.shape.Line upgradeSeparator = new javafx.scene.shape.Line(0, 0, 340, 0);
                 upgradeSeparator.setStroke(Color.GRAY);
@@ -711,7 +714,7 @@ public class DeckBuilder {
         if (card instanceof SpellCard) {
             SpellCard spellCard = (SpellCard) card;
             // Get stats at current level
-            int currentDamage = CardStats.getDamageRounded(card.getId(), cardLevel);
+            int currentDamage = cardStats.getDamageRounded(card.getId(), cardLevel);
             radius = String.valueOf(spellCard.getRadius());
 
             Label areaDamageStat = new Label("Area Damage: " + currentDamage);
@@ -726,7 +729,7 @@ public class DeckBuilder {
             // will be disabled)
             if (!isMaxLevel) {
                 int nextLevel = cardLevel + 1;
-                int nextDamage = CardStats.getDamageRounded(card.getId(), nextLevel);
+                int nextDamage = cardStats.getDamageRounded(card.getId(), nextLevel);
 
                 javafx.scene.shape.Line upgradeSeparator = new javafx.scene.shape.Line(0, 0, 340, 0);
                 upgradeSeparator.setStroke(Color.GRAY);
@@ -889,7 +892,7 @@ public class DeckBuilder {
         // Create a new deck if none exists
         if (currentDeck == null) {
             currentDeck = new Deck("Deck" + selectedDeckNumber, new java.util.ArrayList<>());
-            DeckManager.setCurrentDeck(currentDeck);
+            deckManager.setCurrentDeck(currentDeck);
         }
 
         try {
@@ -897,7 +900,7 @@ public class DeckBuilder {
             updateDeckDisplay();
             updateUI();
             // Auto-save after adding card
-            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+            deckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
             updateDeckNumberButtonStyles();
         } catch (IllegalArgumentException e) {
             // Trying to select a card that is already in the deck
@@ -1129,7 +1132,7 @@ public class DeckBuilder {
     void btnSelectBattleClicked(ActionEvent event) throws IOException {
         // Auto-save current deck before leaving (even if empty)
         if (currentDeck != null) {
-            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+            deckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
         }
         switchToStartBattleScene(event);
     }
@@ -1138,7 +1141,7 @@ public class DeckBuilder {
     void btnSelectBuildClicked(ActionEvent event) throws IOException {
         // Auto-save current deck before leaving (even if empty)
         if (currentDeck != null) {
-            DeckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
+            deckManager.saveDeckByNumber(selectedDeckNumber, currentDeck);
         }
         switchToArenaBuilderScene(event);
     }
@@ -1327,7 +1330,7 @@ public class DeckBuilder {
 
         // Clear and rebuild card display
         cardContainer.getChildren().clear();
-        for (kuroyale.cardpack.Card card : kuroyale.cardpack.CardFactory.getAllCards()) {
+        for (kuroyale.cardpack.Card card : CardFactory.getInstance().getAllCards()) {
             AnchorPane cardButton = createCardNode(card);
             cardButton.setUserData(card.getId());
             cardContainer.getChildren().add(cardButton);
