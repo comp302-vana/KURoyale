@@ -3,6 +3,11 @@ package kuroyale.mainpack.managers;
 import java.util.ArrayList;
 import java.util.List;
 import kuroyale.arenapack.ArenaMap;
+import kuroyale.arenapack.ArenaObjectType;
+import kuroyale.cardpack.CardFactory;
+import kuroyale.mainpack.models.PlayerProfile;
+import kuroyale.mainpack.models.PlayerStatistics;
+import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
@@ -23,6 +28,7 @@ public class EntityLifecycleManager {
     private QuestManager questManager;
     private PersistenceManager persistenceManager;
     private AchievementManager achievementManager;
+    private ComboManager comboManager;
     private java.util.function.Consumer<TowerManager.TowerDestroyResult> towerDestroyCallback;
 
     public EntityLifecycleManager(ArenaMap arenaMap, CombatManager combatManager, EntityRenderer entityRenderer,
@@ -53,6 +59,9 @@ public class EntityLifecycleManager {
         this.achievementManager = achievementManager;
     }
     
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
+    }
 
     public void updateEntities() {
         List<AliveEntity> entitiesToUpdate = new ArrayList<>();
@@ -72,6 +81,10 @@ public class EntityLifecycleManager {
 
         // Remove dead entities first
         for (AliveEntity deadEntity : deadEntities) {
+            // Cleanup combo effects for destroyed entity
+            if (comboManager != null) {
+                comboManager.cleanupDestroyedEntity(deadEntity);
+            }
             TowerManager.TowerDestroyResult result = removeDeadEntity(deadEntity);
             if (result.isGameEnd && towerDestroyCallback != null) {
                 towerDestroyCallback.accept(result);
@@ -105,6 +118,9 @@ public class EntityLifecycleManager {
             if (entity instanceof UnitEntity) {
                 entityUpdater.updateUnitEntity((UnitEntity) entity);
                 if (entity.getHP() <= 0) {
+                    if (comboManager != null) {
+                        comboManager.cleanupDestroyedEntity(entity);
+                    }
                     TowerManager.TowerDestroyResult result = removeDeadEntity(entity);
                     if (result.isGameEnd && towerDestroyCallback != null) {
                         towerDestroyCallback.accept(result);
@@ -113,6 +129,9 @@ public class EntityLifecycleManager {
             } else if (entity instanceof BuildingEntity && !(entity instanceof TowerEntity)) {
                 entityUpdater.updateBuildingEntity((BuildingEntity) entity);
                 if (entity.getHP() <= 0) {
+                    if (comboManager != null) {
+                        comboManager.cleanupDestroyedEntity(entity);
+                    }
                     TowerManager.TowerDestroyResult result = removeDeadEntity(entity);
                     if (result.isGameEnd && towerDestroyCallback != null) {
                         towerDestroyCallback.accept(result);
@@ -121,6 +140,9 @@ public class EntityLifecycleManager {
             } else if (entity instanceof TowerEntity) {
                 entityUpdater.updateTowerEntity((TowerEntity) entity);
                 if (entity.getHP() <= 0) {
+                    if (comboManager != null) {
+                        comboManager.cleanupDestroyedEntity(entity);
+                    }
                     TowerManager.TowerDestroyResult result = removeDeadEntity(entity);
                     if (result.isGameEnd && towerDestroyCallback != null) {
                         towerDestroyCallback.accept(result);
@@ -133,6 +155,13 @@ public class EntityLifecycleManager {
     }
 
     public TowerManager.TowerDestroyResult removeDeadEntity(AliveEntity entity) {
+        //Handle tombstone spawn when destroyed
+        if (entity instanceof BuildingEntity) {
+            BuildingEntity building = (BuildingEntity) entity;
+            if (building.getCard().getId() == 21) {
+                spawnTombstoneDeathSkeletons(building);
+            }
+        }
         arenaMap.removeEntity(entity);
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
@@ -163,8 +192,8 @@ public class EntityLifecycleManager {
             if (persistenceManager != null && entity instanceof TowerEntity) {
                 TowerEntity tower = (TowerEntity) entity;
                 if (!tower.isPlayer()) { // Enemy tower destroyed
-                    kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
-                    kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+                    PlayerProfile profile = persistenceManager.loadPlayerProfile();
+                    PlayerStatistics stats = profile.getStatistics();
                     
                     if (stats != null) {
                         if (tower.isKing()) {
@@ -187,5 +216,44 @@ public class EntityLifecycleManager {
             return result;
         }
     return new TowerManager.TowerDestroyResult(false, false, false, false);
+    }
+
+    private void spawnTombstoneDeathSkeletons(BuildingEntity tombstone) {
+        CardFactory cf = CardFactory.getInstance();
+
+        int tombstoneRow = tombstone.getRow();
+        int tombstoneCol = tombstone.getCol();
+        boolean isPlayer = tombstone.isPlayer();
+        
+        // Spawn 4 skeletons around the tombstone
+        int[][] directions = {{-1, 0}, {1, 0}, {0, 1}, {0, -1}};
+        int spawnedCount = 0;
+        
+        for (int[] dir : directions) {
+            if (spawnedCount >= 4) break;
+            
+            int spawnRow = tombstoneRow + dir[0];
+            int spawnCol = tombstoneCol + dir[1];
+            
+            if (spawnRow >= 0 && spawnRow < rows && spawnCol >= 0 && spawnCol < cols) {
+                if (arenaMap.isWalkable(spawnRow, spawnCol, false) && 
+                    arenaMap.getEntity(spawnRow, spawnCol) == null) {
+                    
+                    UnitCard skeletonCard = (UnitCard) cf.createCard(9);
+                    skeletonCard.setCount(1);
+                    UnitEntity skeleton = new UnitEntity(skeletonCard, isPlayer);
+                    skeleton.setPosition(spawnRow, spawnCol);
+                    
+                    arenaMap.setEntity(spawnRow, spawnCol, skeleton);
+                    arenaMap.placeObject(spawnRow, spawnCol, ArenaObjectType.ENTITY);
+                    arenaMap.addEntity(skeleton);
+                    
+                    spawnedCount++;
+                }
+            }
+        }
+        
+        // Render the spawned skeletons
+        entityRenderer.setEntityDirty(true);
     }
 }

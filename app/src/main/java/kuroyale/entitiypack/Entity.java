@@ -8,14 +8,24 @@ import kuroyale.entitiypack.subclasses.AliveEntity;
 public class Entity {
     private final Card card;
     private final boolean isPlayer;
+    private static kuroyale.mainpack.managers.ComboManager comboManager;
 
     public Entity(Card card, boolean isPlayer) {
         this.card = card;
         this.isPlayer = isPlayer;
     }
+    
+    public static void setComboManager(kuroyale.mainpack.managers.ComboManager comboManager) {
+        Entity.comboManager = comboManager;
+    }
 
     public void attack(AliveEntity other) {
-        other.reduceHP(getDamage());
+        double damage = getDamage();
+        // Apply combo damage multiplier if this entity has combo effects
+        if (comboManager != null && this instanceof AliveEntity) {
+            damage *= comboManager.getDamageMultiplier((AliveEntity) this);
+        }
+        other.reduceHP(damage);
     }
 
     public double getDamage() {

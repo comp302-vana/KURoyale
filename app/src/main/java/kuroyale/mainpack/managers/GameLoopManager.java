@@ -4,7 +4,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.scene.control.Label;
 import javafx.util.Duration;
-import kuroyale.mainpack.SimpleAI;
+import kuroyale.ai.AIContext;
 
 /**
  * Handles game loop orchestration and timeline coordination.
@@ -23,7 +23,7 @@ public class GameLoopManager {
     private double timePassedSinceLastNetworkSync = 0;
     private double timePassedSinceLastElixirSync = 0;
     private double timePassedSinceLastSnapshot = 0;
-    private SimpleAI aiOpponent;
+    private AIContext aiOpponent;
     private final boolean isPvPMode;
     private kuroyale.mainpack.network.NetworkBattleManager networkBattleManager;
     private kuroyale.arenapack.ArenaMap arenaMap;
@@ -59,7 +59,7 @@ public class GameLoopManager {
         this.isPvPMode = true;
     }
 
-    public void setAIOpponent(SimpleAI aiOpponent) {
+    public void setAIOpponent(AIContext aiOpponent) {
         this.aiOpponent = aiOpponent;
     }
     

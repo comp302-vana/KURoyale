@@ -16,7 +16,14 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import kuroyale.deckpack.Deck;
+import kuroyale.deckpack.DeckManager;
+import kuroyale.mainpack.challengeHelpers.ChallengeValidator;
+import kuroyale.mainpack.managers.ChallengeManager;
+import kuroyale.mainpack.managers.PersistenceManager;
+import kuroyale.mainpack.models.Challenge;
 import kuroyale.mainpack.models.GameMode;
+import kuroyale.mainpack.models.PlayerProfile;
 
 public class UIManager extends Application {
     private Stage stage;
@@ -304,10 +311,124 @@ public class UIManager extends Application {
     }
 
     @FXML
+    private javafx.scene.control.Button playButton;
+
+    @FXML
+    void btnPlayClicked(ActionEvent event) {
+        showPlayDropdownMenu(event);
+    }
+
+    private void showPlayDropdownMenu(ActionEvent event) {
+        Node source = (Node) event.getSource();
+        Parent sceneRoot = source.getScene().getRoot();
+
+        if (!(sceneRoot instanceof javafx.scene.layout.AnchorPane))
+            return;
+        javafx.scene.layout.AnchorPane anchorRoot = (javafx.scene.layout.AnchorPane) sceneRoot;
+
+        javafx.scene.layout.StackPane overlay = new javafx.scene.layout.StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
+
+        javafx.scene.layout.HBox menuContainer = new javafx.scene.layout.HBox(20);
+        menuContainer.setAlignment(javafx.geometry.Pos.CENTER);
+
+        javafx.scene.control.Button vsAIBtn = createDropdownButton("vs AI");
+        vsAIBtn.setOnAction(e -> {
+            anchorRoot.getChildren().remove(overlay);
+            try {
+                handleVsAIClicked(event);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        javafx.scene.control.Button localPvPBtn = createDropdownButton("Local PvP");
+        localPvPBtn.setOnAction(e -> {
+            anchorRoot.getChildren().remove(overlay);
+            try {
+                btnLocalPvPClicked(event);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        javafx.scene.control.Button multiplayerBtn = createDropdownButton("Multiplayer");
+        multiplayerBtn.setOnAction(e -> {
+            anchorRoot.getChildren().remove(overlay);
+            try {
+                btnNetworkMultiplayerClicked(event);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        menuContainer.getChildren().addAll(vsAIBtn, localPvPBtn, multiplayerBtn);
+        overlay.getChildren().add(menuContainer);
+
+        overlay.setOnMouseClicked(e -> {
+            if (e.getTarget() == overlay) {
+                anchorRoot.getChildren().remove(overlay);
+            }
+        });
+
+        anchorRoot.getChildren().add(overlay);
+        javafx.scene.layout.AnchorPane.setTopAnchor(overlay, 0.0);
+        javafx.scene.layout.AnchorPane.setBottomAnchor(overlay, 0.0);
+        javafx.scene.layout.AnchorPane.setLeftAnchor(overlay, 0.0);
+        javafx.scene.layout.AnchorPane.setRightAnchor(overlay, 0.0);
+    }
+
+    private javafx.scene.control.Button createDropdownButton(String text) {
+        javafx.scene.control.Button btn = new javafx.scene.control.Button(text);
+        btn.setPrefWidth(190);
+        btn.setPrefHeight(45);
+        btn.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #9b59b6, #8e44ad, #6c3483); " +
+                        "-fx-background-radius: 8; -fx-text-fill: #f5e6d3; " +
+                        "-fx-font-family: 'Trebuchet MS Bold', 'Arial Black', sans-serif; " +
+                        "-fx-font-size: 16px; -fx-font-weight: bold; -fx-cursor: hand; " +
+                        "-fx-border-color: linear-gradient(to bottom, #d4af37, #c9a227, #b8860b); " +
+                        "-fx-border-width: 2; -fx-border-radius: 6;" +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 10, 0.4, 0, 4);");
+
+        btn.setOnMouseEntered(e -> btn.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #a86cc4, #9b59b6, #7d3c98); " +
+                        "-fx-background-radius: 8; -fx-text-fill: #f5e6d3; " +
+                        "-fx-font-family: 'Trebuchet MS Bold', 'Arial Black', sans-serif; " +
+                        "-fx-font-size: 16px; -fx-font-weight: bold; -fx-cursor: hand; " +
+                        "-fx-border-color: linear-gradient(to bottom, #d4af37, #c9a227, #b8860b); " +
+                        "-fx-border-width: 2; -fx-border-radius: 6;" +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.9), 12, 0.5, 0, 5);"));
+
+        btn.setOnMouseExited(e -> btn.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #9b59b6, #8e44ad, #6c3483); " +
+                        "-fx-background-radius: 8; -fx-text-fill: #f5e6d3; " +
+                        "-fx-font-family: 'Trebuchet MS Bold', 'Arial Black', sans-serif; " +
+                        "-fx-font-size: 16px; -fx-font-weight: bold; -fx-cursor: hand; " +
+                        "-fx-border-color: linear-gradient(to bottom, #d4af37, #c9a227, #b8860b); " +
+                        "-fx-border-width: 2; -fx-border-radius: 6;" +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 10, 0.4, 0, 4);"));
+
+        return btn;
+    }
+
+    private void handleVsAIClicked(ActionEvent event) throws IOException {
+        DeckManager dm = DeckManager.getInstance();
+        int selectedDeckNumber = dm.getSelectedDeckNumber();
+        int cardCount = dm.getDeckCardCount(selectedDeckNumber);
+        if (cardCount != 8) {
+            switchToDeckBuilderSceneWithFlash(event);
+            return;
+        }
+        switchToDifficultySelectionScene(event);
+    }
+
+    @FXML
     void btnStartBattleClicked(ActionEvent event) throws IOException {
+        DeckManager dm = DeckManager.getInstance();
         // Check if current deck has 8 cards
-        int selectedDeckNumber = kuroyale.deckpack.DeckManager.getSelectedDeckNumber();
-        int cardCount = kuroyale.deckpack.DeckManager.getDeckCardCount(selectedDeckNumber);
+        int selectedDeckNumber = dm.getSelectedDeckNumber();
+        int cardCount = dm.getDeckCardCount(selectedDeckNumber);
 
         if (cardCount != 8) {
             // Redirect to deck builder with flash animation
@@ -319,7 +440,66 @@ public class UIManager extends Application {
     }
 
     @FXML
+    void btnChallengeModeClicked(ActionEvent event) throws IOException {
+        switchToChallengeSelectionScene(event);
+    }
+
+    private boolean validateChallengeDeckIfNeeded() {
+        Challenge.ChallengeType challengeType = ChallengeController.getSelectedChallengeType();
+        if (challengeType == null) {
+            return true; // No challenge active, deck is fine
+        }
+        
+        // Validate deck before starting battle
+        PersistenceManager persistenceManager = new PersistenceManager();
+        PlayerProfile profile = persistenceManager.loadPlayerProfile();
+        ChallengeManager challengeManager = new ChallengeManager(profile);
+        
+        // Check if startChallenge succeeded
+        if (!challengeManager.startChallenge(challengeType)) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("Challenge Error");
+            alert.setHeaderText("Cannot start challenge");
+            alert.setContentText("Challenge is locked or not found. Please select a valid challenge.");
+            alert.showAndWait();
+            return false;
+        }
+        
+        DeckManager dm = DeckManager.getInstance();
+        Deck currentDeck = dm.loadDeckByNumber(dm.getSelectedDeckNumber());
+        
+        if (currentDeck == null) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("No Deck Selected");
+            alert.setHeaderText("No deck found");
+            alert.setContentText("Please create and select a deck first.");
+            alert.showAndWait();
+            return false;
+        }
+        
+        ChallengeValidator.ValidationResult validation = challengeManager.validateChallengeDeck(currentDeck.getCards());
+        
+        if (!validation.isValid()) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("Invalid Deck");
+            alert.setHeaderText("Deck does not meet challenge requirements");
+            alert.setContentText(validation.getErrorMessage());
+            alert.showAndWait();
+            return false;
+        }
+        
+        return true;
+    }
+
+    @FXML
     void btnNoAIClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            // Return to challenge selection if coming from challenge, otherwise stay here
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "NoAI";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -327,6 +507,12 @@ public class UIManager extends Application {
 
     @FXML
     void btnSimpleClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "Simple";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -334,6 +520,12 @@ public class UIManager extends Application {
 
     @FXML
     void btnMediumClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "Medium";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -341,6 +533,12 @@ public class UIManager extends Application {
 
     @FXML
     void btnAdvancedClicked(ActionEvent event) throws IOException {
+        if (!validateChallengeDeckIfNeeded()) {
+            if (ChallengeController.getSelectedChallengeType() != null) {
+                switchToChallengeSelectionScene(event);
+            }
+            return;
+        }
         selectedDifficulty = "Advanced";
         GameEngine.setGameMode(GameMode.SINGLE_PLAYER_AI);
         switchToBattleScene(event);
@@ -350,14 +548,14 @@ public class UIManager extends Application {
     void btnLocalPvPClicked(ActionEvent event) throws IOException {
         switchToPvPDeckSelectionScene(event);
     }
-    
+
     @FXML
     void btnNetworkMultiplayerClicked(ActionEvent event) throws IOException {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/kuroyale/scenes/NetworkConnectionDialog.fxml"));
             Parent root = loader.load();
             kuroyale.mainpack.network.NetworkConnectionDialogController controller = loader.getController();
-            
+
             Stage dialog = new Stage();
             controller.setStage(dialog);
             dialog.setTitle("Network Multiplayer");
@@ -390,6 +588,15 @@ public class UIManager extends Application {
 
     private void switchToDeckBuilderScene(ActionEvent event) throws IOException {
         root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/DeckBuilderScene.fxml"));
+        root.setStyle("-fx-background-color: BD7FFF;");
+        stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void switchToChallengeSelectionScene(ActionEvent event) throws IOException {
+        root = FXMLLoader.load(getClass().getResource("/kuroyale/scenes/ChallengeSelectionScene.fxml"));
         root.setStyle("-fx-background-color: BD7FFF;");
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root, 1280, 720, Color.web("0xBD7FFF"));
@@ -477,6 +684,136 @@ public class UIManager extends Application {
             return;
         }
 
+        // Show chest preview overlay (animation will handle the rest)
+        showChestPreviewOverlay(event, playerProfile, persistenceManager);
+    }
+
+    private void showChestPreviewOverlay(ActionEvent event,
+            kuroyale.mainpack.models.PlayerProfile playerProfile,
+            kuroyale.mainpack.managers.PersistenceManager persistenceManager) {
+
+        Node source = (Node) event.getSource();
+        Parent sceneRoot = source.getScene().getRoot();
+        if (!(sceneRoot instanceof javafx.scene.layout.AnchorPane))
+            return;
+        javafx.scene.layout.AnchorPane anchorRoot = (javafx.scene.layout.AnchorPane) sceneRoot;
+
+        // Create dark overlay
+        javafx.scene.layout.StackPane overlay = new javafx.scene.layout.StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);");
+
+        // Container for chest and text
+        javafx.scene.layout.VBox container = new javafx.scene.layout.VBox(20);
+        container.setAlignment(javafx.geometry.Pos.CENTER);
+
+        // Chest image
+        javafx.scene.image.ImageView chestImage = new javafx.scene.image.ImageView();
+        try {
+            chestImage.setImage(new javafx.scene.image.Image(
+                    getClass().getResourceAsStream("/kuroyale/images/box.png")));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        chestImage.setFitWidth(200);
+        chestImage.setFitHeight(200);
+        chestImage.setPreserveRatio(true);
+        chestImage.setCursor(javafx.scene.Cursor.HAND);
+
+        // "Tap to open" label
+        javafx.scene.control.Label tapLabel = new javafx.scene.control.Label("Click!");
+        tapLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 24px; -fx-font-weight: bold; " +
+                "-fx-font-family: 'Trebuchet MS Bold';");
+
+        container.getChildren().addAll(chestImage, tapLabel);
+        overlay.getChildren().add(container);
+
+        // Click on chest to open
+        chestImage.setOnMouseClicked(e -> {
+            tapLabel.setVisible(false);
+            playChestOpenAnimation(chestImage, overlay, anchorRoot, event, playerProfile, persistenceManager);
+        });
+
+        // Click outside to close
+        overlay.setOnMouseClicked(e -> {
+            if (e.getTarget() == overlay) {
+                anchorRoot.getChildren().remove(overlay);
+            }
+        });
+
+        // Add overlay to scene
+        anchorRoot.getChildren().add(overlay);
+        javafx.scene.layout.AnchorPane.setTopAnchor(overlay, 0.0);
+        javafx.scene.layout.AnchorPane.setBottomAnchor(overlay, 0.0);
+        javafx.scene.layout.AnchorPane.setLeftAnchor(overlay, 0.0);
+        javafx.scene.layout.AnchorPane.setRightAnchor(overlay, 0.0);
+
+        // Entry animation - chest slides in from bottom
+        chestImage.setTranslateY(300);
+        javafx.animation.TranslateTransition entryAnim = new javafx.animation.TranslateTransition(
+                javafx.util.Duration.millis(400), chestImage);
+        entryAnim.setToY(0);
+        entryAnim.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
+        entryAnim.play();
+    }
+
+    private void playChestOpenAnimation(javafx.scene.image.ImageView chestImage,
+            javafx.scene.layout.StackPane overlay,
+            javafx.scene.layout.AnchorPane anchorRoot,
+            ActionEvent event,
+            kuroyale.mainpack.models.PlayerProfile playerProfile,
+            kuroyale.mainpack.managers.PersistenceManager persistenceManager) {
+
+        // Disable further clicks
+        chestImage.setOnMouseClicked(null);
+        overlay.setOnMouseClicked(null);
+
+        // Phase 1: Shake animation (0.5s)
+        javafx.animation.Timeline shakeTimeline = new javafx.animation.Timeline();
+        for (int i = 0; i < 10; i++) {
+            double offset = (i % 2 == 0) ? 15 : -15;
+            shakeTimeline.getKeyFrames().add(
+                    new javafx.animation.KeyFrame(javafx.util.Duration.millis(i * 50),
+                            new javafx.animation.KeyValue(chestImage.translateXProperty(), offset)));
+        }
+        shakeTimeline.getKeyFrames().add(
+                new javafx.animation.KeyFrame(javafx.util.Duration.millis(500),
+                        new javafx.animation.KeyValue(chestImage.translateXProperty(), 0)));
+
+        // Phase 2: Grow animation (0.3s)
+        javafx.animation.ScaleTransition growAnim = new javafx.animation.ScaleTransition(
+                javafx.util.Duration.millis(300), chestImage);
+        growAnim.setToX(1.3);
+        growAnim.setToY(1.3);
+
+        // Phase 3: Burst + Fade (0.3s)
+        javafx.animation.ScaleTransition burstAnim = new javafx.animation.ScaleTransition(
+                javafx.util.Duration.millis(300), chestImage);
+        burstAnim.setToX(2.0);
+        burstAnim.setToY(2.0);
+
+        javafx.animation.FadeTransition fadeAnim = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(300), chestImage);
+        fadeAnim.setToValue(0);
+
+        javafx.animation.ParallelTransition burstPhase = new javafx.animation.ParallelTransition(
+                burstAnim, fadeAnim);
+
+        // Chain animations
+        shakeTimeline.setOnFinished(e -> growAnim.play());
+        growAnim.setOnFinished(e -> burstPhase.play());
+        burstPhase.setOnFinished(e -> {
+            anchorRoot.getChildren().remove(overlay);
+            onChestOpenComplete(event, playerProfile, persistenceManager);
+        });
+
+        // Start animation sequence
+        shakeTimeline.play();
+    }
+
+    private void onChestOpenComplete(ActionEvent event,
+            kuroyale.mainpack.models.PlayerProfile playerProfile,
+            kuroyale.mainpack.managers.PersistenceManager persistenceManager) {
+
         // Consume one chest
         playerProfile.consumeChest();
 
@@ -495,8 +832,7 @@ public class UIManager extends Application {
         persistenceManager.savePlayerProfile(playerProfile);
 
         // Update achievements
-        kuroyale.mainpack.managers.AchievementManager achievementManager = 
-        new kuroyale.mainpack.managers.AchievementManager();
+        kuroyale.mainpack.managers.AchievementManager achievementManager = new kuroyale.mainpack.managers.AchievementManager();
         achievementManager.setAchievements(playerProfile.getAchievements());
         if (stats != null) {
             achievementManager.onGoldEarned(reward.getGoldAmount(), stats);

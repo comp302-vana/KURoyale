@@ -95,7 +95,7 @@ public class PvPDeckSelectionController {
         List<Deck> numberedDecks = new ArrayList<>();
         // Load Deck1 through Deck8 (slot-based system)
         for (int i = 1; i <= 8; i++) {
-            Deck deck = DeckManager.loadDeckByNumber(i);
+            Deck deck = DeckManager.getInstance().loadDeckByNumber(i);
             if (deck != null) {
                 numberedDecks.add(deck);
             }

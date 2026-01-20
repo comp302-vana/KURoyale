@@ -1,11 +1,15 @@
 package kuroyale.mainpack.managers;
 
+import java.util.List;
+
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.TowerEntity;
 import kuroyale.mainpack.PointsCounter;
-import kuroyale.mainpack.managers.SceneNavigationManager;
+import kuroyale.mainpack.models.Achievement;
+import kuroyale.mainpack.models.Challenge;
 import kuroyale.mainpack.models.GameMode;
+import kuroyale.mainpack.models.Quest;
 
 /**
  * Handles victory conditions, tie-breaker logic, and game end determination.
@@ -22,6 +26,12 @@ public class VictoryConditionManager {
     private QuestManager questManager;
     private AchievementManager achievementManager;
     private PersistenceManager persistenceManager;
+    private NotificationManager notificationManager;
+    private ChallengeManager challengeManager;
+    private GameStateManager gameStateManager;
+    private ComboManager comboManager;
+    private long matchStartTime;
+    private double playerKingTowerInitialHP;
 
     public VictoryConditionManager(ArenaMap arenaMap, PointsCounter pointsCounter, int rows, int cols,
             SceneNavigationManager sceneNavigationManager) {
@@ -50,6 +60,41 @@ public class VictoryConditionManager {
     
     public void setPersistenceManager(PersistenceManager persistenceManager) {
         this.persistenceManager = persistenceManager;
+    }
+
+    public void setNotificationManager(NotificationManager notificationManager) {
+        this.notificationManager = notificationManager;
+    }
+
+    public void setChallengeManager(ChallengeManager challengeManager) {
+        this.challengeManager = challengeManager;
+    }
+    
+    public void setGameStateManager(GameStateManager gameStateManager) {
+        this.gameStateManager = gameStateManager;
+    }
+    
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
+    }
+    
+    /**
+     * Initialize match tracking for challenges (time and damage).
+     * Call this when the match starts.
+     */
+    public void initializeMatchTracking() {
+        matchStartTime = System.currentTimeMillis();
+        
+        playerKingTowerInitialHP = 2400.0; 
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                AliveEntity entity = arenaMap.getEntity(r, c);
+                if (entity instanceof TowerEntity tower && tower.isKing() && tower.isPlayer()) {
+                    playerKingTowerInitialHP = tower.getHP();
+                    break;
+                }
+            }
+        }
     }
 
     public void tieBreaker(javafx.animation.Timeline gameLoop, javafx.scene.control.Label gameTimerLabel) {
@@ -110,6 +155,36 @@ public class VictoryConditionManager {
                 economyManager.awardGold("DEFEAT");
             }
         }
+        
+        // Award combo gold rewards
+        if (comboManager != null && economyManager != null) {
+            int comboGold = comboManager.getComboGoldReward();
+            if (comboGold > 0) {
+                economyManager.addGold(comboGold);
+                System.out.println("Combo bonus: +" + comboGold + " gold (" + 
+                                  comboManager.getUniqueComboCount() + " combos)");
+                
+                // Update statistics and persistence
+                if (persistenceManager != null) {
+                    kuroyale.mainpack.models.PlayerProfile profile = persistenceManager.loadPlayerProfile();
+                    kuroyale.mainpack.models.PlayerStatistics stats = profile.getStatistics();
+                    
+                    if (stats != null) {
+                        stats.incrementTotalGoldEarned(comboGold);
+                        profile.setStatistics(stats);
+                        
+                        // Update achievements
+                        if (achievementManager != null) {
+                            achievementManager.onGoldEarned(comboGold, stats);
+                        }
+                    }
+                    
+                    profile.setTotalGold(economyManager.getCurrentGold());
+                    profile.addGoldTransaction(comboGold, "Combo Bonus: " + comboManager.getUniqueComboCount() + " combos");
+                    persistenceManager.savePlayerProfile(profile);
+                }
+            }
+        }
 
         // Update quest and achievement system
         if (questManager != null || achievementManager != null) {
@@ -123,16 +198,157 @@ public class VictoryConditionManager {
                     stats.recordMatchResult(playerWon, gameMode);
                 }
             
-                // Update quest manager
+                //Update quest manager
                 if (questManager != null && stats != null) {
+                    // Track which quests were completed before update
+                    java.util.Set<Integer> questIdsBefore = new java.util.HashSet<>();
+                    for (Quest q : questManager.getDailyQuests()) {
+                        if (q.getCompleted()) {
+                            questIdsBefore.add(q.getQuestType().getId());
+                        }
+                    }
+                    
                     questManager.onMatchEnded(playerWon, gameMode, stats);
                     questManager.updateFromStatistics(stats);
+                    
+                    // Find newly completed quests
+                    java.util.List<Quest> newlyCompletedQuests = new java.util.ArrayList<>();
+                    for (Quest quest : questManager.getDailyQuests()) {
+                        if (quest.getCompleted() && !questIdsBefore.contains(quest.getQuestType().getId())) {
+                            newlyCompletedQuests.add(quest);
+                        }
+                    }
+                    
+                    // Show notifications immediately
+                    if (notificationManager != null && !newlyCompletedQuests.isEmpty()) {
+                        for (Quest quest : newlyCompletedQuests) {
+                            notificationManager.showNotification(
+                                "Quest Complete!",
+                                "+" + quest.getQuestType().getGoldReward() + " Gold"
+                            );
+                        }
+                    }
                 }
-            
+                
                 // Update achievement manager
                 if (achievementManager != null && stats != null) {
+                    // Track which achievements were completed before update
+                    java.util.Set<Integer> achievementIdsBefore = new java.util.HashSet<>();
+                    for (Achievement a : achievementManager.getAchievements()) {
+                        if (a.getCompleted()) {
+                            achievementIdsBefore.add(a.getAchievementType().getId());
+                        }
+                    }
+                    
                     achievementManager.onMatchEnded(playerWon, gameMode, stats);
                     achievementManager.updateFromStatistics(stats);
+                    
+                    // Find newly completed achievements
+                    java.util.List<Achievement> newlyCompletedAchievements = new java.util.ArrayList<>();
+                    for (Achievement achievement : achievementManager.getAchievements()) {
+                        if (achievement.getCompleted() && !achievementIdsBefore.contains(achievement.getAchievementType().getId())) {
+                            newlyCompletedAchievements.add(achievement);
+                        }
+                    }
+                    
+                    // Show notifications immediately
+                    if (notificationManager != null && !newlyCompletedAchievements.isEmpty()) {
+                        for (Achievement achievement : newlyCompletedAchievements) {
+                            notificationManager.showNotification(
+                                "Achievement Unlocked!",
+                                "+" + achievement.getAchievementType().getGoldReward() + " Gold"
+                            );
+                        }
+                    }
+
+                    if (challengeManager != null && challengeManager.getCurrentChallenge() != null) {
+                        Challenge currentChallenge = challengeManager.getCurrentChallenge();
+                        
+                        if (playerWon) {
+                            // Calculate actual match time using game timer (starts at 180, counts down)
+                            int timeSeconds = 0;
+                            if (gameStateManager != null) {
+                                timeSeconds = 180 - gameStateManager.getTotalSeconds();
+                            } else {
+                                long matchEndTime = System.currentTimeMillis();
+                                if (matchStartTime > 0) {
+                                    timeSeconds = (int) ((matchEndTime - matchStartTime) / 1000);
+                                }
+                            }
+                            
+                            // Check if player king tower took damage
+                            boolean tookDamage = false;
+                            TowerEntity playerKingTower = null;
+                            for (int r = 0; r < rows; r++) {
+                                for (int c = 0; c < cols; c++) {
+                                    AliveEntity entity = arenaMap.getEntity(r, c);
+                                    if (entity instanceof TowerEntity tower && tower.isKing() && tower.isPlayer()) {
+                                        playerKingTower = tower;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Check damage: compare current HP to initial HP (if tower exists)
+                            if (playerKingTower != null && playerKingTowerInitialHP > 0) {
+                                if (playerKingTower.getHP() < playerKingTowerInitialHP) {
+                                    tookDamage = true;
+                                }
+                            }
+                            
+                            // Calculate stars using Template Method Pattern
+                            int stars = challengeManager.calculateStars(playerWon, timeSeconds, tookDamage);
+                            
+                            // Complete challenge
+                            currentChallenge.setCompleted(true);
+                            if (stars > currentChallenge.getStarsEarned()) {
+                                currentChallenge.setStarsEarned(stars);
+                            }
+                            currentChallenge.incrementCompletion();
+                            currentChallenge.updateFastestTime(timeSeconds);
+                            
+                            // Award gold
+                            int goldReward = currentChallenge.getType().getGoldReward();
+                            if (persistenceManager != null && stats != null) {
+                                profile.setTotalGold(profile.getTotalGold() + goldReward);
+                                stats.incrementTotalGoldEarned(goldReward);
+                                profile.setStatistics(stats);
+                                profile.addGoldTransaction(goldReward, "Challenge: " + currentChallenge.getType().getName());
+                                
+                                // Update challenge progress in profile
+                                profile.setChallenges(challengeManager.getChallenges());
+                                
+                                // Update PlayerStatistics to sync with challenge list
+                                List<Challenge> allChallenges = challengeManager.getChallenges();
+                                int completedCount = 0;
+                                boolean hasThreeStars = false;
+                                for (Challenge ch : allChallenges) {
+                                    if (ch.isCompleted()) {
+                                        completedCount++;
+                                    }
+                                    if (ch.getStarsEarned() > 3) {
+                                        hasThreeStars = true;
+                                    }
+                                }
+                                stats.setChallengesCompleted(completedCount);
+                                if (hasThreeStars) {
+                                    stats.setChallengesWithThreeStars(1);
+                                }
+                            }
+                            
+                            // Notify quest manager about challenge completion
+                            if (questManager != null) {
+                                questManager.onChallengeCompleted(stars);
+                            }
+                            
+                            // Notify achievement manager about challenge completion
+                            if (achievementManager != null && stats != null) {
+                                achievementManager.onChallengeCompleted(stars, stats);
+                            }
+                        }
+                        
+                        challengeManager.clearCurrentChallenge();
+                    }
                 }
             
                 // Save updated profile
@@ -144,7 +360,7 @@ public class VictoryConditionManager {
             }
         }
 
-        sceneNavigationManager.showGameEndScreen(playerWon, isDraw, gameLoop, gameMode);
+        sceneNavigationManager.showGameEndScreen(playerWon, isDraw, gameLoop, gameMode, comboManager);
     }
 
     private void awardChest() {
@@ -156,3 +372,4 @@ public class VictoryConditionManager {
         System.out.println("Chest awarded! Total chests: " + profile.getChestCount());
     }
 }
+

@@ -122,7 +122,16 @@ public class NetworkHost {
                 
                 // Set up new client connection
                 clientSocket = newClientSocket;
+                // CRITICAL: Host must create ObjectOutputStream FIRST, flush it, then create ObjectInputStream
+                // This ensures the header is written before client tries to read it
                 clientOut = new ObjectOutputStream(clientSocket.getOutputStream());
+                clientOut.flush(); // Flush header immediately so client can read it
+                // Small delay to ensure client has time to create its ObjectInputStream
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
                 clientIn = new ObjectInputStream(clientSocket.getInputStream());
                 
                 // Clear previous client data (in case of reconnection)

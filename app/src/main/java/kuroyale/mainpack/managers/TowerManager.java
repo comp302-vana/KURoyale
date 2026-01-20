@@ -321,11 +321,15 @@ public class TowerManager {
 
     public List<TowerEntity> getTowersToKillWhenKingDies(boolean isPlayer) {
         List<TowerEntity> towersToKill = new ArrayList<>();
+        List<TowerEntity> seenTowers = new ArrayList<>();
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 AliveEntity entity = arenaMap.getEntity(r, c);
                 if (entity instanceof TowerEntity tower && tower.isPlayer() == isPlayer && tower.getHP() > 0) {
-                    towersToKill.add(tower);
+                    if(!seenTowers.contains(tower)){
+                        seenTowers.add(tower);
+                        towersToKill.add(tower);
+                    }
                 }
             }
         }

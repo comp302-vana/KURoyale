@@ -3,7 +3,12 @@ package kuroyale.mainpack.managers;
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.arenapack.PlacedObject;
+import kuroyale.cardpack.CardCategory;
+import kuroyale.cardpack.CardFactory;
+import kuroyale.cardpack.CardType;
 import kuroyale.cardpack.subclasses.AliveCard;
+import kuroyale.cardpack.subclasses.BuildingCard;
+import kuroyale.cardpack.subclasses.UnitCard;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.entitiypack.subclasses.UnitEntity;
 import kuroyale.entitiypack.subclasses.BuildingEntity;
@@ -20,6 +25,10 @@ public class EntityUpdater {
     private final int rows;
     private final int cols;
     private final double ENTITY_UPDATE_INTERVAL;
+    private GameStateManager gameStateManager;
+    private DualPlayerStateManager dualPlayerStateManager;
+    private boolean isPvPMode;
+    private ComboManager comboManager;
 
     public EntityUpdater(ArenaMap arenaMap, CombatManager combatManager, EntityRenderer entityRenderer,
                         int rows, int cols, double entityUpdateInterval) {
@@ -29,6 +38,20 @@ public class EntityUpdater {
         this.rows = rows;
         this.cols = cols;
         this.ENTITY_UPDATE_INTERVAL = entityUpdateInterval;
+    }
+
+    public void setGameStateManager(GameStateManager gameStateManager) {
+        this.gameStateManager = gameStateManager;
+        this.isPvPMode = false;
+    }
+    
+    public void setDualPlayerStateManager(DualPlayerStateManager dualPlayerStateManager) {
+        this.dualPlayerStateManager = dualPlayerStateManager;
+        this.isPvPMode = true;
+    }
+    
+    public void setComboManager(ComboManager comboManager) {
+        this.comboManager = comboManager;
     }
 
     public void updateUnitEntity(UnitEntity unit) {
@@ -121,6 +144,11 @@ public class EntityUpdater {
         } else {
             String speedStr = getUnitSpeed(unit);
             double speedMultiplier = 1 / getSpeedMultiplier(speedStr);
+            
+            // Apply combo speed multiplier
+            if (comboManager != null) {
+                speedMultiplier *= comboManager.getSpeedMultiplier(unit);
+            }
 
             if (unit.getTicksSinceLastMove() >= (speedMultiplier / ENTITY_UPDATE_INTERVAL)) {
                 unit.resetTicksSinceLastMove();
@@ -167,6 +195,18 @@ public class EntityUpdater {
         int currentRow = building.getRow();
         int currentCol = building.getCol();
         
+        BuildingCard buildingCard = building.getBuildingCard();
+        CardCategory category = buildingCard.getCategory();
+        
+        // Spawner buildings handling
+        if (category == CardCategory.SPAWNER_BUILDING) {
+            handleSpawnerBuilding(building, buildingCard);
+        }
+        //Handle elixir collector separately
+        if (category == CardCategory.SPECIAL_BUILDING){
+            handleSpecialBuilding(building,buildingCard);
+        }
+
         AliveEntity target = building.findClosestTarget(arenaMap);
 
         if (target == null) {
@@ -243,8 +283,14 @@ public class EntityUpdater {
         AliveCard aliveCard = (AliveCard) building.getCard();
         double actSpeed = aliveCard.getActSpeed();
         double attackCooldownTime = actSpeed > 0 ? 1.0 / actSpeed : 1.0;
+        
+        // Apply combo range boost
+        double buildingRange = building.getRange();
+        if (comboManager != null) {
+            buildingRange += comboManager.getRangeBoost(building);
+        }
 
-        if (distance <= building.getRange() + 0.5 || canAttackTower) {
+        if (distance <= buildingRange + 0.5 || canAttackTower) {
             double currentCooldown = combatManager.getAttackCooldown(building);
             if (currentCooldown <= 0) {
                 building.attack(target);
@@ -258,9 +304,6 @@ public class EntityUpdater {
         }
 
         building.reduceLifetime(ENTITY_UPDATE_INTERVAL);
-        if (building.getHP() <= 0) {
-            // Removal handled by caller
-        }
     }
 
     public void updateTowerEntity(TowerEntity tower) {
@@ -366,6 +409,87 @@ public class EntityUpdater {
                 if (target.getHP() <= 0) {
                     // Removal handled by caller
                 }
+            }
+        }
+    }
+
+    private void handleSpawnerBuilding(BuildingEntity building, BuildingCard buildingCard){
+        UnitCard spawnedUnit = buildingCard.getSpawnedUnit();
+        if(spawnedUnit == null) return;
+
+        double spawnInterval = buildingCard.getActSpeed();
+        building.addTimeSinceLastSpawn(ENTITY_UPDATE_INTERVAL);
+
+        if(building.getTimeSinceLastSpawn() >= spawnInterval){
+            int spawnCount = 1;
+            //Barb hut is a special case
+            if(buildingCard.getId() == 23){
+                spawnCount = 2;
+            }
+
+            for(int i=0; i<spawnCount; i++){
+                spawnUnitAdjacentToBuilding(building, spawnedUnit);
+            }
+
+            building.resetTimeSinceLastSpawn();
+        }
+    }
+
+    private void spawnUnitAdjacentToBuilding(BuildingEntity building, UnitCard unitCard){
+        CardFactory cf = CardFactory.getInstance();
+        int buildingRow = building.getRow();
+        int buildingCol = building.getCol();
+        boolean isPlayer = building.isPlayer();
+
+        //The order for directions:above,below,right,left
+        int[][] directions = {{-1, 0}, {1, 0}, {0, 1}, {0, -1}};
+        for (int[] dir : directions) {
+            int spawnRow = buildingRow + dir[0];
+            int spawnCol = buildingCol + dir[1];
+
+            if(spawnRow >= 0 && spawnRow < rows && spawnCol >= 0 && spawnCol < cols){
+                boolean canFly = unitCard.getType() == CardType.AIR;
+                if (arenaMap.isWalkable(spawnRow, spawnCol, canFly) && 
+                    arenaMap.getEntity(spawnRow, spawnCol) == null) {
+                    
+                    // Create and place unit
+                    UnitCard spawnCard = (UnitCard) cf.createCard(unitCard.getId());
+                    spawnCard.setCount(1); // Each spawned unit is a single entity
+                    UnitEntity spawnedUnit = new UnitEntity(spawnCard, isPlayer);
+                    spawnedUnit.setPosition(spawnRow, spawnCol);
+                    
+                    arenaMap.setEntity(spawnRow, spawnCol, spawnedUnit);
+                    arenaMap.placeObject(spawnRow, spawnCol, ArenaObjectType.ENTITY);
+                    arenaMap.addEntity(spawnedUnit);
+                    
+                    entityRenderer.ensureEntityNode(spawnedUnit, spawnCard);
+                    entityRenderer.setEntityDirty(true);
+                    
+                    return;
+                }
+            }
+        }
+    }
+
+    private void handleSpecialBuilding(BuildingEntity building, BuildingCard buildingCard){
+        if (buildingCard.getId() == 24) {
+            double generationInterval = buildingCard.getActSpeed();
+            building.addTimeSinceLastElixirGeneration(ENTITY_UPDATE_INTERVAL);
+            
+            if (building.getTimeSinceLastElixirGeneration() >= generationInterval) {
+                
+                // Generate an elixir
+                if (isPvPMode && dualPlayerStateManager != null) {
+                    int playerId = building.isPlayer() ? 1 : 2;
+                    double currentElixir = dualPlayerStateManager.getElixir(playerId);
+                    dualPlayerStateManager.setElixir(playerId, currentElixir + 1.0);
+                } else if (!isPvPMode && gameStateManager != null) {
+                    double currentElixir = gameStateManager.getCurrentElixir();
+                    gameStateManager.setCurrentElixir(currentElixir + 1.0);
+                }
+                
+                building.incrementElixirGenerated();
+                building.resetTimeSinceLastElixirGeneration();
             }
         }
     }

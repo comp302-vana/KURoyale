@@ -43,7 +43,7 @@ public class SpellSystem {
 
     public void executeSpell(int spellCardID, int targetRow, int targetCol, boolean isPlayerSpell,
                             EntityRenderer entityRenderer) {
-        SpellCard spellCard = (SpellCard) CardFactory.createCard(spellCardID);
+        SpellCard spellCard = (SpellCard) CardFactory.getInstance().createCard(spellCardID);
         double damage = spellCard.getDamage();
         double radius = spellCard.getRadius();
         boolean isZap = (spellCardID == 25);

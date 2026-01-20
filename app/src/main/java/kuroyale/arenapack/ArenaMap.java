@@ -78,7 +78,7 @@ public class ArenaMap {
 
             // Check if tile is river
             if (grid[row][col].getTileType() == TileType.RIVER) {
-                
+
             }
 
             // Check collisions grid for blocking objects
@@ -274,7 +274,7 @@ public class ArenaMap {
                         int s = (type == ArenaObjectType.ENEMY_TOWER || type == ArenaObjectType.OUR_TOWER) ? 2
                                 : (type == ArenaObjectType.ENEMY_KING || type == ArenaObjectType.OUR_KING) ? 3 : 0;
 
-                        // Create a single TowerEntity instance for all tiles in the tower
+                        // Create a single TowerEntity INSTANCE for all tiles in the tower
                         TowerEntity towerEntity = null;
                         switch (type) {
                             case ArenaObjectType.BRIDGE:
@@ -300,12 +300,12 @@ public class ArenaMap {
                                 break;
                         }
 
-                        // Use the same TowerEntity instance for all tiles in the tower
+                        // Use the same TowerEntity INSTANCE for all tiles in the tower
                         if (towerEntity != null) {
                             for (int rr = r - s; rr <= r; rr++) {
                                 for (int cc = c - s; cc <= c; cc++) {
                                     collisions[rr][cc].setPlacedObject(new PlacedObject(type));
-                                    entityArray[rr][cc] = towerEntity; // Same instance for all tiles
+                                    entityArray[rr][cc] = towerEntity; // Same INSTANCE for all tiles
                                 }
                             }
                             entityList.add(towerEntity);
@@ -340,18 +340,24 @@ public class ArenaMap {
         return cols;
     }
 
+    // REQUIRES: 0 <= r < ROWS and 0 <= c < COLS (r and c are within map
+    // boundaries).
+    // The grid array is initialized and contains valid, non-null Tile objects.
+    // MODIFIES: None (this is a pure query method and does not alter the state).
+    // EFFECTS: Returns true if the unit can traverse the tile at (r, c),
+    // specifically:
+    // 1. If the tile contains a BRIDGE, returns true (regardless of unit type).
+    // 2. If the tile contains any other solid object (e.g., TOWER), returns false.
+    // 3. If the tile is a RIVER, returns true ONLY IF 'flying' is true.
+    // 4. Otherwise (e.g., empty GRASS tile), returns true.
     public boolean isWalkable(int r, int c, boolean flying) {
-        // Check if tile has a placed object
         PlacedObject obj = grid[r][c].getPlacedObject();
         if (obj != null) {
-            // Bridges are walkable (they're placed on river tiles)
             if (obj.getType() == ArenaObjectType.BRIDGE) {
                 return true;
             }
-            // Other objects (towers, etc.) are not walkable
             return false;
         }
-        // If no object, check tile type
         if (grid[r][c].getTileType() == TileType.RIVER) {
             return flying;
         }

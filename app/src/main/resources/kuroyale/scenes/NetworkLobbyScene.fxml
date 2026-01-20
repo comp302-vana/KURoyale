@@ -23,7 +23,7 @@
                </VBox.margin>
             </Label>
             
-            <Label fx:id="lblIPAddress" text="" style="-fx-font-size: 14px; -fx-text-fill: white; -fx-font-weight: bold;">
+            <Label fx:id="lblIPAddress" text="Loading IP addresses..." wrapText="true" style="-fx-font-size: 14px; -fx-text-fill: white; -fx-font-weight: bold;" minHeight="50.0">
                <VBox.margin>
                   <Insets bottom="10.0" />
                </VBox.margin>

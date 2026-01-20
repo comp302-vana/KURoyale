@@ -173,7 +173,7 @@ public class ChestManager {
             if (!lockedCardsOfRarity.isEmpty()) {
                 // Pick a random locked card of this rarity
                 int cardId = lockedCardsOfRarity.get(random.nextInt(lockedCardsOfRarity.size()));
-                return CardFactory.createCard(cardId);
+                return CardFactory.getInstance().createCard(cardId);
             }
         }
 

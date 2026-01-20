@@ -19,14 +19,25 @@ public class ArenaSetupManager {
     private final int tileSize;
     private final EntityRenderer entityRenderer;
 
+    // Spell range indicator manager (set after construction)
+    private SpellRangeIndicatorManager spellRangeIndicatorManager;
+
     public ArenaSetupManager(ArenaMap arenaMap, GridPane arenaGrid, int rows, int cols, int tileSize,
-                            EntityRenderer entityRenderer) {
+            EntityRenderer entityRenderer) {
         this.arenaMap = arenaMap;
         this.arenaGrid = arenaGrid;
         this.rows = rows;
         this.cols = cols;
         this.tileSize = tileSize;
         this.entityRenderer = entityRenderer;
+    }
+
+    /**
+     * Set the spell range indicator manager for showing spell effect areas during
+     * drag.
+     */
+    public void setSpellRangeIndicatorManager(SpellRangeIndicatorManager manager) {
+        this.spellRangeIndicatorManager = manager;
     }
 
     public void fillArenaGrid(EntityPlacementManager placementManager) {
@@ -56,16 +67,64 @@ public class ArenaSetupManager {
                 int c = col;
 
                 tile.setOnDragOver(event -> {
-                    if (event.getDragboard().hasString())
+                    if (event.getDragboard().hasString()) {
                         event.acceptTransferModes(TransferMode.COPY);
+
+                        // Show spell range indicator if dragging a spell card
+                        if (spellRangeIndicatorManager != null) {
+                            try {
+                                int cardId = Integer.parseInt(event.getDragboard().getString());
+                                if (SpellRangeIndicatorManager.isSpellCard(cardId)) {
+                                    // Calculate center position of the tile in the arena grid
+                                    double centerX = c * tileSize + tileSize / 2.0;
+                                    double centerY = r * tileSize + tileSize / 2.0;
+                                    spellRangeIndicatorManager.showIndicator(cardId, centerX, centerY);
+                                } else {
+                                    // Not a spell card, hide indicator
+                                    spellRangeIndicatorManager.hideIndicator();
+                                }
+                            } catch (NumberFormatException e) {
+                                // Not a numeric card ID (e.g., "ourtower"), hide indicator
+                                spellRangeIndicatorManager.hideIndicator();
+                            }
+                        }
+                    }
                     event.consume();
                 });
 
-                tile.setOnDragDropped(event -> placementManager.handleCardDrop(event, r, c));
+                // Hide spell indicator when drag exits the tile
+                tile.setOnDragExited(event -> {
+                    // Note: We don't hide here because we want the indicator to stay visible
+                    // as long as we're over *any* arena tile. The indicator will be hidden
+                    // when the drag is complete or exits the entire arena.
+                    event.consume();
+                });
+
+                tile.setOnDragDropped(event -> {
+                    // Hide spell indicator when card is dropped
+                    if (spellRangeIndicatorManager != null) {
+                        spellRangeIndicatorManager.hideIndicator();
+                    }
+                    placementManager.handleCardDrop(event, r, c);
+                });
 
                 arenaGrid.add(tile, col, row);
             }
         }
+
+        // Add drag done handler to the arena grid to hide indicator when drag ends
+        arenaGrid.setOnDragDone(event -> {
+            if (spellRangeIndicatorManager != null) {
+                spellRangeIndicatorManager.hideIndicator();
+            }
+        });
+
+        // Hide indicator when drag exits the arena
+        arenaGrid.setOnDragExited(event -> {
+            if (spellRangeIndicatorManager != null) {
+                spellRangeIndicatorManager.hideIndicator();
+            }
+        });
     }
 
     public void loadDefaultArenaIfExists() {
