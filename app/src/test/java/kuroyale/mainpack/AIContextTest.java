@@ -7,17 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import kuroyale.ai.AIContext;
+import kuroyale.ai.SimpleAI;
 import kuroyale.arenapack.ArenaMap;
 
 /**
- * Test class for SimpleAI as an Abstract Data Type.
+ * Test class for AIContext as an Abstract Data Type.
  * Tests focus on public operations and observable behavior,
  * using repOk() to verify invariants are maintained.
  */
-public class SimpleAITest {
+public class AIContextTest {
 
     private ArenaMap arenaMap;
-    private SimpleAI simpleAI;
+    private AIContext aiContext;
 
     // Minimal stub for GameEngine to satisfy repOk requirement
     private static class GameEngineStub extends GameEngine {
@@ -30,31 +32,31 @@ public class SimpleAITest {
     @BeforeEach
     void setUp() {
         arenaMap = new ArenaMap();
-        simpleAI = new SimpleAI(arenaMap, new GameEngineStub());
+        aiContext = new AIContext(arenaMap, new GameEngineStub(), new SimpleAI());
     }
 
     /**
      * Helper method to check repOk via reflection
      */
-    private boolean checkRepOk(SimpleAI ai) throws Exception {
-        Method repOkMethod = SimpleAI.class.getDeclaredMethod("repOk");
+    private boolean checkRepOk(AIContext ai) throws Exception {
+        Method repOkMethod = AIContext.class.getDeclaredMethod("repOk");
         repOkMethod.setAccessible(true);
         return (Boolean) repOkMethod.invoke(ai);
     }
 
     /**
      * Test Case 1: Constructor establishes valid state
-     * Tests that the constructor creates a SimpleAI instance
+     * Tests that the constructor creates a AIContext instance
      * that satisfies the representation invariant.
      * ADT Test: Verifies the creation operation maintains invariants.
      */
     @Test
     void testConstructorEstablishesValidState() throws Exception {
         // Test that constructor doesn't throw
-        assertNotNull(simpleAI, "Constructor should create a non-null SimpleAI instance");
+        assertNotNull(aiContext, "Constructor should create a non-null AIContext instance");
         
         // Test that repOk holds after construction
-        assertTrue(checkRepOk(simpleAI), 
+        assertTrue(checkRepOk(aiContext), 
                    "repOk() should return true after constructor initialization");
     }
 
@@ -66,13 +68,13 @@ public class SimpleAITest {
     @Test
     void testUpdateMaintainsInvariants() throws Exception {
         // Verify initial state is valid
-        assertTrue(checkRepOk(simpleAI), "Initial state should be valid");
+        assertTrue(checkRepOk(aiContext), "Initial state should be valid");
         
         // Call update operation
-        simpleAI.update(1.0, 30);
+        aiContext.update(1.0, 30);
         
         // Verify repOk still holds after update
-        assertTrue(checkRepOk(simpleAI), 
+        assertTrue(checkRepOk(aiContext), 
                    "repOk() should remain true after update() call");
     }
 
@@ -85,8 +87,8 @@ public class SimpleAITest {
     void testMultipleUpdatesMaintainInvariants() throws Exception {
         // Perform multiple update operations
         for (int i = 0; i < 2; i++) {
-            simpleAI.update(2.8, 30 + i);
-            assertTrue(checkRepOk(simpleAI), 
+            aiContext.update(2.8, 30 + i);
+            assertTrue(checkRepOk(aiContext), 
                       "repOk() should remain true after update " + (i + 1));
         }
     }
@@ -99,23 +101,23 @@ public class SimpleAITest {
     @Test
     void testUpdateWithDifferentTimesMaintainsInvariants() throws Exception {
         // Test update before 60 seconds (double elixir regen)
-        simpleAI.update(5.0, 30);
-        assertTrue(checkRepOk(simpleAI), 
+        aiContext.update(5.0, 30);
+        assertTrue(checkRepOk(aiContext), 
                   "repOk() should hold after update before 60 seconds");
         
         // Test update after 60 seconds (normal elixir regen)
-        simpleAI.update(5.0, 70);
-        assertTrue(checkRepOk(simpleAI), 
+        aiContext.update(5.0, 70);
+        assertTrue(checkRepOk(aiContext), 
                   "repOk() should hold after update after 60 seconds");
         
         // Test update with very small deltaTime
-        simpleAI.update(0.001, 50);
-        assertTrue(checkRepOk(simpleAI), 
+        aiContext.update(0.001, 50);
+        assertTrue(checkRepOk(aiContext), 
                   "repOk() should hold after update with small deltaTime");
         
         // Test update with large deltaTime
-        simpleAI.update(100.0, 50);
-        assertTrue(checkRepOk(simpleAI), 
+        aiContext.update(100.0, 50);
+        assertTrue(checkRepOk(aiContext), 
                   "repOk() should hold after update with large deltaTime");
     }
 }

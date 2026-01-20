@@ -14,6 +14,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import java.util.List;
+
+import kuroyale.ai.AIContext;
+import kuroyale.ai.SimpleAI;
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.cardpack.Card;
@@ -168,7 +171,7 @@ public class GameEngine {
     private ComboManager comboManager;
     private static Challenge.ChallengeType activeChallengeType = null;
 
-    private SimpleAI aiOpponent;
+    private AIContext aiOpponent;
 
     private int kingjester = 0;
 
@@ -510,7 +513,7 @@ public class GameEngine {
         if (!isPvPMode) {
             String difficulty = UIManager.getSelectedDifficulty();
             if ("Simple".equals(difficulty)) {
-                aiOpponent = new SimpleAI(arenaMap, this);
+                aiOpponent = new AIContext(arenaMap, INSTANCE, new SimpleAI());
                 gameLoopManager.setAIOpponent(aiOpponent);
             }
         }
