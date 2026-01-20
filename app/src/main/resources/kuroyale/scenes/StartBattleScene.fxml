@@ -20,15 +20,7 @@
             </ImageView>
          </graphic>
       </Button>
-      <Button layoutX="50.0" layoutY="40.0" mnemonicParsing="false" onAction="#btnSelectQuestAchievementClicked" prefHeight="45.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="600.0" AnchorPane.leftAnchor="0.0">
-         <graphic>
-            <ImageView>
-               <image>
-                  <Image url="@../images/questachievement.png" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
+
       <Button layoutX="340.0" layoutY="340.0" mnemonicParsing="false" onAction="#btnSelectBuildClicked" prefHeight="45.0" prefWidth="60.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="-1.0" AnchorPane.leftAnchor="720.0">
          <graphic>
             <ImageView>
@@ -67,8 +59,7 @@
          </graphic>
       </Button>
       <Button layoutX="845.0" layoutY="405.0" mnemonicParsing="false" onAction="#btnChallengeModeClicked" prefHeight="50.0" prefWidth="200.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 20px; -fx-background-color:#d4eaee; -fx-text-fill: black; -fx-background-radius: 5;" text="Challenge Mode" />
-      <Button layoutX="255.0" layoutY="405.0" mnemonicParsing="false" onAction="#btnLocalPvPClicked" prefHeight="50.0" prefWidth="200.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 20px;" text="Local PvP" />
-      <Button layoutX="255.0" layoutY="465.0" mnemonicParsing="false" onAction="#btnNetworkMultiplayerClicked" prefHeight="50.0" prefWidth="200.0" style="-fx-font-family: 'Trebuchet MS Bold'; -fx-font-size: 20px;" text="Network Multiplayer" />
+
       <ImageView fx:id="arenaPreviewImage" fitHeight="266.0" layoutX="526.0" layoutY="79.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="375.0" AnchorPane.leftAnchor="404.0" AnchorPane.topAnchor="75.0">
          <viewport>
             <Rectangle2D />
@@ -77,15 +68,6 @@
             <Image url="@../images/arena.png" />
          </image>
       </ImageView>
-      <Button fx:id="chestButton" onAction="#btnOpenChestClicked" mnemonicParsing="false" prefHeight="100.0" prefWidth="100.0" style="-fx-background-color: transparent; -fx-padding: 0;" AnchorPane.bottomAnchor="140.0" AnchorPane.rightAnchor="30.0">
-         <graphic>
-            <ImageView fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../images/box.png" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
-      <Label fx:id="chestCountLabel" text="x0" style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 5 12; -fx-background-radius: 8; -fx-font-size: 14;" AnchorPane.bottomAnchor="135.0" AnchorPane.rightAnchor="25.0" />
+
    </children>
 </AnchorPane>

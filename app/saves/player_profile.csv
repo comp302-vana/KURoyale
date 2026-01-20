@@ -69,7 +69,7 @@ UNLOCKED
 28
 
 CHESTS
-7
+3
 
 QUESTS
 3,0,false,false
@@ -85,13 +85,13 @@ ACHIEVEMENTS
 6,0,false,false
 7,0,false,false
 8,6555,false,false
-9,609,false,false
+9,754,false,false
 10,3,false,false
 11,0,false,false
 12,0,false,false
 
 STATISTICS
-3,2,54,16,0,0,0,0,6555,0,609,0,0,2,0,0,0,0
+3,2,54,16,0,0,0,0,6555,0,754,0,0,2,0,0,0,0
 
 QUEST_RESET
 1768863682151
