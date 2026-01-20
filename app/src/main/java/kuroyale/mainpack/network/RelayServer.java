@@ -304,27 +304,55 @@ public class RelayServer {
             connections.put(socket, connection);
             
             // Register connection in room (thread-safe)
-            if (isHost) {
-                room.attachHost(connection);
-            } else {
-                room.attachClient(connection);
+            // Use synchronized block to ensure atomic registration and peer check
+            RelayConnection peer;
+            synchronized (room) {
+                if (isHost) {
+                    room.attachHost(connection);
+                } else {
+                    room.attachClient(connection);
+                }
+                
+                System.out.println(String.format("[%d] Relay: Connection registered - role=%s, roomId=%s, playerName=%s", 
+                    receiveTime, role, roomId, playerName));
+                
+                // Get peer AFTER registration (thread-safe within synchronized block)
+                peer = room.getPeer(isHost);
             }
             
-            System.out.println(String.format("[%d] Relay: Connection registered - role=%s, roomId=%s, playerName=%s", 
-                receiveTime, role, roomId, playerName));
-            
             // Forward the CONNECT message to peer if peer is already connected in the same room
-            RelayConnection peer = room.getPeer(isHost);
+            // This allows the peer to know about the reconnection
             if (peer != null && !peer.socket.isClosed()) {
                 try {
                     MessageProtocol.sendMessage(peer.out, connectMsg);
-                    System.out.println(String.format("[%d] Relay: FORWARDED CONNECT from %s (%s) to %s (%s) in room %s", 
+                    System.out.println(String.format("[%d] Relay: FORWARDED CONNECT (initial) from %s (%s) to %s (%s) in room %s", 
                         receiveTime, role, playerName, peer.isHost ? "HOST" : "CLIENT", peer.playerName, roomId));
                 } catch (IOException e) {
-                    System.err.println(String.format("[%d] Relay: Error forwarding CONNECT message: %s", receiveTime, e.getMessage()));
+                    System.err.println(String.format("[%d] Relay: Error forwarding CONNECT (initial) message: %s", receiveTime, e.getMessage()));
                 }
             } else {
-                System.out.println(String.format("[%d] Relay: CONNECT forwarded - peer not connected yet in room %s", receiveTime, roomId));
+                System.out.println(String.format("[%d] Relay: CONNECT (initial) - peer not connected yet in room %s (peer will receive CONNECT when they connect)", receiveTime, roomId));
+            }
+            
+            // Also, if we just attached and there's a peer, send peer's CONNECT to this new connection
+            // This handles the case where peer connected first and we're connecting second
+            // CRITICAL: This ensures bidirectional visibility even if both connect simultaneously
+            if (peer != null && !peer.socket.isClosed()) {
+                try {
+                    // Create a CONNECT message from the peer to notify this new connection
+                    String peerConnectData = peer.roomId + ":" + peer.playerName;
+                    NetworkMessage peerConnectMsg = new NetworkMessage(
+                        NetworkMessage.MessageType.CONNECT,
+                        peer.isHost ? 1 : 2,
+                        peerConnectData,
+                        String.valueOf(System.currentTimeMillis())
+                    );
+                    MessageProtocol.sendMessage(out, peerConnectMsg);
+                    System.out.println(String.format("[%d] Relay: SENT peer CONNECT to new %s (%s) - peer %s (%s) was already connected in room %s", 
+                        receiveTime, role, playerName, peer.isHost ? "HOST" : "CLIENT", peer.playerName, roomId));
+                } catch (IOException e) {
+                    System.err.println(String.format("[%d] Relay: Error sending peer CONNECT to new connection: %s", receiveTime, e.getMessage()));
+                }
             }
             
             // Start forwarding messages from this connection
@@ -388,6 +416,27 @@ public class RelayServer {
                     System.err.println(String.format("[%d] Relay: DROPPED %s from %s - Reason: %s", 
                         receiveTime, message.getType(), senderInfo, dropReason));
                     continue; // Drop illegal message
+                }
+                
+                // Special handling for CONNECT messages: forward to peer if peer exists
+                // This allows reconnection handshake even after initial connection
+                if (message.getType() == NetworkMessage.MessageType.CONNECT) {
+                    RelayConnection peer = room.getPeer(connection.isHost);
+                    if (peer != null && !peer.socket.isClosed()) {
+                        try {
+                            MessageProtocol.sendMessage(peer.out, message);
+                            String peerRole = peer.isHost ? "HOST" : "CLIENT";
+                            int peerPlayerId = peer.isHost ? 1 : 2;
+                            System.out.println(String.format("[%d] Relay: FORWARDED CONNECT (reconnection) from %s to %s (playerId=%d, room=%s, player=%s)", 
+                                receiveTime, senderRole, peerRole, peerPlayerId, peer.roomId, peer.playerName));
+                        } catch (IOException e) {
+                            System.err.println(String.format("[%d] Relay: Error forwarding CONNECT (reconnection): %s", receiveTime, e.getMessage()));
+                        }
+                    } else {
+                        System.out.println(String.format("[%d] Relay: CONNECT (reconnection) from %s - peer not connected yet in room %s", 
+                            receiveTime, senderRole, connection.roomId));
+                    }
+                    continue; // Don't process CONNECT further in normal message flow
                 }
                 
                 // Get peer from room (thread-safe)

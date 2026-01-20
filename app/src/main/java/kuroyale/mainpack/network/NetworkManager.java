@@ -40,9 +40,9 @@ public class NetworkManager {
     
     public void startHost(int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
-        // Small delay to ensure old connection threads fully exit
+        // Longer delay to ensure old connection threads fully exit and relay server cleans up
         try {
-            Thread.sleep(100);
+            Thread.sleep(500); // Increased from 100ms to 500ms for better cleanup
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -65,9 +65,9 @@ public class NetworkManager {
     
     public void startClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived, boolean useInternet) throws IOException {
         close();
-        // Small delay to ensure old connection threads fully exit
+        // Longer delay to ensure old connection threads fully exit and relay server cleans up
         try {
-            Thread.sleep(100);
+            Thread.sleep(500); // Increased from 100ms to 500ms for better cleanup
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -212,39 +212,80 @@ public class NetworkManager {
         }
     }
     
+    // Store handlers separately to avoid nesting
+    private Consumer<NetworkMessage> battleMessageHandler = null;
+    private Consumer<NetworkMessage> lobbyMessageHandler = null;
+    
     /**
      * Register a battle message handler (separate from lobby handler).
      * This allows the battle system to receive network messages.
-     * Note: This replaces any existing battle handler. To combine handlers,
-     * create a combined handler before calling this.
+     * Note: This REPLACES any existing battle handler to prevent nesting.
      */
     public void registerBattleMessageHandler(Consumer<NetworkMessage> handler) {
-        // Store battle handler and combine with existing lobby handler
-        // Both handlers will be called for battle messages
+        // Store battle handler
+        battleMessageHandler = handler;
+        updateCombinedHandler();
+    }
+    
+    /**
+     * Register a lobby message handler (for START_GAME messages).
+     * Note: This REPLACES any existing lobby handler to prevent nesting.
+     */
+    public void registerLobbyMessageHandler(Consumer<NetworkMessage> handler) {
+        // Store lobby handler
+        lobbyMessageHandler = handler;
+        updateCombinedHandler();
+    }
+    
+    /**
+     * Update the combined handler that calls both lobby and battle handlers.
+     */
+    private void updateCombinedHandler() {
+        Consumer<NetworkMessage> combinedHandler = msg -> {
+            // Call lobby handler if registered
+            if (lobbyMessageHandler != null) {
+                lobbyMessageHandler.accept(msg);
+            }
+            // Call battle handler if registered
+            if (battleMessageHandler != null) {
+                battleMessageHandler.accept(msg);
+            }
+        };
+        
+        // Set the combined handler (replaces any existing handler)
         if (isHost && host != null) {
-            // Update the host's message handler to also call battle handler
-            Consumer<NetworkMessage> existingHandler = host.getOnMessageReceived();
-            // Only wrap if there's an existing handler, otherwise just set the battle handler
-            if (existingHandler != null) {
-                host.setOnMessageReceived(msg -> {
-                    existingHandler.accept(msg);
-                    handler.accept(msg);
-                });
-            } else {
-                host.setOnMessageReceived(handler);
-            }
+            host.setOnMessageReceived(combinedHandler);
         } else if (client != null) {
-            // Update the client's message handler to also call battle handler
-            Consumer<NetworkMessage> existingHandler = client.getOnMessageReceived();
-            // Only wrap if there's an existing handler, otherwise just set the battle handler
-            if (existingHandler != null) {
-                client.setOnMessageReceived(msg -> {
-                    existingHandler.accept(msg);
-                    handler.accept(msg);
-                });
-            } else {
-                client.setOnMessageReceived(handler);
-            }
+            client.setOnMessageReceived(combinedHandler);
+        }
+    }
+    
+    /**
+     * Clear lobby message handler (when leaving lobby).
+     */
+    public void clearLobbyMessageHandler() {
+        lobbyMessageHandler = null;
+        updateCombinedHandler();
+    }
+    
+    /**
+     * Clear battle message handler (when leaving battle).
+     */
+    public void clearBattleMessageHandler() {
+        battleMessageHandler = null;
+        updateCombinedHandler();
+    }
+    
+    /**
+     * Reset lobby state (gameStarted flag, ready status, etc.)
+     * Call this when returning to lobby after a game.
+     */
+    public void resetLobbyState() {
+        if (host != null) {
+            host.resetLobbyState();
+        }
+        if (client != null) {
+            client.resetLobbyState();
         }
     }
     

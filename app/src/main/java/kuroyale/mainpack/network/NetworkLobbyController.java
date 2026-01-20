@@ -49,22 +49,29 @@ public class NetworkLobbyController {
     private NetworkManager networkManager;
     private Timer updateTimer;
     private String selectedDeckName;
+    private boolean battleHandlerRegistered = false; // Track if handler is already registered
     
     @FXML
     private void initialize() {
         networkManager = NetworkManager.getInstance();
         
-        // Register message handler to listen for START_GAME message
-        networkManager.registerBattleMessageHandler(msg -> {
-            if (msg.getType() == NetworkMessage.MessageType.START_GAME) {
-                Platform.runLater(() -> {
-                    // Client receives START_GAME, navigate to battle
-                    if (!networkManager.isHost()) {
-                        navigateToBattleScene();
-                    }
-                });
-            }
-        });
+        // Reset lobby state when entering lobby (in case returning from a game)
+        resetLobbyState();
+        
+        // Register lobby message handler to listen for START_GAME message (only once)
+        if (!battleHandlerRegistered) {
+            networkManager.registerLobbyMessageHandler(msg -> {
+                if (msg.getType() == NetworkMessage.MessageType.START_GAME) {
+                    Platform.runLater(() -> {
+                        // Client receives START_GAME, navigate to battle
+                        if (!networkManager.isHost()) {
+                            navigateToBattleScene();
+                        }
+                    });
+                }
+            });
+            battleHandlerRegistered = true;
+        }
         
         // Load and set default deck automatically
         loadAndSetDefaultDeck();
@@ -425,11 +432,27 @@ public class NetworkLobbyController {
         }
     }
     
+    private void resetLobbyState() {
+        // Reset network state when entering lobby
+        if (networkManager != null) {
+            // Reset game started flag in host/client
+            networkManager.resetLobbyState();
+        }
+    }
+    
     @FXML
     private void btnLeaveClicked() {
         if (updateTimer != null) {
             updateTimer.cancel();
         }
+        
+        // Clear lobby handler when leaving lobby
+        if (networkManager != null) {
+            networkManager.clearLobbyMessageHandler();
+        }
+        
+        // Reset handler registration flag
+        battleHandlerRegistered = false;
         
         // Send disconnect message before closing
         if (networkManager != null && networkManager.isConnected()) {

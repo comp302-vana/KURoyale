@@ -134,6 +134,50 @@ public class NetworkClient {
     
     private void handleMessage(NetworkMessage message) {
         switch (message.getType()) {
+            case CONNECT:
+                // In relay mode, CONNECT from host (playerId=1) means host reconnected
+                if (message.getPlayerId() == 1) {
+                    // Parse CONNECT data: "roomId:playerName" format
+                    String connectData = message.getData();
+                    String newHostName = null;
+                    if (connectData != null && connectData.contains(":")) {
+                        String[] parts = connectData.split(":", 2);
+                        newHostName = parts.length > 1 ? parts[1] : connectData;
+                    } else {
+                        newHostName = connectData; // Fallback for old format
+                    }
+                    
+                    // If this is a reconnection (different host name or host was already connected),
+                    // reset host state
+                    if (hostPlayerName != null && !hostPlayerName.equals(newHostName)) {
+                        System.out.println("Client: Host reconnected with different name, resetting state");
+                        hostDeckName = null;
+                        hostReady = false;
+                    }
+                    
+                    hostPlayerName = newHostName;
+                    System.out.println("Client: Host reconnected via relay: " + hostPlayerName);
+                    
+                    // CRITICAL: Send our CONNECT message back to host so host knows we're connected
+                    // This mimics the initial connection handshake
+                    String ourConnectData = "default:" + clientPlayerName;
+                    sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.CONNECT,
+                        2, // CLIENT identifier
+                        ourConnectData,
+                        getCurrentTimestamp()
+                    ));
+                    System.out.println("Client: Sent CONNECT back to host to announce presence");
+                    
+                    // Also send our deck/ready status to sync state
+                    if (clientDeckName != null) {
+                        setClientDeck(clientDeckName);
+                    }
+                    if (clientReady) {
+                        setClientReady(clientReady);
+                    }
+                }
+                break;
             case PLAYER_JOINED:
                 hostPlayerName = message.getData();
                 break;
@@ -285,6 +329,26 @@ public class NetworkClient {
     
     public boolean isClientReady() {
         return clientReady;
+    }
+    
+    /**
+     * Reset lobby state when returning to lobby after a game.
+     * This resets gameStarted flag and ready status to allow new lobby interactions.
+     */
+    public void resetLobbyState() {
+        gameStarted = false; // Reset game state to allow lobby updates
+        clientReady = false; // Reset ready status
+        // Note: We keep host data and connection intact for reconnection scenarios
+        System.out.println("Client: Lobby state reset (gameStarted=false, clientReady=false)");
+        
+        // Re-send our deck and ready status to sync with host
+        if (hostPlayerName != null) {
+            // Host is connected, send our state
+            if (clientDeckName != null) {
+                setClientDeck(clientDeckName);
+            }
+            setClientReady(clientReady); // This will send READY_STATUS message
+        }
     }
     
     public void close() {

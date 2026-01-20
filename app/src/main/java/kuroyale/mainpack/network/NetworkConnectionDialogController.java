@@ -49,6 +49,7 @@ public class NetworkConnectionDialogController {
     
     private Stage dialogStage;
     private ToggleGroup connectionTypeGroup;
+    private String detectedLocalIP = null; // Store detected local IP for auto-fill
     
     public void setStage(Stage stage) {
         this.dialogStage = stage;
@@ -76,7 +77,13 @@ public class NetworkConnectionDialogController {
             // Enable host IP field for joining
             if (txtHostAddress != null) {
                 txtHostAddress.setDisable(false);
-                txtHostAddress.setPromptText("Host IP Address");
+                // Auto-fill localhost as default (same computer) or show local IP hint
+                if (txtHostAddress.getText().trim().isEmpty()) {
+                    txtHostAddress.setText("127.0.0.1"); // Default to localhost (same computer)
+                    txtHostAddress.setPromptText("Host IP (default: 127.0.0.1 for same computer, or use IP shown above)");
+                } else {
+                    txtHostAddress.setPromptText("Host IP (127.0.0.1 for same computer, or IP shown above)");
+                }
             }
         } else {
             // Internet mode - show relay info
@@ -149,13 +156,20 @@ public class NetworkConnectionDialogController {
             final String finalLocalIP = localIP;
             final String finalPublicIP = publicIP;
             
+            // Store local IP for potential auto-fill
+            detectedLocalIP = finalLocalIP;
+            
             Platform.runLater(() -> {
                 if (lblPublicIP != null) {
                     StringBuilder ipText = new StringBuilder();
                     
                     if (finalLocalIP != null && !finalLocalIP.isEmpty()) {
                         ipText.append("Local IP (same network): ").append(finalLocalIP).append("\n");
-                        ipText.append("  → Use this if you're on the same WiFi/router\n\n");
+                        ipText.append("  → Use this if you're on the same WiFi/router\n");
+                        ipText.append("  → Or use 127.0.0.1 if on the same computer\n\n");
+                    } else {
+                        ipText.append("Local IP: Not detected\n");
+                        ipText.append("  → Use 127.0.0.1 for same computer\n\n");
                     }
                     
                     if (finalPublicIP != null && !finalPublicIP.isEmpty()) {
@@ -258,8 +272,8 @@ public class NetworkConnectionDialogController {
         btnJoinLobby.setDisable(true);
         lblStatus.setText("Creating lobby...");
         
-        // Always use Internet mode (Oracle relay server)
-        boolean useInternet = true;
+        // Use selection from radio buttons
+        boolean useInternet = radioInternet.isSelected();
         
         // Start host in background thread
         new Thread(() -> {
@@ -293,16 +307,19 @@ public class NetworkConnectionDialogController {
         String hostIP = txtHostAddress.getText().trim();
         String portText = txtClientPort.getText().trim();
         
-        // Always use Internet mode (Oracle relay server)
-        boolean useInternet = true;
+        // Use selection from radio buttons
+        boolean useInternet = radioInternet.isSelected();
         
         if (playerName.isEmpty()) {
             lblStatus.setText("Please enter your name");
             return;
         }
         
-        // Host IP not needed for relay mode, but keep validation for compatibility
-        // (hostIP will be ignored when useInternet = true)
+        // For local mode, host IP is required
+        if (!useInternet && (hostIP == null || hostIP.isEmpty())) {
+            lblStatus.setText("Please enter host IP address for local connection");
+            return;
+        }
         
         int port;
         try {
