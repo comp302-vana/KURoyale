@@ -108,15 +108,26 @@ public class EntityPlacementManager {
      * 16).
      * In network mode, client is always player 2, host is player 1.
      */
-    private int determinePlayerFromDropLocation(int targetCol) {
+    private int determinePlayerFromDropLocation(int targetCol, int cardID) {
         if (networkBattleManager != null) {
             // Network mode: determine by role
             return networkBattleManager.isHost() ? 1 : 2;
         }
         if (!isPvPMode)
             return 1; // Single-player mode always uses player 1
-        // Use column-based zone: left side (col < 15) = Player 1, right side (col >=
-        // 16) = Player 2
+        
+        // In local PvP: determine by which player's hand has the card
+        // Check Player 1's cards first
+        if (cardManager != null && cardManager.findCardSlotIndex(cardID) >= 0) {
+            return 1; // Card belongs to Player 1
+        }
+        // Check Player 2's cards
+        if (cardManagerP2 != null && cardManagerP2.findCardSlotIndex(cardID) >= 0) {
+            return 2; // Card belongs to Player 2
+        }
+        
+        // Fallback: Use column-based zone (shouldn't happen if cards are managed correctly)
+        // Left side (col < 15) = Player 1, right side (col >= 16) = Player 2
         return (targetCol < 15) ? 1 : 2;
     }
 
@@ -209,7 +220,8 @@ public class EntityPlacementManager {
             }
 
             // Determine player and get appropriate managers
-            int playerId = determinePlayerFromDropLocation(targetCol);
+            // In local PvP, determine by which player's hand has the card, not drop location
+            int playerId = determinePlayerFromDropLocation(targetCol, cardID);
             CardManager activeCardManager = (playerId == 1) ? cardManager : cardManagerP2;
 
             // Check elixir
