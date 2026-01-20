@@ -49,22 +49,29 @@ public class NetworkLobbyController {
     private NetworkManager networkManager;
     private Timer updateTimer;
     private String selectedDeckName;
+    private boolean battleHandlerRegistered = false; // Track if handler is already registered
     
     @FXML
     private void initialize() {
         networkManager = NetworkManager.getInstance();
         
-        // Register message handler to listen for START_GAME message
-        networkManager.registerBattleMessageHandler(msg -> {
-            if (msg.getType() == NetworkMessage.MessageType.START_GAME) {
-                Platform.runLater(() -> {
-                    // Client receives START_GAME, navigate to battle
-                    if (!networkManager.isHost()) {
-                        navigateToBattleScene();
-                    }
-                });
-            }
-        });
+        // Reset lobby state when entering lobby (in case returning from a game)
+        resetLobbyState();
+        
+        // Register lobby message handler to listen for START_GAME message (only once)
+        if (!battleHandlerRegistered) {
+            networkManager.registerLobbyMessageHandler(msg -> {
+                if (msg.getType() == NetworkMessage.MessageType.START_GAME) {
+                    Platform.runLater(() -> {
+                        // Client receives START_GAME, navigate to battle
+                        if (!networkManager.isHost()) {
+                            navigateToBattleScene();
+                        }
+                    });
+                }
+            });
+            battleHandlerRegistered = true;
+        }
         
         // Load and set default deck automatically
         loadAndSetDefaultDeck();
@@ -78,12 +85,45 @@ public class NetworkLobbyController {
         // Set start button visibility (only host can start)
         btnStartGame.setVisible(networkManager.isHost());
         
-        // Display IP address
-        updateIPAddress();
+        // Display connection info
+        updateConnectionInfo();
     }
     
-    private void updateIPAddress() {
-        // Load IPs in background thread
+    private void updateConnectionInfo() {
+        Platform.runLater(() -> {
+            try {
+                if (NetworkManager.isRelayModeEnabled()) {
+                    // Relay mode: Show relay server info
+                    String relayIP = NetworkManager.getRelayServerIP();
+                    int relayPort = NetworkManager.getRelayServerPort();
+                    
+                    StringBuilder info = new StringBuilder();
+                    info.append("Connected via Relay Server\n");
+                    info.append("Relay: ").append(relayIP).append(":").append(relayPort).append("\n");
+                    
+                    if (networkManager.isHost()) {
+                        info.append("Status: Waiting for player...");
+                        lblIPAddress.setStyle("-fx-font-size: 13px; -fx-text-fill: #90EE90; -fx-font-weight: bold;");
+                    } else {
+                        info.append("Status: Waiting for host...");
+                        lblIPAddress.setStyle("-fx-font-size: 13px; -fx-text-fill: #90EE90; -fx-font-weight: bold;");
+                    }
+                    
+                    lblIPAddress.setText(info.toString());
+                } else {
+                    // Direct mode: Show IP addresses (old behavior)
+                    updateIPAddressDirect();
+                }
+            } catch (Exception e) {
+                lblIPAddress.setText("Connection: Error");
+                lblIPAddress.setStyle("-fx-font-size: 13px; -fx-text-fill: white;");
+                System.err.println("Error updating connection info: " + e.getMessage());
+            }
+        });
+    }
+    
+    private void updateIPAddressDirect() {
+        // Load IPs in background thread (for direct mode only)
         new Thread(() -> {
             String localIP = getLocalIPAddress();
             String publicIP = null;
@@ -430,11 +470,27 @@ public class NetworkLobbyController {
         }
     }
     
+    private void resetLobbyState() {
+        // Reset network state when entering lobby
+        if (networkManager != null) {
+            // Reset game started flag in host/client
+            networkManager.resetLobbyState();
+        }
+    }
+    
     @FXML
     private void btnLeaveClicked() {
         if (updateTimer != null) {
             updateTimer.cancel();
         }
+        
+        // Clear lobby handler when leaving lobby
+        if (networkManager != null) {
+            networkManager.clearLobbyMessageHandler();
+        }
+        
+        // Reset handler registration flag
+        battleHandlerRegistered = false;
         
         // Send disconnect message before closing
         if (networkManager != null && networkManager.isConnected()) {

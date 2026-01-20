@@ -684,10 +684,13 @@ public class GameEngine {
                             entityRenderer.setEntityDirty(true);
                             System.out.println("Client: dirty set TRUE by network msg ENTITY_SPAWN");
 
-                            // Cycle card slot on client when entity spawns (host already cycled)
-                            int slotIndex = cardManager.findCardSlotIndex(cardID);
-                            if (slotIndex >= 0) {
-                                cardManager.cycleCardInSlot(slotIndex);
+                            // Only cycle card slot if this is the CLIENT's own card (ownerId == 2)
+                            // Don't cycle for host's cards (ownerId == 1) - host manages its own deck
+                            if (ownerId == 2) {
+                                int slotIndex = cardManager.findCardSlotIndex(cardID);
+                                if (slotIndex >= 0) {
+                                    cardManager.cycleCardInSlot(slotIndex);
+                                }
                             }
 
                             System.out.println("Client: ENTITY_SPAWN - ID=" + entityId + ", card=" + cardID +

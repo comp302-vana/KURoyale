@@ -15,6 +15,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import kuroyale.mainpack.UIManager;
@@ -38,13 +40,88 @@ public class NetworkConnectionDialogController {
     private Label lblPublicIP;
     @FXML
     private Label lblInstructions;
+    @FXML
+    private RadioButton radioLocal;
+    @FXML
+    private RadioButton radioInternet;
+    @FXML
+    private Label lblConnectionInfo;
     
     private Stage dialogStage;
+    private ToggleGroup connectionTypeGroup;
+    private String detectedLocalIP = null; // Store detected local IP for auto-fill
     
     public void setStage(Stage stage) {
         this.dialogStage = stage;
-        // Load public IP in background
-        loadPublicIP();
+        
+        // Setup toggle group for connection type
+        connectionTypeGroup = new ToggleGroup();
+        radioLocal.setToggleGroup(connectionTypeGroup);
+        radioInternet.setToggleGroup(connectionTypeGroup);
+        radioLocal.setSelected(true); // Default to local
+        
+        // Update info when selection changes
+        radioLocal.setOnAction(e -> updateConnectionInfo());
+        radioInternet.setOnAction(e -> updateConnectionInfo());
+        
+        // Initial info update
+        updateConnectionInfo();
+    }
+    
+    private void updateConnectionInfo() {
+        if (radioLocal.isSelected()) {
+            // Local network mode - show local IP info
+            lblConnectionInfo.setText("Direct connection - same WiFi/router");
+            lblConnectionInfo.setStyle("-fx-text-fill: #87CEEB; -fx-font-size: 12px;");
+            loadPublicIP(); // Still show IPs for reference
+            // Enable host IP field for joining
+            if (txtHostAddress != null) {
+                txtHostAddress.setDisable(false);
+                // Auto-fill localhost as default (same computer) or show local IP hint
+                if (txtHostAddress.getText().trim().isEmpty()) {
+                    txtHostAddress.setText("127.0.0.1"); // Default to localhost (same computer)
+                    txtHostAddress.setPromptText("Host IP (default: 127.0.0.1 for same computer, or use IP shown above)");
+                } else {
+                    txtHostAddress.setPromptText("Host IP (127.0.0.1 for same computer, or IP shown above)");
+                }
+            }
+        } else {
+            // Internet mode - show relay info
+            String relayIP = NetworkManager.getRelayServerIP();
+            int relayPort = NetworkManager.getRelayServerPort();
+            lblConnectionInfo.setText("Using relay server: " + relayIP + ":" + relayPort + "\nNo port forwarding needed!");
+            lblConnectionInfo.setStyle("-fx-text-fill: #90EE90; -fx-font-size: 12px;");
+            showRelayInfo();
+            // Disable host IP field for joining (not needed in relay mode)
+            if (txtHostAddress != null) {
+                txtHostAddress.setDisable(true);
+                txtHostAddress.setPromptText("Not needed (using relay server)");
+                txtHostAddress.clear();
+            }
+        }
+    }
+    
+    private void showRelayInfo() {
+        Platform.runLater(() -> {
+            if (lblPublicIP != null) {
+                String relayIP = NetworkManager.getRelayServerIP();
+                int relayPort = NetworkManager.getRelayServerPort();
+                
+                StringBuilder info = new StringBuilder();
+                info.append("Relay Server Mode\n");
+                info.append("Relay: ").append(relayIP).append(":").append(relayPort).append("\n");
+                info.append("Connecting via Oracle Cloud server");
+                
+                lblPublicIP.setText(info.toString());
+                lblPublicIP.setStyle("-fx-text-fill: #90EE90; -fx-font-size: 12px; -fx-font-weight: bold;");
+                lblPublicIP.setVisible(true);
+            }
+            
+            if (lblInstructions != null) {
+                lblInstructions.setText("No port forwarding needed! Works across any network.");
+                lblInstructions.setStyle("-fx-text-fill: #87CEEB; -fx-font-size: 11px;");
+            }
+        });
     }
     
     private void loadPublicIP() {
@@ -79,13 +156,20 @@ public class NetworkConnectionDialogController {
             final String finalLocalIP = localIP;
             final String finalPublicIP = publicIP;
             
+            // Store local IP for potential auto-fill
+            detectedLocalIP = finalLocalIP;
+            
             Platform.runLater(() -> {
                 if (lblPublicIP != null) {
                     StringBuilder ipText = new StringBuilder();
                     
                     if (finalLocalIP != null && !finalLocalIP.isEmpty()) {
                         ipText.append("Local IP (same network): ").append(finalLocalIP).append("\n");
-                        ipText.append("  → Use this if you're on the same WiFi/router\n\n");
+                        ipText.append("  → Use this if you're on the same WiFi/router\n");
+                        ipText.append("  → Or use 127.0.0.1 if on the same computer\n\n");
+                    } else {
+                        ipText.append("Local IP: Not detected\n");
+                        ipText.append("  → Use 127.0.0.1 for same computer\n\n");
                     }
                     
                     if (finalPublicIP != null && !finalPublicIP.isEmpty()) {
@@ -188,10 +272,13 @@ public class NetworkConnectionDialogController {
         btnJoinLobby.setDisable(true);
         lblStatus.setText("Creating lobby...");
         
+        // Use selection from radio buttons
+        boolean useInternet = radioInternet.isSelected();
+        
         // Start host in background thread
         new Thread(() -> {
             try {
-                NetworkManager.getInstance().startHost(port, playerName, null);
+                NetworkManager.getInstance().startHost(port, playerName, null, useInternet);
                 
                 Platform.runLater(() -> {
                     lblStatus.setText("Lobby created! Waiting for player...");
@@ -220,13 +307,17 @@ public class NetworkConnectionDialogController {
         String hostIP = txtHostAddress.getText().trim();
         String portText = txtClientPort.getText().trim();
         
+        // Use selection from radio buttons
+        boolean useInternet = radioInternet.isSelected();
+        
         if (playerName.isEmpty()) {
             lblStatus.setText("Please enter your name");
             return;
         }
         
-        if (hostIP.isEmpty()) {
-            lblStatus.setText("Please enter host IP address");
+        // For local mode, host IP is required
+        if (!useInternet && (hostIP == null || hostIP.isEmpty())) {
+            lblStatus.setText("Please enter host IP address for local connection");
             return;
         }
         
@@ -249,7 +340,7 @@ public class NetworkConnectionDialogController {
         // Connect to host in background thread
         new Thread(() -> {
             try {
-                NetworkManager.getInstance().startClient(hostIP, port, playerName, null);
+                NetworkManager.getInstance().startClient(hostIP, port, playerName, null, useInternet);
                 
                 Platform.runLater(() -> {
                     lblStatus.setText("Connected!");

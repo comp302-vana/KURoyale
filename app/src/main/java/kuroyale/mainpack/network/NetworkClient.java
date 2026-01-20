@@ -27,6 +27,10 @@ public class NetworkClient {
     private String hostDeckName;
     private boolean hostReady = false;
     
+    // Track if game has started (to ignore LOBBY_UPDATE during battle)
+    private boolean gameStarted = false;
+    
+    // Direct connection mode: client connects directly to host IP
     public NetworkClient(String hostIP, int port, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
         this.clientPlayerName = playerName;
         this.onMessageReceived = onMessageReceived;
@@ -70,26 +74,133 @@ public class NetworkClient {
         receiveThread.start();
     }
     
+    // Relay mode: client connects to relay server (outbound connection - no NAT issues)
+    // Note: boolean parameter distinguishes this from direct mode constructor
+    private NetworkClient(boolean useRelay, String relayIP, int relayPort, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
+        this.clientPlayerName = playerName;
+        this.onMessageReceived = onMessageReceived;
+        this.isRunning = true;
+        
+        // Connect to relay server (outbound - no NAT issues)
+        System.out.println("Client: Connecting to relay server at " + relayIP + ":" + relayPort);
+        try {
+            socket = new java.net.Socket();
+            socket.connect(new java.net.InetSocketAddress(relayIP, relayPort), 10000);
+            socket.setSoTimeout(0);
+            System.out.println("Client: Connected to relay server");
+        } catch (java.net.ConnectException e) {
+            throw new IOException("Cannot connect to relay server. Make sure the relay server is running.", e);
+        } catch (java.net.SocketTimeoutException e) {
+            throw new IOException("Connection timeout. Check relay server IP/port.", e);
+        } catch (java.net.UnknownHostException e) {
+            throw new IOException("Unknown relay server: " + relayIP, e);
+        }
+        
+        // CRITICAL: For relay mode, create ObjectOutputStream FIRST, flush, then ObjectInputStream
+        // Relay server expects this order
+        out = new ObjectOutputStream(socket.getOutputStream());
+        out.flush();
+        in = new ObjectInputStream(socket.getInputStream());
+        
+        // Send CONNECT message to identify as CLIENT (playerId = 2)
+        // Format: "roomId:playerName" (using "default" room for now)
+        String connectData = "default:" + playerName;
+        sendMessage(new NetworkMessage(
+            NetworkMessage.MessageType.CONNECT,
+            2, // CLIENT identifier
+            connectData,
+            getCurrentTimestamp()
+        ));
+        System.out.println("Client: Sent CONNECT message to relay (identified as CLIENT, room=default)");
+        
+        // Start receiving messages from relay (which forwards host messages)
+        receiveThread = new Thread(this::receiveMessages);
+        receiveThread.setDaemon(true);
+        receiveThread.start();
+    }
+    
+    /**
+     * Create NetworkClient in relay mode.
+     * This is a factory method to avoid constructor signature conflicts.
+     */
+    public static NetworkClient createRelayClient(String relayIP, int relayPort, String playerName, Consumer<NetworkMessage> onMessageReceived) throws IOException {
+        return new NetworkClient(true, relayIP, relayPort, playerName, onMessageReceived);
+    }
+    
     private void receiveMessages() {
         try {
             while (isRunning && socket != null && !socket.isClosed()) {
                 NetworkMessage message = MessageProtocol.receiveMessage(in);
+                System.out.println("Client: Received message: " + message.getType() + 
+                                 " (playerId=" + message.getPlayerId() + ")");
                 handleMessage(message);
             }
         } catch (IOException | ClassNotFoundException e) {
             if (isRunning) {
                 System.err.println("Client: Error receiving message: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            if (isRunning) {
+                System.err.println("Client: Unexpected error in receiveMessages: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
     
     private void handleMessage(NetworkMessage message) {
         switch (message.getType()) {
+            case CONNECT:
+                // In relay mode, CONNECT from host (playerId=1) means host reconnected
+                if (message.getPlayerId() == 1) {
+                    // Parse CONNECT data: "roomId:playerName" format
+                    String connectData = message.getData();
+                    String newHostName = null;
+                    if (connectData != null && connectData.contains(":")) {
+                        String[] parts = connectData.split(":", 2);
+                        newHostName = parts.length > 1 ? parts[1] : connectData;
+                    } else {
+                        newHostName = connectData; // Fallback for old format
+                    }
+                    
+                    // If this is a reconnection (different host name or host was already connected),
+                    // reset host state
+                    if (hostPlayerName != null && !hostPlayerName.equals(newHostName)) {
+                        System.out.println("Client: Host reconnected with different name, resetting state");
+                        hostDeckName = null;
+                        hostReady = false;
+                    }
+                    
+                    hostPlayerName = newHostName;
+                    System.out.println("Client: Host reconnected via relay: " + hostPlayerName);
+                    
+                    // CRITICAL: Send our CONNECT message back to host so host knows we're connected
+                    // This mimics the initial connection handshake
+                    String ourConnectData = "default:" + clientPlayerName;
+                    sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.CONNECT,
+                        2, // CLIENT identifier
+                        ourConnectData,
+                        getCurrentTimestamp()
+                    ));
+                    System.out.println("Client: Sent CONNECT back to host to announce presence");
+                    
+                    // Also send our deck/ready status to sync state
+                    if (clientDeckName != null) {
+                        setClientDeck(clientDeckName);
+                    }
+                    if (clientReady) {
+                        setClientReady(clientReady);
+                    }
+                }
+                break;
             case PLAYER_JOINED:
                 hostPlayerName = message.getData();
                 break;
             case DECK_SELECTED:
-                if (message.getPlayerId() == 1) {
+                // Only process DECK_SELECTED if game hasn't started yet
+                // During battle, ignore deck selection messages to prevent deck refreshes
+                if (!gameStarted && message.getPlayerId() == 1) {
                     hostDeckName = message.getData();
                 }
                 break;
@@ -99,10 +210,15 @@ public class NetworkClient {
                 }
                 break;
             case LOBBY_UPDATE:
-                parseLobbyUpdate(message.getData());
+                // Only process LOBBY_UPDATE if game hasn't started yet
+                // During battle, ignore LOBBY_UPDATE to prevent deck changes
+                if (!gameStarted) {
+                    parseLobbyUpdate(message.getData());
+                }
                 break;
             case START_GAME:
                 // Game starting - message handler in lobby controller will handle navigation
+                gameStarted = true; // Mark game as started to ignore future LOBBY_UPDATE messages
                 System.out.println("Client: Game starting message received");
                 break;
             case DISCONNECT:
@@ -122,13 +238,34 @@ public class NetworkClient {
                 break;
         }
         
+        // Forward all messages (including battle messages) to registered handlers
         if (onMessageReceived != null) {
+            // Debug: Log battle messages to help diagnose issues
+            if (message.getType() == NetworkMessage.MessageType.ENTITY_SPAWN ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_UPDATE ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_DEATH ||
+                message.getType() == NetworkMessage.MessageType.TOWER_UPDATE ||
+                message.getType() == NetworkMessage.MessageType.PLACEMENT_REJECTED ||
+                message.getType() == NetworkMessage.MessageType.SPELL_CAST_EVENT) {
+                System.out.println("Client: Received battle message: " + message.getType() + 
+                                 " (playerId=" + message.getPlayerId() + ")");
+            }
             onMessageReceived.accept(message);
+        } else {
+            // Debug: Warn if handler is null when battle message arrives
+            if (message.getType() == NetworkMessage.MessageType.ENTITY_SPAWN ||
+                message.getType() == NetworkMessage.MessageType.ENTITY_UPDATE ||
+                message.getType() == NetworkMessage.MessageType.PLACEMENT_REJECTED) {
+                System.err.println("Client: WARNING - Battle message received but onMessageReceived is null! " +
+                                 "Message type: " + message.getType());
+            }
         }
     }
     
     private void parseLobbyUpdate(String data) {
         // Format: hostName:hostDeck:hostReady|clientName:clientDeck:clientReady
+        // IMPORTANT: Only update host info from LOBBY_UPDATE, not client's own info
+        // Client's own deck/ready status should only be set by the client itself
         String[] parts = data.split("\\|");
         if (parts.length >= 1) {
             String[] hostData = parts[0].split(":");
@@ -138,28 +275,32 @@ public class NetworkClient {
                 hostReady = Boolean.parseBoolean(hostData[2]);
             }
         }
-        if (parts.length >= 2) {
-            String[] clientData = parts[1].split(":");
-            if (clientData.length >= 3) {
-                clientPlayerName = clientData[0];
-                clientDeckName = clientData[1].isEmpty() ? null : clientData[1];
-                clientReady = Boolean.parseBoolean(clientData[2]);
-            }
-        }
+        // Don't update client's own data from LOBBY_UPDATE - it should only be set by client
+        // This prevents the client's deck from being overwritten during battle
     }
     
     public void sendMessage(NetworkMessage message) {
         if (out != null) {
             try {
+                // Debug: Log battle messages being sent
+                if (message.getType() == NetworkMessage.MessageType.CARD_PLACEMENT_REQUEST ||
+                    message.getType() == NetworkMessage.MessageType.SPELL_CAST_REQUEST) {
+                    System.out.println("Client: Sending battle message: " + message.getType() + 
+                                     " (playerId=" + message.getPlayerId() + ", data=" + message.getData() + ")");
+                }
                 MessageProtocol.sendMessage(out, message);
             } catch (IOException e) {
                 System.err.println("Client: Error sending message: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.err.println("Client: Cannot send message - output stream is null!");
         }
     }
     
     public void setClientDeck(String deckName) {
         this.clientDeckName = deckName;
+        System.out.println("Client: Sending deck selection: " + deckName);
         sendMessage(new NetworkMessage(
             NetworkMessage.MessageType.DECK_SELECTED,
             2,
@@ -206,8 +347,29 @@ public class NetworkClient {
         return clientReady;
     }
     
+    /**
+     * Reset lobby state when returning to lobby after a game.
+     * This resets gameStarted flag and ready status to allow new lobby interactions.
+     */
+    public void resetLobbyState() {
+        gameStarted = false; // Reset game state to allow lobby updates
+        clientReady = false; // Reset ready status
+        // Note: We keep host data and connection intact for reconnection scenarios
+        System.out.println("Client: Lobby state reset (gameStarted=false, clientReady=false)");
+        
+        // Re-send our deck and ready status to sync with host
+        if (hostPlayerName != null) {
+            // Host is connected, send our state
+            if (clientDeckName != null) {
+                setClientDeck(clientDeckName);
+            }
+            setClientReady(clientReady); // This will send READY_STATUS message
+        }
+    }
+    
     public void close() {
         isRunning = false;
+        gameStarted = false; // Reset game state when closing
         try {
             if (socket != null && !socket.isClosed()) {
                 sendMessage(new NetworkMessage(
