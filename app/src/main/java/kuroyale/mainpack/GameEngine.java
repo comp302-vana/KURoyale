@@ -17,6 +17,8 @@ import java.util.List;
 
 import kuroyale.ai.AIContext;
 import kuroyale.ai.SimpleAI;
+import kuroyale.ai.MediumAI;
+import kuroyale.ai.AdvancedAI;
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.arenapack.ArenaObjectType;
 import kuroyale.cardpack.Card;
@@ -207,6 +209,7 @@ public class GameEngine {
     @FXML
     private void initialize() {
         deckManager = DeckManager.getInstance();
+        cardFactory = CardFactory.getInstance();
 
         entityLayer.setPrefSize(cols * tileSize, rows * tileSize);
         staticLayer.setPrefSize(cols * tileSize, rows * tileSize);
@@ -515,6 +518,12 @@ public class GameEngine {
             if ("Simple".equals(difficulty)) {
                 aiOpponent = new AIContext(arenaMap, INSTANCE, new SimpleAI());
                 gameLoopManager.setAIOpponent(aiOpponent);
+            } else if ("Medium".equals(difficulty)) {
+                aiOpponent = new AIContext(arenaMap, INSTANCE, new MediumAI());
+                gameLoopManager.setAIOpponent(aiOpponent);
+            } else if ("Advanced".equals(difficulty)) {
+                aiOpponent = new AIContext(arenaMap, INSTANCE, new AdvancedAI());
+                gameLoopManager.setAIOpponent(aiOpponent);
             }
         }
 
@@ -614,6 +623,34 @@ public class GameEngine {
                     // TODO: Refund elixir or show error message
                     return;
                 }
+                
+                // Handle spell cast event from host (spell was confirmed and executed)
+                if (msg.getType() == NetworkMessage.MessageType.SPELL_CAST_EVENT) {
+                    // Parse: "spellId|row|col"
+                    String[] parts = msg.getData().split("\\|");
+                    if (parts.length >= 3) {
+                        int spellId = Integer.parseInt(parts[0]);
+                        int row = Integer.parseInt(parts[1]);
+                        int col = Integer.parseInt(parts[2]);
+                        
+                        System.out.println("Client: SPELL_CAST_EVENT received - spell=" + spellId + 
+                                ", target=(" + row + ", " + col + ")");
+                        
+                        // Execute spell locally for visual effects (host already executed authoritatively)
+                        // Note: playerId 2 is client, so isPlayerSpell = false (spells are cast by client)
+                        spellSystem.executeSpell(spellId, row, col, false, entityRenderer);
+                        
+                        // Cycle the spell card (client's own spell was confirmed)
+                        int slotIndex = cardManager.findCardSlotIndex(spellId);
+                        if (slotIndex >= 0) {
+                            cardManager.cycleCardInSlot(slotIndex);
+                            System.out.println("Client: Spell card cycled in slot " + slotIndex);
+                        }
+                        
+                        entityRenderer.setEntityDirty(true);
+                    }
+                    return;
+                }
 
                 // Parse entity spawn message: "entityId|cardId|row|col|owner|hp|maxHp"
                 String[] parts = msg.getData().split("\\|");
@@ -638,7 +675,8 @@ public class GameEngine {
                         System.out.println("Client: Updated existing entity ID=" + entityId);
                     } else {
                         // Spawn new entity from host
-                        boolean isPlayer = (ownerId == 1);
+                        // On client: ownerId 1 = host (enemy), ownerId 2 = client (own entity)
+                        boolean isPlayer = (ownerId == 2);
                         AliveEntity entity;
                         if (cardID <= 15) {
                             entity = new UnitEntity(
@@ -763,12 +801,48 @@ public class GameEngine {
                     AliveEntity entity = registry.getEntity(entityId);
 
                     if (entity != null) {
-                        // Remove entity
-                        entityLifecycleManager.removeDeadEntity(entity);
+                        // Get entity position before removal
+                        int entityRow = entity.getRow();
+                        int entityCol = entity.getCol();
+                        boolean isBuilding = entity instanceof BuildingEntity;
+                        
+                        System.out.println("Client: Processing ENTITY_DEATH - ID=" + entityId + 
+                                ", position=(" + entityRow + ", " + entityCol + "), isBuilding=" + isBuilding);
+                        
+                        // CRITICAL: Set HP to 0 FIRST so renderEntities() won't re-add it to aliveNow
+                        entity.setHP(0);
+                        
+                        // Remove entity from arenaMap grid cells FIRST (before sprite removal)
+                        // This ensures renderEntities() won't find it in the grid
+                        for (int r = 0; r < rows; r++) {
+                            for (int c = 0; c < cols; c++) {
+                                if (arenaMap.getEntity(r, c) == entity) {
+                                    arenaMap.setEntity(r, c, null);
+                                    arenaMap.clearObject(r, c);
+                                    System.out.println("Client: Cleared entity from grid cell (" + r + ", " + c + ")");
+                                }
+                            }
+                        }
+                        
+                        // Remove entity from arenaMap entityList
+                        arenaMap.removeEntity(entity);
+                        
+                        // Explicitly remove sprite (especially important for buildings)
+                        entityRenderer.removeEntitySprite(entity);
+                        System.out.println("Client: Removed sprite for entity ID=" + entityId);
+                        
+                        // Remove entity from registry
                         registry.removeEntity(entityId);
+                        
+                        // Remove from combat manager
+                        combatManager.removeEntity(entity);
+                        
+                        // Force immediate re-render to ensure sprite is gone
+                        // This will clean up any remaining sprites with HP <= 0 or not in aliveNow
                         entityRenderer.setEntityDirty(true);
-                        System.out.println("Client: dirty set TRUE by network msg ENTITY_DEATH");
-                        System.out.println("Client: Entity died: ID=" + entityId);
+                        entityRenderer.renderEntities(); // Force immediate render
+                        
+                        System.out.println("Client: Entity removal complete - ID=" + entityId);
                     }
                 }
             });
@@ -834,6 +908,9 @@ public class GameEngine {
                         // removeTowerFromNetwork, but ensure it's set)
                         entityRenderer.setEntityDirty(true);
                         entityRenderer.setStaticDirty(true);
+                        
+                        // Force immediate re-render of static layer to remove tower sprite
+                        entityRenderer.renderStaticObjects();
 
                         System.out.println("Client: TOWER_DESTROY - Tower " + towerId + " removed, visuals cleared");
                     } catch (IllegalArgumentException e) {

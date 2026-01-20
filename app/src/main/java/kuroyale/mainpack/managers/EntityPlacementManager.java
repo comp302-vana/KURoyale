@@ -380,8 +380,12 @@ public class EntityPlacementManager {
         int absoluteRow = absoluteCoords[0];
         int absoluteCol = absoluteCoords[1];
 
+        // Check if it's a spell
+        boolean isSpell = (cardID >= 25 && cardID <= 28);
+        
         // Validate zone: client (player 2) can only place in right side (col >= 16)
-        if (!CoordinateTransformer.isValidPlayer2Zone(absoluteRow, absoluteCol, rows, cols)) {
+        // EXCEPT for spells, which can be placed anywhere
+        if (!isSpell && !CoordinateTransformer.isValidPlayer2Zone(absoluteRow, absoluteCol, rows, cols)) {
             System.out.println(
                     "Client: Invalid placement zone - requested absolute (" + absoluteRow + ", " + absoluteCol +
                             ") is not in Player 2 zone (col >= 16)");
@@ -398,8 +402,6 @@ public class EntityPlacementManager {
                 ", clientView=(" + clientRow + ", " + clientCol +
                 "), absolute=(" + absoluteRow + ", " + absoluteCol + ")");
 
-        // Check if it's a spell
-        boolean isSpell = (cardID >= 25 && cardID <= 28);
         if (isSpell) {
             // Send spell request to host (host will execute and send updates)
             networkBattleManager.sendSpellCastRequest(cardID, absoluteRow, absoluteCol, requestId);
@@ -435,16 +437,21 @@ public class EntityPlacementManager {
         Card cardToCheck = cardFactory.createCard(cardID);
         int cost = cardToCheck.getCost();
 
-        // Validate zone
-        boolean validZone = CoordinateTransformer.isValidPlacementZone(row, col, playerId, rows, cols);
-        if (!validZone) {
-            System.out.println("Host: CARD_PLACEMENT REJECTED - requestId=" + requestId +
-                    ", player=" + playerId + ", card=" + cardID +
-                    ", requested=(" + row + ", " + col + ") - invalid zone");
-            if (requestId > 0) {
-                networkBattleManager.sendPlacementRejected(requestId, "Invalid zone");
+        // Check if it's a spell first (spells can be placed anywhere)
+        boolean isSpell = (cardID >= 25 && cardID <= 28);
+        
+        // Validate zone - skip zone validation for spells (they can target anywhere)
+        if (!isSpell) {
+            boolean validZone = CoordinateTransformer.isValidPlacementZone(row, col, playerId, rows, cols);
+            if (!validZone) {
+                System.out.println("Host: CARD_PLACEMENT REJECTED - requestId=" + requestId +
+                        ", player=" + playerId + ", card=" + cardID +
+                        ", requested=(" + row + ", " + col + ") - invalid zone");
+                if (requestId > 0) {
+                    networkBattleManager.sendPlacementRejected(requestId, "Invalid zone");
+                }
+                return -1;
             }
-            return -1;
         }
 
         // Check elixir
@@ -459,9 +466,6 @@ public class EntityPlacementManager {
             }
             return -1;
         }
-
-        // Check if it's a spell
-        boolean isSpell = (cardID >= 25 && cardID <= 28);
         if (isSpell) {
             // Host executes spell authoritatively
             executeSpell(cardID, row, col, playerId == 1);

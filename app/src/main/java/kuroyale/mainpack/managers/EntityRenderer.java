@@ -187,7 +187,15 @@ public class EntityRenderer {
         double barWidth = bg.getWidth();
 
         health.setWidth(barWidth * healthPercent);
-        if (e.isPlayer()) {
+        // Health bar color: blue for own team, red for enemy
+        // Only flip colors for entities (not towers) on client side
+        boolean isTower = e instanceof TowerEntity;
+        boolean shouldBeBlue = e.isPlayer();
+        if (isClient && !isTower) {
+            // Flip color only for regular entities on client, not towers
+            shouldBeBlue = !shouldBeBlue;
+        }
+        if (shouldBeBlue) {
             health.setFill(Color.DODGERBLUE);
         } else {
             health.setFill(Color.ORANGERED);
@@ -426,7 +434,12 @@ public class EntityRenderer {
             if (dead) {
                 ImageView iv = entitySprites.get(e);
                 Pane hb = healthBarsByEntity.get(e);
-                entityLayer.getChildren().removeAll(iv, hb);
+                if (iv != null) {
+                    entityLayer.getChildren().remove(iv);
+                }
+                if (hb != null) {
+                    entityLayer.getChildren().remove(hb);
+                }
                 healthBarsByEntity.remove(e);
             }
             return dead;
@@ -452,7 +465,13 @@ public class EntityRenderer {
         healthBarContainer.setPrefWidth(barWidth);
         healthBarContainer.setPrefHeight(barHeight);
 
-        Color teamColor = isPlayer ? Color.DODGERBLUE : Color.ORANGERED;
+        // Only flip colors for entities (not towers) on client side
+        boolean shouldBeBlue = isPlayer;
+        if (isClient && !isTower) {
+            // Flip color only for regular entities on client, not towers
+            shouldBeBlue = !shouldBeBlue;
+        }
+        Color teamColor = shouldBeBlue ? Color.DODGERBLUE : Color.ORANGERED;
 
         Rectangle bg = new Rectangle(barWidth, barHeight);
         bg.setStroke(Color.BLACK);
