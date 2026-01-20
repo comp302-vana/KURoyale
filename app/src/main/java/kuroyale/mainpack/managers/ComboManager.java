@@ -5,6 +5,7 @@ import javafx.scene.layout.Pane;
 import kuroyale.arenapack.ArenaMap;
 import kuroyale.entitiypack.subclasses.AliveEntity;
 import kuroyale.mainpack.models.Combo.ComboType;
+
 /**
  * Main orchestrator for combo system.
  * Coordinates detection, effect application, and UI feedback.
@@ -14,24 +15,32 @@ public class ComboManager {
     private final ComboDetector comboDetector;
     private final ApplyComboEffect effectApplier;
     private final ComboUI comboUI;
+    private final ComboVisualEffects visualEffects;
+    private final int tileSize = 32;
 
     // Track unique combos triggered this match
     private final Set<ComboType> uniqueCombosThisMatch = new HashSet<>();
-    
-    public ComboManager(ArenaMap arenaMap, EntityRenderer entityRenderer, Pane rootPane) {
+
+    public ComboManager(ArenaMap arenaMap, EntityRenderer entityRenderer, Pane uiPane, Pane effectPane) {
         this.comboDetector = new ComboDetector();
         this.effectApplier = new ApplyComboEffect(arenaMap);
-        this.comboUI = new ComboUI(rootPane);
+        this.comboUI = new ComboUI(uiPane);
+        // Visual effects should be in the entity layer to match coordinates
+        this.visualEffects = new ComboVisualEffects(effectPane, tileSize);
+        this.visualEffects.setEntityRenderer(entityRenderer);
+
         // Set reference so ComboUI can get actual combo count
         this.comboUI.setComboManager(this);
+        // Set visual effects on effect applier
+        this.effectApplier.setVisualEffects(visualEffects);
     }
 
     /**
      * Called when a card is played. Checks for combo triggers.
      */
-    public void onCardPlayed(int cardID, AliveEntity playedEntity, int playerId) {
-        ComboType detectedCombo = comboDetector.onCardPlayed(cardID, playedEntity, playerId);
-        
+    public void onCardPlayed(int cardID, AliveEntity playedEntity, int playerId, int row, int col) {
+        ComboType detectedCombo = comboDetector.onCardPlayed(cardID, playedEntity, playerId, row, col);
+
         if (detectedCombo != null) {
             triggerCombo(detectedCombo);
         }
@@ -42,21 +51,29 @@ public class ComboManager {
      */
     private void triggerCombo(ComboType comboType) {
         System.out.println("COMBO TRIGGERED: " + comboType.getName());
-        
+
         // Track unique combos
         uniqueCombosThisMatch.add(comboType);
-        
+
         // Update combo counter first
         comboUI.updateComboCounter();
-        
+
         // Show visual feedback
         comboUI.showComboTrigger(comboType);
-        
+
         // Get the two cards that triggered the combo from detector
         ComboDetector.CardPlayRecord[] comboCards = comboDetector.getLastComboCards();
         if (comboCards != null && comboCards.length == 2) {
             // Apply combo effects with the correct two cards
             effectApplier.applyComboEffect(comboType, comboCards[0], comboCards[1]);
+
+            // Special sparkle effect for SPELL_SYNERGY (at second spell's location)
+            if (comboType == ComboType.SPELL_SYNERGY && comboCards[1] != null) {
+                // Use the exact location where the spell was cast
+                double centerX = comboCards[1].col * tileSize + (tileSize / 2.0);
+                double centerY = comboCards[1].row * tileSize + (tileSize / 2.0);
+                visualEffects.showSparkleEffect(centerX, centerY);
+            }
         } else {
             // Fallback: use last two cards if detector didn't store them
             List<ComboDetector.CardPlayRecord> recentPlays = comboDetector.recentCardPlays;
@@ -67,7 +84,7 @@ public class ComboManager {
             }
         }
     }
-    
+
     /**
      * Get the last card play record (for spell synergy refund).
      */
@@ -78,39 +95,40 @@ public class ComboManager {
         }
         return null;
     }
-    
+
     /**
      * Check if last spell should get refund (for Spell Synergy combo).
      * This checks if the last card play triggered a Spell Synergy combo.
      */
     public boolean shouldRefundLastSpell() {
         ComboDetector.CardPlayRecord lastPlay = getLastCardPlay();
-        if (lastPlay == null) return false;
-        
+        if (lastPlay == null)
+            return false;
+
         // Check if last play was a spell
         if (lastPlay.cardID < 25 || lastPlay.cardID > 28) {
             return false;
         }
-        
+
         // Check if Spell Synergy combo was just triggered (check recent plays)
         List<ComboDetector.CardPlayRecord> recentPlays = comboDetector.recentCardPlays;
         if (recentPlays.size() < 2) {
             return false;
         }
-        
+
         // Get last two plays
         ComboDetector.CardPlayRecord secondLast = recentPlays.get(recentPlays.size() - 2);
         ComboDetector.CardPlayRecord last = recentPlays.get(recentPlays.size() - 1);
-        
+
         // Check if both are spells and different
         boolean secondLastIsSpell = secondLast.cardID >= 25 && secondLast.cardID <= 28;
         boolean lastIsSpell = last.cardID >= 25 && last.cardID <= 28;
         boolean differentSpells = secondLast.cardID != last.cardID;
-        
+
         // Check if within combo window (5 seconds)
         double timeDiff = (last.timestamp - secondLast.timestamp) / 1000.0;
         boolean withinWindow = timeDiff <= 5.0;
-        
+
         return secondLastIsSpell && lastIsSpell && differentSpells && withinWindow;
     }
 
@@ -127,21 +145,21 @@ public class ComboManager {
     public double getSpeedMultiplier(AliveEntity entity) {
         return effectApplier.getSpeedMultiplier(entity);
     }
-    
+
     /**
      * Get range boost for a building (delegates to effect applier).
      */
     public double getRangeBoost(AliveEntity entity) {
         return effectApplier.getRangeBoost(entity);
     }
-    
+
     /**
      * Cleanup destroyed entity effects.
      */
     public void cleanupDestroyedEntity(AliveEntity entity) {
         effectApplier.cleanupDestroyedEntity(entity);
     }
-    
+
     /**
      * Reset combo tracking for a new match.
      */
@@ -151,7 +169,7 @@ public class ComboManager {
         uniqueCombosThisMatch.clear();
         comboUI.reset();
     }
-    
+
     /**
      * Get number of unique combos triggered this match.
      */
@@ -165,7 +183,7 @@ public class ComboManager {
     public int getComboGoldReward() {
         return uniqueCombosThisMatch.size() * 10;
     }
-    
+
     /**
      * Get list of unique combos triggered this match.
      */

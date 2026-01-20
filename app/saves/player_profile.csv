@@ -1,13 +1,12 @@
 GOLD
-2275
-55557500
+400
 
 LEVELS
 1,1
 2,1
 3,1
-4,2
-5,3
+4,1
+5,1
 6,1
 7,1
 8,1
@@ -16,7 +15,7 @@ LEVELS
 11,1
 12,1
 13,1
-14,3
+14,1
 15,1
 16,1
 17,1
@@ -27,49 +26,17 @@ LEVELS
 22,1
 23,1
 24,1
-25,2
+25,1
 26,1
 27,1
 28,1
 
 HISTORY
-1767661027994,75,DRAW
-1767664097332,50,DEFEAT
-1767699479883,50,DEFEAT
-1767699603612,50,DEFEAT
-1767704017479,150,VICTORY
-1767705233438,150,VICTORY
-1767705428908,150,VICTORY
-1767705572791,50,DEFEAT
-1767709906391,150,VICTORY
-1767714677947,500,Achievement Reward: First Blood
-1767718345631,150,VICTORY
-1768858340210,750,Achievement Reward: Tower Hunter
-1768085474475,150,VICTORY
-1768113432038,150,VICTORY
-1768113432075,250,Challenge: Swarm Master
-1768113489608,150,VICTORY
-1768113489662,300,Challenge: Spell Barrage
-1768113538923,150,VICTORY
-1768113538965,300,Challenge: Spell Barrage
-1768113546602,1000,Achievement Reward: Undefeated
-1768113551372,350,Quest Reward: Destroy an enemy King Tower
-1768116701336,150,VICTORY
-1768117144274,150,VICTORY
-1768117355322,150,VICTORY
-1768117836912,150,VICTORY
-1768118610479,150,VICTORY
-1768118610503,250,Challenge: Swarm Master
-1768118616940,175,Quest Reward: Deploy 15 troop cards
-1768118715628,150,VICTORY
-1768118715649,300,Challenge: Spell Barrage
-1768119039789,150,VICTORY
-1768119039817,250,Challenge: Swarm Master
-1768119133786,150,VICTORY
-1768119133811,200,Challenge: No Buildings Allowed
-1768119807528,150,VICTORY
-1768119807561,200,Challenge: No Buildings Allowed
-1768119856514,600,Achievement Reward: Three-Star Hero
+1768868052120,150,VICTORY
+1768868134212,150,VICTORY
+1768868134225,10,Combo Bonus: 1 combos
+1768874266766,50,DEFEAT
+1768874266774,40,Combo Bonus: 4 combos
 
 UNLOCKED
 1
@@ -102,59 +69,37 @@ UNLOCKED
 28
 
 CHESTS
-2
+7
 
 QUESTS
+3,0,false,false
+4,15,true,false
 5,0,false,false
-9,0,false,false
-13,0,false,false
 
 ACHIEVEMENTS
-1,1,true,true
-2,54,true,true
+1,1,true,false
+2,6,false,false
 3,0,false,false
 4,0,false,false
 5,0,false,false
 6,0,false,false
 7,0,false,false
-8,0,false,false
-9,1209,false,false
-10,10,false,false
-13
-
-QUESTS
-9,0,false,false
-4,15,true,true
-14,1,true,true
-
-ACHIEVEMENTS
-1,1,true,true
-2,21,false,false
-3,3,false,false
-4,1,true,true
-5,0,false,false
-6,0,false,false
-7,0,false,false
-8,1915,false,false
-9,4766,false,false
-10,22,false,false
+8,6555,false,false
+9,609,false,false
+10,3,false,false
 11,0,false,false
-12,5,true,true
+12,0,false,false
 
 STATISTICS
-10,5,54,16,0,0,0,0,0,0,1209,0,2,3,0,0,0,0
+3,2,54,16,0,0,0,0,6555,0,609,0,0,2,0,0,0,0
 
 QUEST_RESET
-1768857276195
-22,17,195,192,0,0,0,0,1915,0,4766,0,14,14,3,0,0,0
-
-QUEST_RESET
-1768085442744
+1768863682151
 
 CHALLENGES
-1,true,3,2,2,25
-2,true,3,1,1,-1
-3,true,3,2,2,33
+1,false,0,0,0,-1
+2,false,0,0,0,-1
+3,false,0,0,0,-1
 4,false,0,0,0,-1
 5,false,0,0,0,-1
 
