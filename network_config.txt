@@ -1,0 +1,250 @@
+# ============================================================================
+# KURoyale Network Configuration File
+# ============================================================================
+# This file contains all network-related settings for the game.
+# Modify these values to customize network behavior.
+# 
+# IMPORTANT: After modifying this file, restart the game for changes to take effect.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# RELAY SERVER CONFIGURATION (Internet Mode)
+# ----------------------------------------------------------------------------
+# The relay server is used for NAT traversal when playing over the internet.
+# Both host and client connect outbound to the relay server, which forwards
+# messages between them. This eliminates the need for port forwarding.
+
+# Relay server IP address
+# Valid values: IPv4 address (e.g., "192.168.1.1") or hostname (e.g., "relay.example.com")
+# Default: "80.225.92.3" (Oracle Cloud relay server)
+RELAY_SERVER_IP=80.225.92.3
+
+# Relay server port
+# Valid values: 1-65535 (must match the port the relay server is listening on)
+# Default: 8081
+# Note: Ports below 1024 may require administrator/root privileges
+RELAY_SERVER_PORT=8081
+
+# ----------------------------------------------------------------------------
+# DIRECT CONNECTION CONFIGURATION (Local Network Mode)
+# ----------------------------------------------------------------------------
+# Direct connections are used when both players are on the same local network.
+# The host listens for incoming connections, and the client connects directly.
+
+# Default port for direct connections (host listens on this port)
+# Valid values: 1024-65535 (ports below 1024 may require admin privileges)
+# Default: 8080
+# Note: If this port is in use, the game will attempt to use it anyway and may fail
+DIRECT_CONNECTION_PORT=8080
+
+# ----------------------------------------------------------------------------
+# CONNECTION TIMEOUT SETTINGS
+# ----------------------------------------------------------------------------
+
+# Connection timeout (milliseconds)
+# How long to wait when attempting to connect to host/relay server before giving up
+# Valid values: 1000-60000 (1-60 seconds)
+# Default: 10000 (10 seconds)
+# Recommended: 10000 for local networks, 15000-20000 for internet connections
+CONNECTION_TIMEOUT_MS=10000
+
+# Socket read timeout (milliseconds)
+# How long to wait for data on an established connection before timing out
+# Valid values: 0 (infinite), or 1000-300000 (1 second to 5 minutes)
+# Default: 0 (infinite - wait indefinitely for data)
+# Note: Set to 0 for real-time gameplay, or higher value for debugging
+SOCKET_READ_TIMEOUT_MS=0
+
+# ----------------------------------------------------------------------------
+# CONNECTION CLEANUP SETTINGS
+# ----------------------------------------------------------------------------
+
+# Cleanup delay (milliseconds)
+# Delay before closing old connections to ensure threads fully exit
+# Valid values: 100-2000 (0.1-2 seconds)
+# Default: 500 (0.5 seconds)
+# Note: Increasing this may help with connection stability but slows reconnection
+CLEANUP_DELAY_MS=500
+
+# Connection retry delay (milliseconds)
+# How long to wait before retrying a failed connection attempt
+# Valid values: 500-5000 (0.5-5 seconds)
+# Default: 1000 (1 second)
+CONNECTION_RETRY_DELAY_MS=1000
+
+# ----------------------------------------------------------------------------
+# ROOM CONFIGURATION (Relay Mode)
+# ----------------------------------------------------------------------------
+
+# Default room ID
+# The room identifier used when no specific room is specified
+# Valid values: Any alphanumeric string (letters, numbers, underscores, hyphens)
+# Default: "default"
+# Note: Players in the same room can communicate; different rooms are isolated
+DEFAULT_ROOM_ID=default
+
+# Room ID format
+# Format: "roomId:playerName" (e.g., "room123:Alice")
+# The relay server uses this format to identify rooms and players
+
+# ----------------------------------------------------------------------------
+# MESSAGE PROTOCOL SETTINGS
+# ----------------------------------------------------------------------------
+
+# Message buffer size (bytes)
+# Size of buffer used for reading network messages
+# Valid values: 1024-65536 (1KB-64KB)
+# Default: 8192 (8KB)
+# Note: Larger values may improve performance but use more memory
+MESSAGE_BUFFER_SIZE=8192
+
+# Enable message logging
+# Whether to log all network messages to console (for debugging)
+# Valid values: true, false
+# Default: false
+# Note: Enabling this will generate a lot of console output
+ENABLE_MESSAGE_LOGGING=false
+
+# ----------------------------------------------------------------------------
+# NETWORK MODE SETTINGS
+# ----------------------------------------------------------------------------
+
+# Default network mode
+# Which connection mode to use by default when starting a game
+# Valid values: "local", "internet"
+# Default: "local"
+# - "local": Direct connection (host listens, client connects directly)
+# - "internet": Relay mode (both connect to relay server)
+DEFAULT_NETWORK_MODE=local
+
+# Auto-detect network mode
+# Automatically choose local or internet mode based on connection availability
+# Valid values: true, false
+# Default: false
+# Note: When true, attempts internet mode first, falls back to local if relay unavailable
+AUTO_DETECT_NETWORK_MODE=false
+
+# ----------------------------------------------------------------------------
+# RELAY SERVER SETTINGS (For Running Your Own Relay Server)
+# ----------------------------------------------------------------------------
+
+# Relay server bind address
+# IP address the relay server should bind to (0.0.0.0 = all interfaces)
+# Valid values: IP address or "0.0.0.0" (all interfaces)
+# Default: "0.0.0.0" (listen on all network interfaces)
+# Note: Only used when running your own relay server
+RELAY_BIND_ADDRESS=0.0.0.0
+
+# Relay server max connections
+# Maximum number of simultaneous connections the relay server will accept
+# Valid values: 1-1000
+# Default: 100
+# Note: Each game requires 2 connections (host + client)
+RELAY_MAX_CONNECTIONS=100
+
+# Relay server room timeout (seconds)
+# How long to keep an empty room before removing it
+# Valid values: 60-3600 (1 minute to 1 hour)
+# Default: 300 (5 minutes)
+# Note: Empty rooms are removed when both players disconnect
+RELAY_ROOM_TIMEOUT_SECONDS=300
+
+# ----------------------------------------------------------------------------
+# DEBUGGING AND DIAGNOSTICS
+# ----------------------------------------------------------------------------
+
+# Enable network debug output
+# Print detailed network connection and message information to console
+# Valid values: true, false
+# Default: false
+# Note: Useful for troubleshooting connection issues
+ENABLE_NETWORK_DEBUG=false
+
+# Log connection events
+# Log when connections are established, closed, or fail
+# Valid values: true, false
+# Default: true
+LOG_CONNECTION_EVENTS=true
+
+# Log message forwarding (Relay Mode)
+# Log when messages are forwarded through the relay server
+# Valid values: true, false
+# Default: false
+# Note: Only applies when using relay mode
+LOG_MESSAGE_FORWARDING=false
+
+# ----------------------------------------------------------------------------
+# PERFORMANCE TUNING
+# ----------------------------------------------------------------------------
+
+# Thread pool size (for relay server)
+# Number of threads available for handling connections
+# Valid values: 1-100
+# Default: 10
+# Note: Only used when running your own relay server
+RELAY_THREAD_POOL_SIZE=10
+
+# Connection keep-alive interval (seconds)
+# How often to send keep-alive packets to detect dead connections
+# Valid values: 0 (disabled), or 30-300 (30 seconds to 5 minutes)
+# Default: 0 (disabled)
+# Note: TCP keep-alive is handled by the OS, this is for application-level checks
+KEEP_ALIVE_INTERVAL_SECONDS=0
+
+# ----------------------------------------------------------------------------
+# SECURITY SETTINGS
+# ----------------------------------------------------------------------------
+
+# Validate message direction
+# Ensure messages are only sent in allowed directions (CLIENT→HOST or HOST→CLIENT)
+# Valid values: true, false
+# Default: true
+# Note: Disabling this may allow invalid message flows (not recommended)
+VALIDATE_MESSAGE_DIRECTION=true
+
+# Maximum message size (bytes)
+# Reject messages larger than this size to prevent DoS attacks
+# Valid values: 1024-10485760 (1KB-10MB)
+# Default: 1048576 (1MB)
+# Note: Game messages are typically small (<1KB), this is a safety limit
+MAX_MESSAGE_SIZE_BYTES=1048576
+
+# ----------------------------------------------------------------------------
+# NOTES AND TROUBLESHOOTING
+# ----------------------------------------------------------------------------
+#
+# COMMON ISSUES:
+#
+# 1. "Connection refused" error:
+#    - Check that the host has started the lobby
+#    - Verify the port is not blocked by firewall
+#    - For direct connections, ensure both players are on the same network
+#    - For relay mode, verify RELAY_SERVER_IP and RELAY_SERVER_PORT are correct
+#
+# 2. "Connection timeout" error:
+#    - Increase CONNECTION_TIMEOUT_MS (try 15000 or 20000)
+#    - Check network connectivity (ping the host/relay server)
+#    - Verify firewall allows outbound connections on the specified port
+#
+# 3. Messages not being received:
+#    - Enable ENABLE_MESSAGE_LOGGING to see what's being sent/received
+#    - Check that VALIDATE_MESSAGE_DIRECTION is not blocking valid messages
+#    - Verify both players are using the same network mode (local vs internet)
+#
+# 4. Relay server connection issues:
+#    - Verify RELAY_SERVER_IP is reachable (ping or telnet to test)
+#    - Check that RELAY_SERVER_PORT matches the relay server configuration
+#    - Ensure the relay server is running and accessible
+#
+# PORT FORWARDING (Direct Connection Mode):
+# If playing over the internet with direct connections, the host must forward
+# the DIRECT_CONNECTION_PORT in their router. The client connects to the
+# host's public IP address on that port.
+#
+# RELAY MODE ADVANTAGES:
+# - No port forwarding required
+# - Works through most NAT configurations
+# - Easier setup for internet play
+# - Supports multiple simultaneous games (via rooms)
+#
+# ============================================================================
