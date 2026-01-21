@@ -2,7 +2,6 @@
 
 <?import javafx.geometry.Rectangle2D?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -39,7 +38,7 @@
             </ImageView>
          </graphic>
       </Button>
-      <Button mnemonicParsing="false" onAction="#btnSelectQuestAchievementClicked" prefHeight="50.0" prefWidth="50.0" styleClass="battle-button" AnchorPane.bottomAnchor="270.0" AnchorPane.rightAnchor="755.0">
+      <Button mnemonicParsing="false" onAction="#btnSelectQuestAchievementClicked" prefHeight="50.0" prefWidth="50.0" styleClass="battle-button" AnchorPane.bottomAnchor="260.0" AnchorPane.rightAnchor="755.0">
          <graphic>
             <ImageView fitHeight="28.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true">
                <image>
@@ -49,7 +48,7 @@
          </graphic>
       </Button>
       <Button fx:id="playButton" mnemonicParsing="false" onAction="#btnPlayClicked" prefHeight="70.0" prefWidth="200.0" styleClass="battle-button" text="Play" AnchorPane.bottomAnchor="260.0" AnchorPane.leftAnchor="540.0" AnchorPane.rightAnchor="540.0" />
-      <Button mnemonicParsing="false" onAction="#btnOpenChestClicked" prefHeight="50.0" prefWidth="50.0" styleClass="battle-button" AnchorPane.bottomAnchor="270.0" AnchorPane.leftAnchor="755.0">
+      <Button mnemonicParsing="false" onAction="#btnOpenChestClicked" prefHeight="50.0" prefWidth="50.0" styleClass="battle-button" AnchorPane.bottomAnchor="260.0" AnchorPane.leftAnchor="755.0">
          <graphic>
             <ImageView fitHeight="28.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true">
                <image>
@@ -58,7 +57,7 @@
             </ImageView>
          </graphic>
       </Button>
-      <Button mnemonicParsing="false" onAction="#btnChallengeModeClicked" prefHeight="50.0" prefWidth="200.0" styleClass="battle-button" text="Challenge Mode" AnchorPane.bottomAnchor="200.0" AnchorPane.leftAnchor="540.0" AnchorPane.rightAnchor="540.0" />
+      <Button mnemonicParsing="false" onAction="#btnChallengeModeClicked" prefHeight="50.0" prefWidth="200.0" styleClass="battle-button" text="Challenge Mode" AnchorPane.bottomAnchor="175.0" AnchorPane.leftAnchor="540.0" AnchorPane.rightAnchor="540.0" />
 
       <ImageView fx:id="arenaPreviewImage" fitHeight="266.0" layoutX="526.0" layoutY="79.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="375.0" AnchorPane.leftAnchor="404.0" AnchorPane.topAnchor="75.0">
          <viewport>
