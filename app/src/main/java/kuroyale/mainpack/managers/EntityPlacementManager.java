@@ -176,7 +176,15 @@ public class EntityPlacementManager {
                 cc--;
             }
         } else {
-            // Player 2 (right side): search rightwards within [riverRightLimit, cols-1]
+            // Player 2 (right side): NEVER place on left side or bridge
+            // If desired position is anywhere in [0, riverRightLimit), reject
+            if (desiredCol < riverRightLimit) {
+                System.out.println("Player 2: Attempted placement at col " + desiredCol + 
+                        " is on left side (< " + riverRightLimit + "), rejecting");
+                return -1;
+            }
+            
+            // Search rightwards within [riverRightLimit, cols-1]
             int cc = startCol + 1;
             while (cc < cols && cc >= riverRightLimit) {
                 if (arenaMap.placeObject(row, cc, ArenaObjectType.ENTITY)) {
@@ -281,15 +289,16 @@ public class EntityPlacementManager {
             }
 
             // Validate placement: in PvP, players can only place on their side
+            // Player 1 zone: col < 15, River: col in [15,16], Player 2 zone: col >= 16
             if (isPvPMode) {
-                if (playerId == 1 && targetCol >= cols / 2 - 1) {
-                    System.out.println("Player 1 cannot place troops on enemy side or bridge.");
+                if (playerId == 1 && targetCol >= 15) {
+                    System.out.println("Player 1 cannot place troops on bridge or enemy side (col >= 15).");
                     event.setDropCompleted(false);
                     event.consume();
                     return;
                 }
-                if (playerId == 2 && targetCol < cols / 2) {
-                    System.out.println("Player 2 cannot place troops on enemy side or bridge.");
+                if (playerId == 2 && targetCol < 16) {
+                    System.out.println("Player 2 cannot place troops on enemy side or bridge (col < 16).");
                     event.setDropCompleted(false);
                     event.consume();
                     return;
