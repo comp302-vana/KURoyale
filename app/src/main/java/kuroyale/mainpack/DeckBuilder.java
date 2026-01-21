@@ -607,6 +607,19 @@ public class DeckBuilder {
                 nextDamageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextDamageStat.setStyle("-fx-text-fill: #4CAF50;");
 
+                // Add other stats that don't change with level but should be displayed
+                Label nextHitSpeedStat = new Label("Hit Speed: " + hitSpeed);
+                nextHitSpeedStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+                nextHitSpeedStat.setStyle("-fx-text-fill: #4CAF50;");
+
+                Label nextRangeStat = new Label("Range: " + range);
+                nextRangeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+                nextRangeStat.setStyle("-fx-text-fill: #4CAF50;");
+
+                Label nextSpeedStat = new Label("Speed: " + speed);
+                nextSpeedStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+                nextSpeedStat.setStyle("-fx-text-fill: #4CAF50;");
+
                 Label costLabel = new Label("Upgrade Cost: " + upgradeCost + " Gold");
                 costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
 
@@ -630,7 +643,7 @@ public class DeckBuilder {
                 });
 
                 statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextHPStat, nextDamageStat,
-                        costLabel, goldLabelModal);
+                        nextHitSpeedStat, nextRangeStat, nextSpeedStat, costLabel, goldLabelModal);
                 // Store reference to upgrade button for later alignment with close button
                 upgradeButtonRef = upgradeButton;
             }
@@ -682,6 +695,15 @@ public class DeckBuilder {
                 nextDamageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextDamageStat.setStyle("-fx-text-fill: #4CAF50;");
 
+                // Add other stats that don't change with level but should be displayed
+                Label nextRangeStat = new Label("Range: " + range);
+                nextRangeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+                nextRangeStat.setStyle("-fx-text-fill: #4CAF50;");
+
+                Label nextLifetimeStat = new Label("Lifetime: " + lifetime);
+                nextLifetimeStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+                nextLifetimeStat.setStyle("-fx-text-fill: #4CAF50;");
+
                 Label costLabel = new Label("Upgrade Cost: " + upgradeCost + " Gold");
                 costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
 
@@ -705,7 +727,7 @@ public class DeckBuilder {
                 });
 
                 statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextHPStat, nextDamageStat,
-                        costLabel, goldLabelModal);
+                        nextRangeStat, nextLifetimeStat, costLabel, goldLabelModal);
                 // Store reference to upgrade button for later alignment with close button
                 upgradeButtonRef = upgradeButton;
             }
@@ -743,6 +765,11 @@ public class DeckBuilder {
                 nextDamageStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
                 nextDamageStat.setStyle("-fx-text-fill: #4CAF50;");
 
+                // Add other stats that don't change with level but should be displayed
+                Label nextRadiusStat = new Label("Radius: " + radius);
+                nextRadiusStat.setFont(Font.font("Trebuchet MS", FontWeight.NORMAL, 14));
+                nextRadiusStat.setStyle("-fx-text-fill: #4CAF50;");
+
                 Label costLabel = new Label("Upgrade Cost: " + upgradeCost + " Gold");
                 costLabel.setFont(Font.font("Trebuchet MS", FontWeight.BOLD, 14));
 
@@ -766,7 +793,7 @@ public class DeckBuilder {
                 });
 
                 statsBox.getChildren().addAll(upgradeSeparator, upgradeTitle, nextDamageStat,
-                        costLabel, goldLabelModal);
+                        nextRadiusStat, costLabel, goldLabelModal);
                 // Store reference to upgrade button for later alignment with close button
                 upgradeButtonRef = upgradeButton;
             }
