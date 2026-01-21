@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+
+<VBox fx:id="cardRoot" alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="220.0" prefWidth="260.0" spacing="10.0" styleClass="challenge-card" stylesheets="@../styles/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="kuroyale.mainpack.ChallengeItemController">
+   <children>
+      <Label fx:id="titleLabel" alignment="CENTER" prefWidth="240.0" styleClass="challenge-title" text="Challenge Name" wrapText="true" />
+      
+      <Label fx:id="descLabel" alignment="TOP_CENTER" prefHeight="50.0" prefWidth="240.0" styleClass="challenge-desc" text="Description of the challenge goes here." textAlignment="CENTER" wrapText="true" />
+      
+      <HBox alignment="CENTER" spacing="15.0">
+         <children>
+            <VBox alignment="CENTER">
+               <children>
+                  <Label styleClass="challenge-label-small" text="REWARD" />
+                  <Label fx:id="rewardLabel" styleClass="challenge-reward-value" text="100 G" />
+               </children>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <VBox alignment="CENTER">
+               <children>
+                  <Label styleClass="challenge-label-small" text="STARS" />
+                  <Label fx:id="starsLabel" styleClass="challenge-stars" text="★☆☆" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+      
+      <Region VBox.vgrow="ALWAYS" />
+      
+      <Button fx:id="actionButton" mnemonicParsing="false" onAction="#onActionClicked" prefHeight="35.0" prefWidth="140.0" styleClass="challenge-button-small" text="Start" />
+   </children>
+</VBox>

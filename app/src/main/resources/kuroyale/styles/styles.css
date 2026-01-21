@@ -92,7 +92,7 @@
     -fx-padding: 15 25;
     -fx-text-fill: #f5e6d3;
     -fx-font-family: 'Trebuchet MS Bold', 'Arial Black', sans-serif;
-    -fx-font-size: 24px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 15, 0.5, 0, 6);
     -fx-cursor: hand;
@@ -111,4 +111,150 @@
     -fx-background-insets: 2;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0.3, 0, 3);
     -fx-padding: 17 25 13 25;
+}
+
+/* ===== Challenge Mode Cards ===== */
+.challenge-card {
+    -fx-background-color: linear-gradient(to bottom, #4a235a 0%, #2e1437 100%);
+    -fx-background-radius: 15;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+    -fx-border-radius: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 0, 5);
+    -fx-padding: 15;
+}
+
+.challenge-card:hover {
+    -fx-effect: dropshadow(gaussian, #d4af37, 10, 0.3, 0, 0);
+    /* Golden glow on hover */
+    -fx-border-color: #f5e6d3;
+}
+
+.challenge-title {
+    -fx-font-family: 'Trebuchet MS Bold', sans-serif;
+    -fx-font-size: 18px;
+    -fx-text-fill: #f5e6d3;
+    -fx-font-weight: bold;
+}
+
+.challenge-desc {
+    -fx-font-family: 'Trebuchet MS', sans-serif;
+    -fx-font-size: 14px;
+    -fx-text-fill: #dcdcdc;
+}
+
+.challenge-label-small {
+    -fx-font-size: 10px;
+    -fx-text-fill: #b3b3b3;
+    -fx-font-weight: bold;
+}
+
+.challenge-reward-value {
+    -fx-font-size: 16px;
+    -fx-text-fill: #ffd700;
+    /* Gold color */
+    -fx-font-weight: bold;
+}
+
+.challenge-stars {
+    -fx-font-size: 18px;
+    -fx-text-fill: #ffd700;
+}
+
+.challenge-button-small {
+    -fx-background-color: linear-gradient(to bottom, #9b59b6 0%, #8e44ad 100%);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.challenge-button-small:hover {
+    -fx-background-color: linear-gradient(to bottom, #a86cc4 0%, #9b59b6 100%);
+}
+
+.locked-card {
+    -fx-background-color: #2c2c2c;
+    -fx-border-color: #555;
+    -fx-opacity: 0.7;
+}
+
+.locked-card .challenge-title,
+.locked-card .challenge-desc,
+.locked-card .challenge-reward-value,
+.locked-card .challenge-stars {
+    -fx-text-fill: #777;
+}
+
+/* ===== Statistics Panel ===== */
+.stats-panel {
+    -fx-background-color: rgba(30, 20, 40, 0.85);
+    /* Dark semi-transparent background */
+    -fx-background-radius: 15;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 2;
+    -fx-border-radius: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 10, 0, 0, 5);
+    -fx-padding: 20;
+}
+
+.stats-title {
+    -fx-font-family: 'Trebuchet MS Bold', sans-serif;
+    -fx-font-size: 22px;
+    -fx-text-fill: #f5e6d3;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 2, 0.5, 0, 1);
+    -fx-padding: 0 0 15 0;
+    -fx-border-color: transparent transparent #d4af37 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.stats-item-box {
+    -fx-padding: 10 0;
+    -fx-border-color: transparent transparent rgba(80, 60, 100, 0.5) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.stats-item-title {
+    -fx-font-family: 'Trebuchet MS Bold', sans-serif;
+    -fx-font-size: 15px;
+    -fx-text-fill: #ffd700;
+    /* Gold */
+}
+
+.stats-item-value {
+    -fx-font-family: 'Trebuchet MS', sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #dcdcdc;
+    /* Light gray */
+}
+
+/* ===== Sleek Back Button ===== */
+.back-button {
+    -fx-background-color: rgba(0, 0, 0, 0.4);
+    -fx-background-radius: 20;
+    -fx-border-color: #d4af37;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 20;
+    -fx-text-fill: #f5e6d3;
+    -fx-font-family: 'Trebuchet MS', sans-serif;
+    -fx-font-size: 14px;
+    -fx-padding: 5 15;
+    -fx-cursor: hand;
+}
+
+.back-button:hover {
+    -fx-background-color: rgba(212, 175, 55, 0.2);
+    /* Gold tint on hover */
+    -fx-border-color: #ffd700;
+}
+
+/* ===== Decorative Scene Title ===== */
+.scene-title {
+    -fx-font-family: 'Trebuchet MS Bold', sans-serif;
+    -fx-font-size: 48px;
+    -fx-text-fill: linear-gradient(to bottom, #ffd700, #ffb900);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 10, 0.5, 0, 3);
+    -fx-stroke: #4a235a;
+    -fx-stroke-width: 1;
 }

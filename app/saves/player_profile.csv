@@ -1,5 +1,5 @@
 GOLD
-2675
+2795
 
 LEVELS
 1,1
@@ -63,6 +63,10 @@ HISTORY
 1768868134225,10,Combo Bonus: 1 combos
 1768874266766,50,DEFEAT
 1768874266774,40,Combo Bonus: 4 combos
+1768954310068,50,DEFEAT
+1768954310078,10,Combo Bonus: 1 combos
+1768954366142,50,DEFEAT
+1768954366149,10,Combo Bonus: 1 combos
 
 UNLOCKED
 1
@@ -100,7 +104,7 @@ CHESTS
 QUESTS
 7,0,false,false
 9,1,true,false
-4,0,false,false
+4,3,false,false
 
 ACHIEVEMENTS
 1,1,true,true
@@ -110,14 +114,14 @@ ACHIEVEMENTS
 5,0,false,false
 6,0,false,false
 7,0,false,false
-8,493,false,false
-9,1365,false,false
-10,25,false,false
+8,1091,false,false
+9,1485,false,false
+10,27,false,false
 11,0,false,false
 12,0,false,false
 
 STATISTICS
-25,9,279,80,0,0,0,0,1013,0,1365,0,0,3,0,0,0,0
+27,9,288,80,0,0,0,0,1206,0,1485,0,0,3,0,0,0,0
 
 QUEST_RESET
 1768948347500
