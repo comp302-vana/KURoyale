@@ -1,6 +1,6 @@
 # KURoyale
 
-A Clash Royale-inspired multiplayer card battle game developed in Java as a 6-person team project for COMP302 (Software Engineering) at Koç University.
+A Clash Royale-inspired multiplayer card battle game developed in Java as a 6-person team project for COMP302 at Koç University.
 
 ## Features
 
